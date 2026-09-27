@@ -7,7 +7,6 @@ import {
 } from 'react-native'
 import {
   createNativeStackNavigator,
-  type NativeStackNavigationProp,
 } from '@react-navigation/native-stack'
 
 import RescheduleBookingScreen from '../screens/bookings/RescheduleBookingScreen'
@@ -92,10 +91,6 @@ const Tab = createBottomTabNavigator()
 const Stack =
   createNativeStackNavigator<CustomerStackParamList>()
 
-export type CustomerStackNavigationProp =
-  NativeStackNavigationProp<
-    CustomerStackParamList
-  >
 
 export default function CustomerNavigator({
   location,
@@ -109,7 +104,7 @@ export default function CustomerNavigator({
       }}
     >
       <Stack.Screen name="Tabs">
-        {({ navigation }) => (
+        {({ navigation: stackNavigation }) => (
           <Tab.Navigator
             screenOptions={{
               headerShown: false,
@@ -144,7 +139,7 @@ export default function CustomerNavigator({
                     onLocationChange
                   }
                   onServicePress={service => {
-                    navigation.navigate(
+                    stackNavigation.navigate(
                       'Booking',
                       { service },
                     )
@@ -171,9 +166,7 @@ export default function CustomerNavigator({
               {({ navigation }) => (
                 <MyBookingsScreen
                   onBookingPress={bookingId =>
-                    navigation.getParent<
-                      CustomerStackNavigationProp
-                    >()?.navigate(
+                    stackNavigation.navigate(
                       'ActiveBooking',
                       { bookingId },
                     )
