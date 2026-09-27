@@ -336,7 +336,6 @@ export async function getCustomerBookings(): Promise<
   const occurrenceBookingIds = bookings
   .filter(
     booking =>
-      booking.booking_type === 'scheduled' ||
       booking.booking_type === 'recurring',
   )
   .map(booking => booking.id)
@@ -668,15 +667,12 @@ async function resolveOccurrenceIdForOtp(
       data?.fulfillment_type ??
         '',
     )
-
-  if (
-    bookingType !==
-      'scheduled' &&
-    bookingType !==
-      'recurring'
-  ) {
-    return undefined
-  }
+if (
+  bookingType !==
+  'recurring'
+) {
+  return undefined
+}
 
   const occurrence =
     await getCustomerActiveBookingOccurrence(

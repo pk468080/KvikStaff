@@ -255,17 +255,24 @@ export default function BookingDetailsScreen({
       setError(null)
 
       try {
-        const [
-          nextBooking,
-          nextOccurrences,
-        ] = await Promise.all([
-          getWorkerBooking(
-            bookingId,
-          ),
-          getWorkerBookingOccurrencesForBooking(
-            bookingId,
-          ),
-        ])
+       const nextBooking =
+  await getWorkerBooking(
+    bookingId,
+  )
+
+if (!nextBooking) {
+  throw new Error(
+    'Booking not found or not assigned to this worker.',
+  )
+}
+
+const nextOccurrences =
+  nextBooking.bookingType ===
+  'recurring'
+    ? await getWorkerBookingOccurrencesForBooking(
+        bookingId,
+      )
+    : []
 
         if (!nextBooking) {
           throw new Error(
