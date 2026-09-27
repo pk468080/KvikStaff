@@ -1,6 +1,18 @@
 import {
+  useEffect,
+} from 'react'
+
+import {
   StyleSheet,
 } from 'react-native'
+
+import {
+  useNavigation,
+} from '@react-navigation/native'
+
+import type {
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack'
 
 import {
   createBottomTabNavigator,
@@ -14,10 +26,19 @@ import {
   UI,
 } from '../constants/ui'
 
+import {
+  useWorkerRuntime,
+} from '../context/WorkerRuntimeContext'
+
 import type {
   WorkerStackParamList,
   WorkerTabParamList,
 } from '../types/navigation'
+
+type WorkerStackNavigation =
+  NativeStackNavigationProp<
+    WorkerStackParamList
+  >
 
 import WorkerHomeScreen from '../screens/home/WorkerHomeScreen'
 
@@ -58,6 +79,30 @@ const Stack =
 
 
 function WorkerTabs() {
+  const navigation =
+    useNavigation<WorkerStackNavigation>()
+
+  const {
+    latestOfferBookingId,
+  } = useWorkerRuntime()
+
+  useEffect(() => {
+    if (!latestOfferBookingId) {
+      return
+    }
+
+    navigation.navigate(
+      'BookingOffer',
+      {
+        bookingId:
+          latestOfferBookingId,
+      },
+    )
+  }, [
+    latestOfferBookingId,
+    navigation,
+  ])
+
   return (
     <Tab.Navigator
       screenOptions={{
