@@ -1,12 +1,15 @@
 import {
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs'
+
 import {
   StyleSheet,
 } from 'react-native'
+
 import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack'
+
 import RescheduleBookingScreen from '../screens/bookings/RescheduleBookingScreen'
 import BookingDetailsScreen from '../screens/bookings/BookingDetailsScreen'
 import BookingScreen from '../screens/bookings/BookingScreen'
@@ -15,6 +18,7 @@ import PaymentScreen from '../screens/payment/PaymentScreen'
 import CustomerBookingRouter from '../screens/bookings/CustomerBookingRouter'
 import MyBookingsScreen from '../screens/bookings/MyBookingsScreen'
 import MyProfileScreen from '../screens/profile/MyProfileScreen'
+import ReviewWorkerScreen from '../screens/reviews/ReviewWorkerScreen'
 
 import {
   getOrCreateCustomerAddress,
@@ -27,6 +31,7 @@ import {
 import {
   createCustomerRecurringBooking,
 } from '../services/booking/recurringBooking.service'
+
 import {
   createCustomerInstantBooking,
 } from '../services/booking/instantBooking.service'
@@ -56,7 +61,7 @@ type CustomerNavigatorProps = {
   onSignOut: () => void
 }
 
-type CustomerStackParamList = {
+export type CustomerStackParamList = {
   Tabs: undefined
 
   Booking: {
@@ -67,7 +72,8 @@ type CustomerStackParamList = {
     draft: BookingDraft
     service: HomeService
   }
-    RescheduleBooking: {
+
+  RescheduleBooking: {
     bookingId: string
     currentStart: string
     currentEnd: string
@@ -80,7 +86,15 @@ type CustomerStackParamList = {
     occurrenceCount: number
     totalWorkingHours: number
   }
-  ActiveBooking: { bookingId: string }
+
+  ActiveBooking: {
+    bookingId: string
+  }
+
+  ReviewWorker: {
+    bookingId: string
+    occurrenceId?: string
+  }
 }
 
 const Tab =
@@ -88,8 +102,6 @@ const Tab =
 
 const Stack =
   createNativeStackNavigator<CustomerStackParamList>()
-
-
 
 export default function CustomerNavigator({
   location,
@@ -116,7 +128,9 @@ export default function CustomerNavigator({
             <Tab.Screen name="Home">
               {() => (
                 <HomeScreen
-                  location={location}
+                  location={
+                    location
+                  }
                   onLocationChange={
                     onLocationChange
                   }
@@ -135,13 +149,26 @@ export default function CustomerNavigator({
             <Tab.Screen name="My Bookings">
               {({ navigation }) => (
                 <MyBookingsScreen
-                  onBookingPress={bookingId => navigation.navigate('ActiveBooking', { bookingId })}
+                  onBookingPress={bookingId =>
+                    navigation.navigate(
+                      'ActiveBooking',
+                      {
+                        bookingId,
+                      },
+                    )
+                  }
                 />
               )}
             </Tab.Screen>
 
             <Tab.Screen name="My Profile">
-              {() => <MyProfileScreen onSignOut={onSignOut} />}
+              {() => (
+                <MyProfileScreen
+                  onSignOut={
+                    onSignOut
+                  }
+                />
+              )}
             </Tab.Screen>
           </Tab.Navigator>
         )}
@@ -160,8 +187,7 @@ export default function CustomerNavigator({
                 {
                   draft,
                   service:
-                    route.params
-                      .service,
+                    route.params.service,
                 },
               )
             }}
@@ -178,40 +204,75 @@ export default function CustomerNavigator({
 
           async function handleContinue() {
             if (!draft.location) {
-              throw new Error('A booking location is required.')
+              throw new Error(
+                'A booking location is required.',
+              )
             }
 
-            if (draft.bookingType !== 'instant' && (!draft.startDate || !draft.endDate)) {
+            if (
+              draft.bookingType !==
+                'instant' &&
+              (!draft.startDate ||
+                !draft.endDate)
+            ) {
               throw new Error(
                 'Booking dates are required.',
               )
             }
 
-            const addressId = await getOrCreateCustomerAddress(
+            const addressId =
+              await getOrCreateCustomerAddress(
                 draft.location,
               )
 
-            if (draft.bookingType === 'instant') {
-              const result = await createCustomerInstantBooking({
-                serviceVariantId: service.serviceVariantId,
-                addressId,
-                startTime: draft.startTime,
-                endTime: draft.endTime,
-              })
+            if (
+              draft.bookingType ===
+              'instant'
+            ) {
+              const result =
+                await createCustomerInstantBooking(
+                  {
+                    serviceVariantId:
+                      service.serviceVariantId,
+                    addressId,
+                    startTime:
+                      draft.startTime,
+                    endTime:
+                      draft.endTime,
+                  },
+                )
+
               if (
-                result.instant_available === false ||
-                result.fallback_to_scheduled === true
+                result.instant_available ===
+                  false ||
+                result.fallback_to_scheduled ===
+                  true
               ) {
-                navigation.navigate('Booking', { service })
+                navigation.navigate(
+                  'Booking',
+                  {
+                    service,
+                  },
+                )
                 return
               }
-              navigation.navigate('Payment', {
-                bookingId: result.booking_id,
-                finalAmount: result.final_amount,
-                currency: result.currency,
-                occurrenceCount: result.occurrence_count,
-                totalWorkingHours: result.total_working_hours,
-              })
+
+              navigation.navigate(
+                'Payment',
+                {
+                  bookingId:
+                    result.booking_id,
+                  finalAmount:
+                    result.final_amount,
+                  currency:
+                    result.currency,
+                  occurrenceCount:
+                    result.occurrence_count,
+                  totalWorkingHours:
+                    result.total_working_hours,
+                },
+              )
+
               return
             }
 
@@ -224,32 +285,41 @@ export default function CustomerNavigator({
                   {
                     serviceVariantId:
                       service.serviceVariantId,
-
                     addressId,
-
                     startDate:
-  toDateString(
-    new Date(draft.startDate!),
-  ),
-
-endDate:
-  toDateString(
-    new Date(draft.endDate!),
-  ),
-
-startTime:
-  toTimeString(
-    new Date(draft.startTime),
-  ),
-
-endTime:
-  toTimeString(
-    new Date(draft.endTime),
-  ),
-
+                      toDateString(
+                        new Date(
+                          draft.startDate!,
+                        ),
+                      ),
+                    endDate:
+                      toDateString(
+                        new Date(
+                          draft.endDate!,
+                        ),
+                      ),
+                    startTime:
+                      toTimeString(
+                        new Date(
+                          draft.startTime,
+                        ),
+                      ),
+                    endTime:
+                      toTimeString(
+                        new Date(
+                          draft.endTime,
+                        ),
+                      ),
                     selectedWeekdays:
-                      [0, 1, 2, 3, 4, 5, 6],
-
+                      [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                      ],
                     excludedDates:
                       draft.excludedDates,
                   },
@@ -260,16 +330,12 @@ endTime:
                 {
                   bookingId:
                     result.booking_id,
-
                   finalAmount:
                     result.final_amount,
-
                   currency:
                     result.currency,
-
                   occurrenceCount:
                     result.occurrence_count,
-
                   totalWorkingHours:
                     result.total_working_hours,
                 },
@@ -279,9 +345,13 @@ endTime:
             }
 
             const weekdayIndexes =
-  draft.selectedWeekdays
-    .map(getWeekdayIndex)
-    .filter(index => index >= 0)
+              draft.selectedWeekdays
+                .map(
+                  getWeekdayIndex,
+                )
+                .filter(
+                  index => index >= 0,
+                )
 
             if (
               weekdayIndexes.length ===
@@ -292,22 +362,30 @@ endTime:
               )
             }
 
-   const expectedWeekdayIndexes =
-  Array.from(
-    new Set(
-      draft.selectedWeekdays
-        .map(getWeekdayIndex)
-        .filter(index => index >= 0),
-    ),
-  )
+            const expectedWeekdayIndexes =
+              Array.from(
+                new Set(
+                  draft.selectedWeekdays
+                    .map(
+                      getWeekdayIndex,
+                    )
+                    .filter(
+                      index =>
+                        index >= 0,
+                    ),
+                ),
+              )
 
             const expectedExcludedDates =
               Array.from(
-                new Set(draft.excludedDates),
+                new Set(
+                  draft.excludedDates,
+                ),
               ).sort()
 
             if (
-              expectedWeekdayIndexes.length === 0
+              expectedWeekdayIndexes.length ===
+              0
             ) {
               throw new Error(
                 'At least one recurring weekday is required.',
@@ -341,32 +419,33 @@ endTime:
                 {
                   serviceVariantId:
                     service.serviceVariantId,
-
                   addressId,
-
                   startDate:
-  toDateString(
-    new Date(draft.startDate!),
-  ),
-
-endDate:
-  toDateString(
-    new Date(draft.endDate!),
-  ),
-
-startTime:
-  toTimeString(
-    new Date(draft.startTime),
-  ),
-
-endTime:
-  toTimeString(
-    new Date(draft.endTime),
-  ),
-
+                    toDateString(
+                      new Date(
+                        draft.startDate!,
+                      ),
+                    ),
+                  endDate:
+                    toDateString(
+                      new Date(
+                        draft.endDate!,
+                      ),
+                    ),
+                  startTime:
+                    toTimeString(
+                      new Date(
+                        draft.startTime,
+                      ),
+                    ),
+                  endTime:
+                    toTimeString(
+                      new Date(
+                        draft.endTime,
+                      ),
+                    ),
                   selectedWeekdays:
                     expectedWeekdayIndexes,
-
                   excludedDates:
                     expectedExcludedDates,
                 },
@@ -377,16 +456,12 @@ endTime:
               {
                 bookingId:
                   result.booking_id,
-
                 finalAmount:
                   result.final_amount,
-
                 currency:
                   result.currency,
-
                 occurrenceCount:
                   result.occurrence_count,
-
                 totalWorkingHours:
                   result.total_working_hours,
               },
@@ -460,9 +535,16 @@ endTime:
               route.params
                 .totalWorkingHours
             }
-            onPaid={() => navigation.replace('ActiveBooking', {
-              bookingId: route.params.bookingId,
-            })}
+            onPaid={() =>
+              navigation.replace(
+                'ActiveBooking',
+                {
+                  bookingId:
+                    route.params
+                      .bookingId,
+                },
+              )
+            }
           />
         )}
       </Stack.Screen>
@@ -487,23 +569,65 @@ endTime:
                 },
               )
             }}
+            onReview={(
+              bookingId,
+              occurrenceId,
+            ) => {
+              navigation.navigate(
+                'ReviewWorker',
+                {
+                  bookingId,
+                  occurrenceId,
+                },
+              )
+            }}
           />
         )}
       </Stack.Screen>
-<Stack.Screen name="RescheduleBooking">
+
+      <Stack.Screen name="RescheduleBooking">
+        {({ route, navigation }) => (
+          <RescheduleBookingScreen
+            bookingId={
+              route.params.bookingId
+            }
+            currentStart={
+              route.params.currentStart
+            }
+            currentEnd={
+              route.params.currentEnd
+            }
+            onCompleted={() =>
+              navigation.replace(
+                'ActiveBooking',
+                {
+                  bookingId:
+                    route.params.bookingId,
+                },
+              )
+            }
+          />
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen
+  name="ReviewWorker"
+  options={{
+    presentation: 'modal',
+    animation: 'slide_from_bottom',
+    headerShown: false,
+  }}
+>
   {({ route, navigation }) => (
-    <RescheduleBookingScreen
-      bookingId={route.params.bookingId}
-      currentStart={route.params.currentStart}
-      currentEnd={route.params.currentEnd}
-      onCompleted={() =>
-        navigation.replace(
-          'ActiveBooking',
-          {
-            bookingId:
-              route.params.bookingId,
-          },
-        )
+    <ReviewWorkerScreen
+      bookingId={
+        route.params.bookingId
+      }
+      occurrenceId={
+        route.params.occurrenceId
+      }
+      onDone={() =>
+        navigation.goBack()
       }
     />
   )}
@@ -512,15 +636,15 @@ endTime:
   )
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    height: 64,
-    paddingBottom: 8,
-    paddingTop: 8,
-  },
+const styles =
+  StyleSheet.create({
+    tabBar: {
+      height: 64,
+      paddingBottom: 8,
+      paddingTop: 8,
+    },
 
-  tabBarLabel: {
-    fontSize: 12,
-  },
-
-})
+    tabBarLabel: {
+      fontSize: 12,
+    },
+  })

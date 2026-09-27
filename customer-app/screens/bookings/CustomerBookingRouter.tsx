@@ -22,16 +22,23 @@ import {
 
 type CustomerBookingRouterProps = {
   bookingId: string
+
   onReschedule: (
     bookingId: string,
     currentStart: string,
     currentEnd: string,
+  ) => void
+
+  onReview: (
+    bookingId: string,
+    occurrenceId?: string,
   ) => void
 }
 
 export default function CustomerBookingRouter({
   bookingId,
   onReschedule,
+  onReview,
 }: CustomerBookingRouterProps) {
   const [
     bookingType,
@@ -164,6 +171,9 @@ export default function CustomerBookingRouter({
         bookingId={
           bookingId
         }
+        onReview={
+          onReview
+        }
       />
     )
   }
@@ -175,6 +185,12 @@ export default function CustomerBookingRouter({
       }
       onReschedule={
         onReschedule
+      }
+      onReview={
+        bookingIdToReview =>
+          onReview(
+            bookingIdToReview,
+          )
       }
     />
   )
