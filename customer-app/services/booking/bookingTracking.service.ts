@@ -293,13 +293,11 @@ export async function getCustomerBooking(
     )
 
   if (
-    booking.booking_type !==
-      'scheduled' &&
-    booking.booking_type !==
-      'recurring'
-  ) {
-    return booking
-  }
+  booking.booking_type !==
+  'recurring'
+) {
+  return booking
+}
 
   const occurrence =
     await getCustomerActiveBookingOccurrence(
