@@ -193,11 +193,11 @@ export default function CustomerNavigator({
               {() => (
                 <CustomerProfileNavigator
                   onOpenBooking={bookingId =>
-                    navigation.navigate(
-                      'ActiveBooking',
-                      { bookingId },
-                    )
-                  }
+  stackNavigation.navigate(
+    'ActiveBooking',
+    { bookingId },
+  )
+}
                   onSignOut={onSignOut}
                 />
               )}

@@ -1,8 +1,8 @@
 import {
   useCallback,
-  useEffect,
   useState,
 } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import type { ReactNode } from 'react'
 import {
   ActivityIndicator,
@@ -88,9 +88,11 @@ export default function MyProfileScreen({
     [],
   )
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     void loadProfile()
-  }, [loadProfile])
+  }, [loadProfile]),
+)
 
   async function handleSignOut() {
     if (signingOut) {
