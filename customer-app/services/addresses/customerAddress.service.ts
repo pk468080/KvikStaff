@@ -13,6 +13,7 @@ export type CustomerSavedAddress = {
   addressLine: string
   latitude: number
   longitude: number
+  createdAt?: string
 }
 
 async function getAuthenticatedUserId() {
@@ -132,8 +133,8 @@ export async function getOrCreateCustomerAddress(
   return createdAddress.id
 }
 
-export async function getLatestCustomerAddress(): Promise<
-  CustomerSavedAddress | null
+export async function getCustomerSavedAddresses(): Promise<
+  CustomerSavedAddress[]
 > {
   const userId =
     await getAuthenticatedUserId()
@@ -144,28 +145,61 @@ export async function getLatestCustomerAddress(): Promise<
   } = await supabase
     .from('addresses')
     .select(
-      'id, label, address_line, latitude, longitude',
+      'id, label, address_line, latitude, longitude, created_at',
     )
     .eq('user_id', userId)
     .order('created_at', {
       ascending: false,
     })
-    .limit(1)
-    .maybeSingle()
 
   if (error) {
     throw error
   }
 
-  if (!data) {
-    return null
+  return (data ?? []).map(
+    row => ({
+      id: row.id,
+      label: row.label,
+      addressLine:
+        row.address_line,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      createdAt:
+        row.created_at,
+    }),
+  )
+}
+
+export async function getLatestCustomerAddress(): Promise<
+  CustomerSavedAddress | null
+> {
+  const addresses =
+    await getCustomerSavedAddresses()
+
+  return addresses[0] ?? null
+}
+
+export async function deleteCustomerAddress(
+  addressId: string,
+): Promise<void> {
+  const userId =
+    await getAuthenticatedUserId()
+
+  if (!addressId) {
+    throw new Error(
+      'An address is required.',
+    )
   }
 
-  return {
-    id: data.id,
-    label: data.label,
-    addressLine: data.address_line,
-    latitude: data.latitude,
-    longitude: data.longitude,
+  const {
+    error,
+  } = await supabase
+    .from('addresses')
+    .delete()
+    .eq('id', addressId)
+    .eq('user_id', userId)
+
+  if (error) {
+    throw error
   }
 }

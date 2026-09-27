@@ -3,27 +3,28 @@ import {
 } from '@react-navigation/bottom-tabs'
 import {
   StyleSheet,
+  Text,
 } from 'react-native'
 import {
   createNativeStackNavigator,
+  type NativeStackNavigationProp,
 } from '@react-navigation/native-stack'
+
 import RescheduleBookingScreen from '../screens/bookings/RescheduleBookingScreen'
 import BookingDetailsScreen from '../screens/bookings/BookingDetailsScreen'
 import BookingScreen from '../screens/bookings/BookingScreen'
-import HomeScreen from '../screens/home/HomeScreen'
-import PaymentScreen from '../screens/payment/PaymentScreen'
 import CustomerBookingRouter from '../screens/bookings/CustomerBookingRouter'
 import MyBookingsScreen from '../screens/bookings/MyBookingsScreen'
-import MyProfileScreen from '../screens/profile/MyProfileScreen'
+import HomeScreen from '../screens/home/HomeScreen'
+import PaymentScreen from '../screens/payment/PaymentScreen'
+import CustomerProfileNavigator from './CustomerProfileNavigator'
 
 import {
   getOrCreateCustomerAddress,
 } from '../services/addresses/customerAddress.service'
-
 import {
   createCustomerScheduledBooking,
 } from '../services/booking/scheduledBooking.service'
-
 import {
   createCustomerRecurringBooking,
 } from '../services/booking/recurringBooking.service'
@@ -56,7 +57,7 @@ type CustomerNavigatorProps = {
   onSignOut: () => void
 }
 
-type CustomerStackParamList = {
+export type CustomerStackParamList = {
   Tabs: undefined
 
   Booking: {
@@ -67,7 +68,8 @@ type CustomerStackParamList = {
     draft: BookingDraft
     service: HomeService
   }
-    RescheduleBooking: {
+
+  RescheduleBooking: {
     bookingId: string
     currentStart: string
     currentEnd: string
@@ -80,16 +82,20 @@ type CustomerStackParamList = {
     occurrenceCount: number
     totalWorkingHours: number
   }
-  ActiveBooking: { bookingId: string }
+
+  ActiveBooking: {
+    bookingId: string
+  }
 }
 
-const Tab =
-  createBottomTabNavigator()
-
+const Tab = createBottomTabNavigator()
 const Stack =
   createNativeStackNavigator<CustomerStackParamList>()
 
-
+export type CustomerStackNavigationProp =
+  NativeStackNavigationProp<
+    CustomerStackParamList
+  >
 
 export default function CustomerNavigator({
   location,
@@ -107,13 +113,30 @@ export default function CustomerNavigator({
           <Tab.Navigator
             screenOptions={{
               headerShown: false,
-              tabBarStyle:
-                styles.tabBar,
-              tabBarLabelStyle:
-                styles.tabBarLabel,
+              tabBarActiveTintColor: '#007AFF',
+              tabBarInactiveTintColor: '#8E939B',
+              tabBarStyle: styles.tabBar,
+              tabBarLabelStyle: styles.tabBarLabel,
+              tabBarItemStyle: styles.tabBarItem,
+              tabBarActiveBackgroundColor: '#EEF6FF',
+              tabBarHideOnKeyboard: true,
             }}
           >
-            <Tab.Screen name="Home">
+            <Tab.Screen
+              name="Home"
+              options={{
+                tabBarIcon: ({ color }) => (
+                  <Text
+                    style={[
+                      styles.tabIcon,
+                      { color },
+                    ]}
+                  >
+                    ⌂
+                  </Text>
+                ),
+              }}
+            >
               {() => (
                 <HomeScreen
                   location={location}
@@ -123,25 +146,68 @@ export default function CustomerNavigator({
                   onServicePress={service => {
                     navigation.navigate(
                       'Booking',
-                      {
-                        service,
-                      },
+                      { service },
                     )
                   }}
                 />
               )}
             </Tab.Screen>
 
-            <Tab.Screen name="My Bookings">
+            <Tab.Screen
+              name="My Bookings"
+              options={{
+                tabBarIcon: ({ color }) => (
+                  <Text
+                    style={[
+                      styles.tabIcon,
+                      { color },
+                    ]}
+                  >
+                    ▤
+                  </Text>
+                ),
+              }}
+            >
               {({ navigation }) => (
                 <MyBookingsScreen
-                  onBookingPress={bookingId => navigation.navigate('ActiveBooking', { bookingId })}
+                  onBookingPress={bookingId =>
+                    navigation.getParent<
+                      CustomerStackNavigationProp
+                    >()?.navigate(
+                      'ActiveBooking',
+                      { bookingId },
+                    )
+                  }
                 />
               )}
             </Tab.Screen>
 
-            <Tab.Screen name="My Profile">
-              {() => <MyProfileScreen onSignOut={onSignOut} />}
+            <Tab.Screen
+              name="My Profile"
+              options={{
+                tabBarIcon: ({ color }) => (
+                  <Text
+                    style={[
+                      styles.tabIcon,
+                      { color },
+                    ]}
+                  >
+                    ◯
+                  </Text>
+                ),
+              }}
+            >
+              {() => (
+                <CustomerProfileNavigator
+                  onOpenBooking={bookingId =>
+                    navigation.navigate(
+                      'ActiveBooking',
+                      { bookingId },
+                    )
+                  }
+                  onSignOut={onSignOut}
+                />
+              )}
             </Tab.Screen>
           </Tab.Navigator>
         )}
@@ -150,9 +216,7 @@ export default function CustomerNavigator({
       <Stack.Screen name="Booking">
         {({ route, navigation }) => (
           <BookingScreen
-            service={
-              route.params.service
-            }
+            service={route.params.service}
             location={location}
             onContinue={draft => {
               navigation.navigate(
@@ -160,8 +224,7 @@ export default function CustomerNavigator({
                 {
                   draft,
                   service:
-                    route.params
-                      .service,
+                    route.params.service,
                 },
               )
             }}
@@ -178,40 +241,72 @@ export default function CustomerNavigator({
 
           async function handleContinue() {
             if (!draft.location) {
-              throw new Error('A booking location is required.')
+              throw new Error(
+                'A booking location is required.',
+              )
             }
 
-            if (draft.bookingType !== 'instant' && (!draft.startDate || !draft.endDate)) {
+            if (
+              draft.bookingType !==
+                'instant' &&
+              (!draft.startDate ||
+                !draft.endDate)
+            ) {
               throw new Error(
                 'Booking dates are required.',
               )
             }
 
-            const addressId = await getOrCreateCustomerAddress(
+            const addressId =
+              await getOrCreateCustomerAddress(
                 draft.location,
               )
 
-            if (draft.bookingType === 'instant') {
-              const result = await createCustomerInstantBooking({
-                serviceVariantId: service.serviceVariantId,
-                addressId,
-                startTime: draft.startTime,
-                endTime: draft.endTime,
-              })
+            if (
+              draft.bookingType ===
+              'instant'
+            ) {
+              const result =
+                await createCustomerInstantBooking(
+                  {
+                    serviceVariantId:
+                      service.serviceVariantId,
+                    addressId,
+                    startTime:
+                      draft.startTime,
+                    endTime:
+                      draft.endTime,
+                  },
+                )
+
               if (
-                result.instant_available === false ||
-                result.fallback_to_scheduled === true
+                result.instant_available ===
+                  false ||
+                result.fallback_to_scheduled ===
+                  true
               ) {
-                navigation.navigate('Booking', { service })
+                navigation.navigate(
+                  'Booking',
+                  { service },
+                )
                 return
               }
-              navigation.navigate('Payment', {
-                bookingId: result.booking_id,
-                finalAmount: result.final_amount,
-                currency: result.currency,
-                occurrenceCount: result.occurrence_count,
-                totalWorkingHours: result.total_working_hours,
-              })
+
+              navigation.navigate(
+                'Payment',
+                {
+                  bookingId:
+                    result.booking_id,
+                  finalAmount:
+                    result.final_amount,
+                  currency:
+                    result.currency,
+                  occurrenceCount:
+                    result.occurrence_count,
+                  totalWorkingHours:
+                    result.total_working_hours,
+                },
+              )
               return
             }
 
@@ -224,32 +319,40 @@ export default function CustomerNavigator({
                   {
                     serviceVariantId:
                       service.serviceVariantId,
-
                     addressId,
-
                     startDate:
-  toDateString(
-    new Date(draft.startDate!),
-  ),
-
-endDate:
-  toDateString(
-    new Date(draft.endDate!),
-  ),
-
-startTime:
-  toTimeString(
-    new Date(draft.startTime),
-  ),
-
-endTime:
-  toTimeString(
-    new Date(draft.endTime),
-  ),
-
-                    selectedWeekdays:
-                      [0, 1, 2, 3, 4, 5, 6],
-
+                      toDateString(
+                        new Date(
+                          draft.startDate!,
+                        ),
+                      ),
+                    endDate:
+                      toDateString(
+                        new Date(
+                          draft.endDate!,
+                        ),
+                      ),
+                    startTime:
+                      toTimeString(
+                        new Date(
+                          draft.startTime,
+                        ),
+                      ),
+                    endTime:
+                      toTimeString(
+                        new Date(
+                          draft.endTime,
+                        ),
+                      ),
+                    selectedWeekdays: [
+                      0,
+                      1,
+                      2,
+                      3,
+                      4,
+                      5,
+                      6,
+                    ],
                     excludedDates:
                       draft.excludedDates,
                   },
@@ -260,28 +363,25 @@ endTime:
                 {
                   bookingId:
                     result.booking_id,
-
                   finalAmount:
                     result.final_amount,
-
                   currency:
                     result.currency,
-
                   occurrenceCount:
                     result.occurrence_count,
-
                   totalWorkingHours:
                     result.total_working_hours,
                 },
               )
-
               return
             }
 
             const weekdayIndexes =
-  draft.selectedWeekdays
-    .map(getWeekdayIndex)
-    .filter(index => index >= 0)
+              draft.selectedWeekdays
+                .map(getWeekdayIndex)
+                .filter(
+                  index => index >= 0,
+                )
 
             if (
               weekdayIndexes.length ===
@@ -292,22 +392,30 @@ endTime:
               )
             }
 
-   const expectedWeekdayIndexes =
-  Array.from(
-    new Set(
-      draft.selectedWeekdays
-        .map(getWeekdayIndex)
-        .filter(index => index >= 0),
-    ),
-  )
+            const expectedWeekdayIndexes =
+              Array.from(
+                new Set(
+                  draft.selectedWeekdays
+                    .map(
+                      getWeekdayIndex,
+                    )
+                    .filter(
+                      index =>
+                        index >= 0,
+                    ),
+                ),
+              )
 
             const expectedExcludedDates =
               Array.from(
-                new Set(draft.excludedDates),
+                new Set(
+                  draft.excludedDates,
+                ),
               ).sort()
 
             if (
-              expectedWeekdayIndexes.length === 0
+              expectedWeekdayIndexes.length ===
+              0
             ) {
               throw new Error(
                 'At least one recurring weekday is required.',
@@ -341,32 +449,33 @@ endTime:
                 {
                   serviceVariantId:
                     service.serviceVariantId,
-
                   addressId,
-
                   startDate:
-  toDateString(
-    new Date(draft.startDate!),
-  ),
-
-endDate:
-  toDateString(
-    new Date(draft.endDate!),
-  ),
-
-startTime:
-  toTimeString(
-    new Date(draft.startTime),
-  ),
-
-endTime:
-  toTimeString(
-    new Date(draft.endTime),
-  ),
-
+                    toDateString(
+                      new Date(
+                        draft.startDate!,
+                      ),
+                    ),
+                  endDate:
+                    toDateString(
+                      new Date(
+                        draft.endDate!,
+                      ),
+                    ),
+                  startTime:
+                    toTimeString(
+                      new Date(
+                        draft.startTime,
+                      ),
+                    ),
+                  endTime:
+                    toTimeString(
+                      new Date(
+                        draft.endTime,
+                      ),
+                    ),
                   selectedWeekdays:
                     expectedWeekdayIndexes,
-
                   excludedDates:
                     expectedExcludedDates,
                 },
@@ -377,16 +486,12 @@ endTime:
               {
                 bookingId:
                   result.booking_id,
-
                 finalAmount:
                   result.final_amount,
-
                 currency:
                   result.currency,
-
                 occurrenceCount:
                   result.occurrence_count,
-
                 totalWorkingHours:
                   result.total_working_hours,
               },
@@ -460,9 +565,16 @@ endTime:
               route.params
                 .totalWorkingHours
             }
-            onPaid={() => navigation.replace('ActiveBooking', {
-              bookingId: route.params.bookingId,
-            })}
+            onPaid={() =>
+              navigation.replace(
+                'ActiveBooking',
+                {
+                  bookingId:
+                    route.params
+                      .bookingId,
+                },
+              )
+            }
           />
         )}
       </Stack.Screen>
@@ -490,37 +602,76 @@ endTime:
           />
         )}
       </Stack.Screen>
-<Stack.Screen name="RescheduleBooking">
-  {({ route, navigation }) => (
-    <RescheduleBookingScreen
-      bookingId={route.params.bookingId}
-      currentStart={route.params.currentStart}
-      currentEnd={route.params.currentEnd}
-      onCompleted={() =>
-        navigation.replace(
-          'ActiveBooking',
-          {
-            bookingId:
-              route.params.bookingId,
-          },
-        )
-      }
-    />
-  )}
-</Stack.Screen>
+
+      <Stack.Screen name="RescheduleBooking">
+        {({ route, navigation }) => (
+          <RescheduleBookingScreen
+            bookingId={
+              route.params.bookingId
+            }
+            currentStart={
+              route.params.currentStart
+            }
+            currentEnd={
+              route.params.currentEnd
+            }
+            onCompleted={() =>
+              navigation.replace(
+                'ActiveBooking',
+                {
+                  bookingId:
+                    route.params
+                      .bookingId,
+                },
+              )
+            }
+          />
+        )}
+      </Stack.Screen>
     </Stack.Navigator>
   )
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 64,
-    paddingBottom: 8,
-    paddingTop: 8,
+    height: 76,
+    marginHorizontal: 12,
+    marginBottom: 10,
+    paddingHorizontal: 8,
+    paddingTop: 7,
+    paddingBottom: 7,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0,
+    borderRadius: 24,
+    elevation: 12,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+  },
+
+  tabBarItem: {
+    marginHorizontal: 3,
+    borderRadius: 18,
+    paddingTop: 2,
+    paddingBottom: 2,
   },
 
   tabBarLabel: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
+    marginBottom: 1,
+    letterSpacing: 0.1,
   },
 
+  tabIcon: {
+    fontSize: 22,
+    fontWeight: '500',
+    lineHeight: 24,
+    textAlign: 'center',
+  },
 })
