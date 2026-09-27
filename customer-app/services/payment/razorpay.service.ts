@@ -147,18 +147,25 @@ export async function getBookingPaymentDetails(
   /*
    * Instant bookings always contain one occurrence.
    */
-  if (
-    data.fulfillment_type ===
-    'instant'
-  ) {
-    return {
-      bookingId: data.id,
-      amount,
-      currency,
-      occurrenceCount: 1,
-      totalWorkingHours,
-    }
+  /*
+ * Instant and scheduled bookings are single-record bookings.
+ * Only recurring bookings use the persisted recurring schedule
+ * fields to calculate the occurrence count.
+ */
+if (
+  data.fulfillment_type ===
+  'instant' ||
+  data.fulfillment_type ===
+  'scheduled'
+) {
+  return {
+    bookingId: data.id,
+    amount,
+    currency,
+    occurrenceCount: 1,
+    totalWorkingHours,
   }
+}
 
   /*
    * Scheduled and recurring bookings derive their
