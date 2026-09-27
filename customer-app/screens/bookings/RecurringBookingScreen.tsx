@@ -4,9 +4,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import {
-  getReviewedOccurrenceIds,
-} from '../../services/reviews/review.service'
+
 import {
   ActivityIndicator,
   Alert,
@@ -27,6 +25,7 @@ import {
   getCustomerActiveBookingOccurrence,
   getCustomerBookingOccurrences,
   requestBookingOtp,
+  type BookingStatus,
   type CustomerBooking,
   type CustomerBookingOccurrence,
 } from '../../services/booking/bookingTracking.service'
@@ -41,19 +40,7 @@ import {
 
 type RecurringBookingScreenProps = {
   bookingId: string
-
-  onReview: (
-    bookingId: string,
-    occurrenceId?: string,
-  ) => void
 }
-const [
-  reviewedOccurrenceIds,
-  setReviewedOccurrenceIds,
-] =
-  useState<Set<string>>(
-    new Set(),
-  )
 
 function formatStatus(
   status: string,
@@ -112,9 +99,7 @@ function elapsedSince(
   completedAt: string | null,
 ): string {
   const start =
-    Date.parse(
-      startedAt,
-    )
+    Date.parse(startedAt)
 
   const end =
     completedAt
@@ -124,9 +109,7 @@ function elapsedSince(
       : Date.now()
 
   if (
-    !Number.isFinite(
-      start,
-    )
+    !Number.isFinite(start)
   ) {
     return '00:00:00'
   }
@@ -252,7 +235,6 @@ function StatusBadge({
 
 export default function RecurringBookingScreen({
   bookingId,
-  onReview,
 }: RecurringBookingScreenProps) {
   const [
     booking,
@@ -321,9 +303,7 @@ export default function RecurringBookingScreen({
     timer,
     setTimer,
   ] =
-    useState(
-      '00:00:00',
-    )
+    useState('00:00:00')
 
   const loadData =
     useCallback(
@@ -331,13 +311,9 @@ export default function RecurringBookingScreen({
         isRefresh = false,
       ) => {
         if (isRefresh) {
-          setRefreshing(
-            true,
-          )
+          setRefreshing(true)
         } else {
-          setLoading(
-            true,
-          )
+          setLoading(true)
         }
 
         setError(null)
@@ -391,13 +367,8 @@ export default function RecurringBookingScreen({
               ?.status !==
               'in_progress'
           ) {
-            setOtp(
-              null,
-            )
-
-            setOtpType(
-              null,
-            )
+            setOtp(null)
+            setOtpType(null)
           }
         } catch (
           cause
@@ -408,13 +379,8 @@ export default function RecurringBookingScreen({
               : 'Unable to load recurring booking.',
           )
         } finally {
-          setLoading(
-            false,
-          )
-
-          setRefreshing(
-            false,
-          )
+          setLoading(false)
+          setRefreshing(false)
         }
       },
       [bookingId],
@@ -525,9 +491,7 @@ export default function RecurringBookingScreen({
   ])
 
   async function handleShowOtp(
-    type:
-      | 'start'
-      | 'end',
+    type: 'start' | 'end',
   ) {
     if (
       !booking ||
@@ -544,7 +508,6 @@ export default function RecurringBookingScreen({
       setError(
         'The Start OTP is available only after the worker arrives for this shift.',
       )
-
       return
     }
 
@@ -556,14 +519,12 @@ export default function RecurringBookingScreen({
       setError(
         'The End OTP is available only while this shift is in progress.',
       )
-
       return
     }
 
     setOtpLoading(
       true,
     )
-
     setError(null)
 
     try {
@@ -674,18 +635,9 @@ export default function RecurringBookingScreen({
   if (loading) {
     return (
       <ScreenContainer>
-        <View
-          style={
-            styles.loading
-          }
-        >
+        <View style={styles.loading}>
           <ActivityIndicator />
-
-          <Text
-            style={
-              styles.loadingText
-            }
-          >
+          <Text style={styles.loadingText}>
             Loading recurring booking...
           </Text>
         </View>
@@ -695,8 +647,8 @@ export default function RecurringBookingScreen({
 
   if (
     !booking ||
-    (error &&
-      occurrences.length === 0)
+    error &&
+      occurrences.length === 0
   ) {
     return (
       <ScreenContainer>
@@ -705,35 +657,21 @@ export default function RecurringBookingScreen({
             styles.container
           }
         >
-          <Text
-            style={
-              styles.eyebrow
-            }
-          >
+          <Text style={styles.eyebrow}>
             RECURRING BOOKING
           </Text>
 
-          <Text
-            style={
-              styles.title
-            }
-          >
+          <Text style={styles.title}>
             Booking unavailable
           </Text>
 
-          <Text
-            style={
-              styles.errorText
-            }
-          >
+          <Text style={styles.errorText}>
             {error ??
               'Recurring booking could not be loaded.'}
           </Text>
 
           <Pressable
-            style={
-              styles.button
-            }
+            style={styles.button}
             onPress={() => {
               void loadData()
             }}
@@ -756,19 +694,15 @@ export default function RecurringBookingScreen({
   }
 
   const isSeriesCompleted =
-    occurrences.length > 0 &&
-    completedCount ===
-      occurrences.length
+  occurrences.length > 0 &&
+  completedCount === occurrences.length
 
-  const isSeriesCancelled =
-    booking.status ===
-      'cancelled' ||
-    (
-      occurrences.length >
-        0 &&
-      cancelledCount ===
-        occurrences.length
-    )
+const isSeriesCancelled =
+  booking.status === 'cancelled' ||
+  (
+    occurrences.length > 0 &&
+    cancelledCount === occurrences.length
+  )
 
   return (
     <ScreenContainer>
@@ -792,19 +726,11 @@ export default function RecurringBookingScreen({
           false
         }
       >
-        <Text
-          style={
-            styles.eyebrow
-          }
-        >
+        <Text style={styles.eyebrow}>
           RECURRING BOOKING
         </Text>
 
-        <Text
-          style={
-            styles.title
-          }
-        >
+        <Text style={styles.title}>
           Your recurring shifts
         </Text>
 
@@ -813,7 +739,9 @@ export default function RecurringBookingScreen({
             styles.subtitle
           }
         >
-          Each shift has its own status, Start OTP, service timer and End OTP.
+          Each shift has its own status,
+          Start OTP, service timer and
+          End OTP.
         </Text>
 
         {error ? (
@@ -850,11 +778,7 @@ export default function RecurringBookingScreen({
               styles.summaryHeader
             }
           >
-            <View
-              style={{
-                flex: 1,
-              }}
-            >
+            <View style={{ flex: 1 }}>
               <Text
                 style={
                   styles.summaryTitle
@@ -874,15 +798,15 @@ export default function RecurringBookingScreen({
             </View>
 
             <StatusBadge
-              status={
-                isSeriesCancelled
-                  ? 'cancelled'
-                  : isSeriesCompleted
-                    ? 'completed'
-                    : activeOccurrence?.status ??
-                      booking.status
-              }
-            />
+  status={
+    isSeriesCancelled
+      ? 'cancelled'
+      : isSeriesCompleted
+        ? 'completed'
+        : activeOccurrence?.status ??
+          booking.status
+  }
+/>
           </View>
 
           <View
@@ -914,9 +838,7 @@ export default function RecurringBookingScreen({
                   styles.summaryValue
                 }
               >
-                {
-                  occurrences.length
-                }
+                {occurrences.length}
               </Text>
             </View>
 
@@ -938,9 +860,7 @@ export default function RecurringBookingScreen({
                   styles.summaryValue
                 }
               >
-                {
-                  completedCount
-                }
+                {completedCount}
               </Text>
             </View>
 
@@ -962,9 +882,7 @@ export default function RecurringBookingScreen({
                   styles.summaryValue
                 }
               >
-                {
-                  remainingCount
-                }
+                {remainingCount}
               </Text>
             </View>
           </View>
@@ -1069,9 +987,7 @@ export default function RecurringBookingScreen({
             {activeOccurrence.status ===
             'arrived' ? (
               <Pressable
-                style={
-                  styles.button
-                }
+                style={styles.button}
                 disabled={
                   otpLoading
                 }
@@ -1087,8 +1003,7 @@ export default function RecurringBookingScreen({
                   }
                 >
                   {otpLoading &&
-                  otpType ===
-                    'start'
+                  otpType === 'start'
                     ? 'Generating...'
                     : 'Show Start OTP'}
                 </Text>
@@ -1121,9 +1036,7 @@ export default function RecurringBookingScreen({
                 </View>
 
                 <Pressable
-                  style={
-                    styles.button
-                  }
+                  style={styles.button}
                   disabled={
                     otpLoading
                   }
@@ -1139,8 +1052,7 @@ export default function RecurringBookingScreen({
                     }
                   >
                     {otpLoading &&
-                    otpType ===
-                      'end'
+                    otpType === 'end'
                       ? 'Generating...'
                       : 'Show End OTP'}
                   </Text>
@@ -1178,7 +1090,8 @@ export default function RecurringBookingScreen({
                     styles.otpHint
                   }
                 >
-                  Give this 6-digit code to the worker for this shift only.
+                  Give this 6-digit code to the
+                  worker for this shift only.
                 </Text>
               </View>
             ) : null}
@@ -1202,7 +1115,8 @@ export default function RecurringBookingScreen({
                 styles.emptyText
               }
             >
-              There are no remaining active occurrences for this series.
+              There are no remaining active
+              occurrences for this series.
             </Text>
           </View>
         )}
@@ -1225,7 +1139,8 @@ export default function RecurringBookingScreen({
               styles.sectionSubtitle
             }
           >
-            Every recurring shift is tracked independently.
+            Every recurring shift is tracked
+            independently.
           </Text>
 
           <View
@@ -1281,41 +1196,11 @@ export default function RecurringBookingScreen({
                     </Text>
                   </View>
 
-                  <View
-                    style={
-                      styles.occurrenceActions
+                  <StatusBadge
+                    status={
+                      occurrence.status
                     }
-                  >
-                    <StatusBadge
-                      status={
-                        occurrence.status
-                      }
-                    />
-
-                    {occurrence.status ===
-                      'completed' &&
-                    occurrence.worker_id ? (
-                      <Pressable
-                        style={
-                          styles.reviewSmallButton
-                        }
-                        onPress={() =>
-                          onReview(
-                            bookingId,
-                            occurrence.id,
-                          )
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.reviewSmallButtonText
-                          }
-                        >
-                          Review
-                        </Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
+                  />
                 </View>
               ),
             )}
@@ -1323,7 +1208,7 @@ export default function RecurringBookingScreen({
         </View>
 
         {!isSeriesCompleted &&
-        !isSeriesCancelled ? (
+!isSeriesCancelled ? (
           <Pressable
             style={
               styles.cancelButton
@@ -1663,26 +1548,6 @@ const styles =
       marginTop: 2,
       color: '#8A99A6',
       fontSize: 11,
-    },
-
-    occurrenceActions: {
-      alignItems: 'flex-end',
-      justifyContent: 'center',
-      marginLeft: 8,
-    },
-
-    reviewSmallButton: {
-      marginTop: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-      borderRadius: 10,
-      backgroundColor: '#00A7A7',
-    },
-
-    reviewSmallButtonText: {
-      color: '#FFFFFF',
-      fontSize: 11,
-      fontWeight: '800',
     },
 
     badge: {
