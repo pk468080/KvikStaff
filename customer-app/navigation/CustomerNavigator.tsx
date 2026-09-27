@@ -8,7 +8,7 @@ import {
 import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack'
-
+import CustomerPushRegistration from '../components/runtime/CustomerPushRegistration'
 import RescheduleBookingScreen from '../screens/bookings/RescheduleBookingScreen'
 import BookingDetailsScreen from '../screens/bookings/BookingDetailsScreen'
 import BookingScreen from '../screens/bookings/BookingScreen'
@@ -104,8 +104,18 @@ export default function CustomerNavigator({
       }}
     >
       <Stack.Screen name="Tabs">
-        {({ navigation: stackNavigation }) => (
-          <Tab.Navigator
+  {({ navigation: stackNavigation }) => (
+    <>
+      <CustomerPushRegistration
+        onOpenBooking={bookingId =>
+          stackNavigation.navigate(
+            'ActiveBooking',
+            { bookingId },
+          )
+        }
+      />
+
+      <Tab.Navigator
             screenOptions={{
               headerShown: false,
               tabBarActiveTintColor: '#007AFF',
@@ -203,6 +213,7 @@ export default function CustomerNavigator({
               )}
             </Tab.Screen>
           </Tab.Navigator>
+    </>
         )}
       </Stack.Screen>
 

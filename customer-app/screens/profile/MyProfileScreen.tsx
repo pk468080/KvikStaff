@@ -13,7 +13,9 @@ import {
   Text,
   View,
 } from 'react-native'
-
+import {
+  deactivateCurrentCustomerPushTokens,
+} from '../../services/notifications/customerNotifications.service'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import {
   getLatestCustomerAddress,
@@ -102,10 +104,19 @@ export default function MyProfileScreen({
     setSigningOut(true)
     setError(null)
 
-    try {
-      await signOut()
-      onSignOut()
-    } catch (nextError) {
+   try {
+  try {
+    await deactivateCurrentCustomerPushTokens()
+  } catch (tokenError) {
+    console.warn(
+      'Unable to deactivate customer push tokens during logout:',
+      tokenError,
+    )
+  }
+
+  await signOut()
+  onSignOut()
+} catch (nextError) {
       setError(
         nextError instanceof Error
           ? nextError.message

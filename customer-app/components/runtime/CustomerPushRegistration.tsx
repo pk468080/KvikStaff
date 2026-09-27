@@ -1,0 +1,248 @@
+import {
+  useEffect,
+  useRef,
+} from 'react'
+
+import {
+  Platform,
+} from 'react-native'
+
+import Constants from 'expo-constants'
+import * as Notifications from 'expo-notifications'
+
+import {
+  registerCustomerPushToken,
+} from '../../services/notifications/customerNotifications.service'
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+})
+
+function getExpoProjectId(): string | null {
+  const projectId =
+    Constants.expoConfig?.extra?.eas
+      ?.projectId ??
+    Constants.easConfig?.projectId ??
+    null
+
+  if (
+    typeof projectId !==
+    'string'
+  ) {
+    return null
+  }
+
+  const trimmed =
+    projectId.trim()
+
+  return trimmed || null
+}
+
+async function configureAndroidNotifications(): Promise<void> {
+  if (
+    Platform.OS !==
+    'android'
+  ) {
+    return
+  }
+
+  await Notifications.setNotificationChannelAsync(
+    'booking-assignment',
+    {
+      name:
+        'TempStaff Customer',
+      importance:
+        Notifications.AndroidImportance.MAX,
+      vibrationPattern: [
+        0,
+        250,
+        250,
+        250,
+      ],
+    },
+  )
+}
+
+async function registerPushToken(): Promise<void> {
+  await configureAndroidNotifications()
+
+  const {
+    status: existingStatus,
+  } =
+    await Notifications.getPermissionsAsync()
+
+  let finalStatus =
+    existingStatus
+
+  if (
+    existingStatus !==
+    'granted'
+  ) {
+    const {
+      status,
+    } =
+      await Notifications.requestPermissionsAsync()
+
+    finalStatus =
+      status
+  }
+
+  if (
+    finalStatus !==
+    'granted'
+  ) {
+    throw new Error(
+      'Notification permission was not granted.',
+    )
+  }
+
+  const projectId =
+    getExpoProjectId()
+
+  if (!projectId) {
+    throw new Error(
+      'Expo/EAS projectId is not configured.',
+    )
+  }
+
+  const tokenResponse =
+    await Notifications.getExpoPushTokenAsync({
+      projectId,
+    })
+
+  const token =
+    tokenResponse.data?.trim()
+
+  if (!token) {
+    throw new Error(
+      'Expo did not return a push token.',
+    )
+  }
+
+  const platform =
+    Platform.OS === 'ios'
+      ? 'ios'
+      : Platform.OS === 'android'
+        ? 'android'
+        : 'web'
+
+  await registerCustomerPushToken(
+    token,
+    platform,
+  )
+
+  console.log(
+    'Customer push token registered successfully.',
+  )
+}
+
+export default function CustomerPushRegistration({
+  onOpenBooking,
+}: {
+  onOpenBooking: (
+    bookingId: string,
+  ) => void
+}) {
+  const handledNotificationId =
+    useRef<string | null>(
+      null,
+    )
+
+  useEffect(() => {
+    void registerPushToken().catch(
+      error => {
+        console.error(
+          'Customer push registration failed:',
+          error,
+        )
+      },
+    )
+
+    const pushTokenSubscription =
+      Notifications.addPushTokenListener(
+        () => {
+          void registerPushToken().catch(
+            error => {
+              console.error(
+                'Customer push token refresh failed:',
+                error,
+              )
+            },
+          )
+        },
+      )
+
+    function handleNotificationResponse(
+      response: Notifications.NotificationResponse,
+    ) {
+      const data =
+        response.notification
+          .request.content.data
+
+      const notificationId =
+        typeof data?.notification_id ===
+        'string'
+          ? data.notification_id
+          : null
+
+      if (
+        notificationId &&
+        handledNotificationId.current ===
+          notificationId
+      ) {
+        return
+      }
+
+      if (notificationId) {
+        handledNotificationId.current =
+          notificationId
+      }
+
+      const bookingId =
+        typeof data?.booking_id ===
+        'string'
+          ? data.booking_id
+          : null
+
+      if (bookingId) {
+        onOpenBooking(
+          bookingId,
+        )
+      }
+    }
+
+    const responseSubscription =
+      Notifications.addNotificationResponseReceivedListener(
+        handleNotificationResponse,
+      )
+
+    void Notifications.getLastNotificationResponseAsync()
+      .then(response => {
+        if (response) {
+          handleNotificationResponse(
+            response,
+          )
+        }
+      })
+      .catch(error => {
+        console.error(
+          'Unable to read the last customer notification response:',
+          error,
+        )
+      })
+
+    return () => {
+      pushTokenSubscription.remove()
+      responseSubscription.remove()
+    }
+  }, [
+    onOpenBooking,
+  ])
+
+  return null
+}
