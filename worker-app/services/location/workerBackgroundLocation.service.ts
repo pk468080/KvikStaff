@@ -66,6 +66,11 @@ TaskManager.defineTask(
     error,
   }) => {
     if (error) {
+      console.warn(
+        '[WorkerLocationTask] Background location task error:',
+        error,
+      )
+
       return
     }
 
@@ -96,47 +101,63 @@ TaskManager.defineTask(
         latestLocation,
       )
 
-      /*
-       * Available workers use the presence
-       * heartbeat.
-       *
-       * Workers handling an active booking
-       * fall through to updateWorkerLocation()
-       * so the booking-scoped location rows
-       * are written.
-       */
-      try {
-        const result =
-          await sendWorkerPresenceHeartbeat(
-            latitude,
-            longitude,
-          )
-
-        if (
-          result.status ===
-          'available'
-        ) {
-          return
-        }
-      } catch {
-        /*
-         * Busy/tracking workers may not be
-         * eligible for the presence heartbeat.
-         * Continue with the generic location
-         * update so active bookings receive it.
-         */
-      }
-
-      await updateWorkerLocation(
+      console.log(
+        '[WorkerLocationTask] Received location:',
         latitude,
         longitude,
-        null,
       )
-    } catch {
+
       /*
-       * Background tasks should not throw for
-       * transient location/auth/network errors.
+       * Refresh worker presence when possible.
+       *
+       * IMPORTANT:
+       * Do NOT return when heartbeat succeeds.
+       *
+       * An active booking also needs a booking-scoped
+       * worker_locations row. updateWorkerLocation(...)
+       * with null booking_id copies the location into
+       * active booking rows on the database side.
        */
+      try {
+        await sendWorkerPresenceHeartbeat(
+          latitude,
+          longitude,
+        )
+      } catch (
+        heartbeatError
+      ) {
+        console.warn(
+          '[WorkerLocationTask] Presence heartbeat unavailable:',
+          heartbeatError,
+        )
+      }
+
+      /*
+       * Always publish the generic worker location.
+       *
+       * The database function is responsible for copying
+       * this position into active booking-scoped rows.
+       */
+      const result =
+        await updateWorkerLocation(
+          latitude,
+          longitude,
+          null,
+        )
+
+      console.log(
+        '[WorkerLocationTask] Location published:',
+        result.latitude,
+        result.longitude,
+        result.recordedAt,
+      )
+    } catch (
+      taskError
+    ) {
+      console.warn(
+        '[WorkerLocationTask] Failed to publish location:',
+        taskError,
+      )
     }
   },
 )
@@ -152,8 +173,8 @@ export async function isWorkerBackgroundLocationTrackingStarted(): Promise<boole
 }
 
 export async function startWorkerBackgroundLocationTracking(
-  intervalSeconds: number = WORKER.location
-    .defaultUpdateIntervalSeconds,
+  intervalSeconds: number =
+    WORKER.location.defaultUpdateIntervalSeconds,
 ): Promise<void> {
   await ensureWorkerBackgroundLocationPermission()
 
@@ -198,12 +219,24 @@ export async function startWorkerBackgroundLocationTracking(
     safeIntervalSeconds *
     1000
 
+  /*
+   * If an old task is already running, stop it first.
+   *
+   * This is important because the previous task may have
+   * been started with the old 30-second configuration.
+   */
   const alreadyStarted =
     await isWorkerBackgroundLocationTrackingStarted()
 
   if (alreadyStarted) {
-    return
+    await Location.stopLocationUpdatesAsync(
+      WORKER_BACKGROUND_LOCATION_TASK,
+    )
   }
+
+  console.log(
+    `[WorkerLocation] Starting background tracking every ${safeIntervalSeconds}s`,
+  )
 
   await Location.startLocationUpdatesAsync(
     WORKER_BACKGROUND_LOCATION_TASK,
@@ -211,20 +244,9 @@ export async function startWorkerBackgroundLocationTracking(
       accuracy:
         Location.Accuracy.Balanced,
 
-      /*
-       * Active booking:
-       * 10 seconds from WORKER.location.
-       *
-       * Normal/available:
-       * 30 seconds from WORKER.location.
-       */
       timeInterval:
         intervalMs,
 
-      /*
-       * The worker may also publish when they
-       * have moved the configured minimum distance.
-       */
       distanceInterval:
         WORKER.location
           .minimumDistanceMeters,
@@ -239,8 +261,7 @@ export async function startWorkerBackgroundLocationTracking(
         Location.ActivityType.OtherNavigation,
 
       /*
-       * Avoid aggressive batching. The interval
-       * above remains the requested update cadence.
+       * Do not batch the updates.
        */
       deferredUpdatesDistance:
         0,
@@ -265,8 +286,8 @@ export async function stopWorkerBackgroundLocationTracking(): Promise<void> {
 }
 
 export async function restartWorkerBackgroundLocationTracking(
-  intervalSeconds: number = WORKER.location
-    .defaultUpdateIntervalSeconds,
+  intervalSeconds: number =
+    WORKER.location.defaultUpdateIntervalSeconds,
 ): Promise<void> {
   await stopWorkerBackgroundLocationTracking()
 

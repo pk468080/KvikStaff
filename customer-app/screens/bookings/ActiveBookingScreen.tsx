@@ -42,7 +42,10 @@ import {
 import {
   supabase,
 } from '../../lib/supabase'
-
+type BookingMapLocation = {
+  latitude: number
+  longitude: number
+}
 type ActiveBookingScreenProps = {
   bookingId: string
 
@@ -302,7 +305,13 @@ export default function ActiveBookingScreen({
     useState<WorkerLocation | null>(
       null,
     )
-
+const [
+  customerLocation,
+  setCustomerLocation,
+] =
+  useState<BookingMapLocation | null>(
+    null,
+  )
   const [
     statusHistory,
     setStatusHistory,
@@ -392,20 +401,7 @@ export default function ActiveBookingScreen({
         nextHistory,
       )
 
-      if (
-        nextBooking.worker_id
-      ) {
-        const nextLocation =
-          await getLatestWorkerLocation(
-            bookingId,
-          )
-
-        setLocation(
-          nextLocation,
-        )
-      } else {
-        setLocation(null)
-      }
+      nextBooking.worker_id
 
       setLocationNow(
         Date.now(),
@@ -1058,17 +1054,20 @@ export default function ActiveBookingScreen({
               </Text>
             </View>
 
-            {showLiveMap ? (
-              <LiveWorkerMap
-                location={{
-                  latitude:
-                    location.latitude,
-
-                  longitude:
-                    location.longitude,
-                }}
-              />
-            ) : (
+            {showLiveMap &&
+customerLocation ? (
+  <LiveWorkerMap
+    workerLocation={{
+      latitude:
+        location.latitude,
+      longitude:
+        location.longitude,
+    }}
+    customerLocation={
+      customerLocation
+    }
+  />
+) : (
               <View
                 style={
                   styles.mapUnavailable

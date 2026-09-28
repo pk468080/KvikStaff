@@ -1,15 +1,18 @@
 import {
   useEffect,
+  useMemo,
   useRef,
 } from 'react'
 
 import {
   StyleSheet,
+  Text,
   View,
 } from 'react-native'
 
 import MapView, {
   Marker,
+  Polyline,
   PROVIDER_GOOGLE,
 } from 'react-native-maps'
 
@@ -19,7 +22,8 @@ export type LiveWorkerMapLocation = {
 }
 
 type Props = {
-  location: LiveWorkerMapLocation
+  workerLocation: LiveWorkerMapLocation
+  customerLocation: LiveWorkerMapLocation
 }
 
 type MarkerRef = {
@@ -32,62 +36,150 @@ type MarkerRef = {
   ) => void
 }
 
+function calculateDistanceKm(
+  from: LiveWorkerMapLocation,
+  to: LiveWorkerMapLocation,
+): number {
+  const earthRadiusKm = 6371
+
+  const latitude1 =
+    (from.latitude * Math.PI) / 180
+
+  const latitude2 =
+    (to.latitude * Math.PI) / 180
+
+  const deltaLatitude =
+    ((to.latitude -
+      from.latitude) *
+      Math.PI) /
+    180
+
+  const deltaLongitude =
+    ((to.longitude -
+      from.longitude) *
+      Math.PI) /
+    180
+
+  const a =
+    Math.sin(
+      deltaLatitude / 2,
+    ) **
+      2 +
+    Math.cos(latitude1) *
+      Math.cos(latitude2) *
+      Math.sin(
+        deltaLongitude / 2,
+      ) **
+        2
+
+  const c =
+    2 *
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a),
+    )
+
+  return (
+    earthRadiusKm *
+    c
+  )
+}
+
 export default function LiveWorkerMap({
-  location,
+  workerLocation,
+  customerLocation,
 }: Props) {
   const mapRef =
     useRef<MapView | null>(null)
 
-  const markerRef =
-    useRef<MarkerRef | null>(null)
+  const workerMarkerRef =
+    useRef<MarkerRef | null>(
+      null,
+    )
 
-  const previousLocationRef =
+  const previousWorkerLocationRef =
     useRef<LiveWorkerMapLocation | null>(
       null,
     )
 
+  const distanceKm =
+    useMemo(
+      () =>
+        calculateDistanceKm(
+          workerLocation,
+          customerLocation,
+        ),
+      [
+        workerLocation.latitude,
+        workerLocation.longitude,
+        customerLocation.latitude,
+        customerLocation.longitude,
+      ],
+    )
+
+  const fitMapToBothLocations =
+    () => {
+      requestAnimationFrame(() => {
+        mapRef.current?.fitToCoordinates(
+          [
+            {
+              latitude:
+                customerLocation.latitude,
+              longitude:
+                customerLocation.longitude,
+            },
+            {
+              latitude:
+                workerLocation.latitude,
+              longitude:
+                workerLocation.longitude,
+            },
+          ],
+          {
+            edgePadding: {
+              top: 60,
+              right: 60,
+              bottom: 90,
+              left: 60,
+            },
+            animated: true,
+          },
+        )
+      })
+    }
+
   useEffect(() => {
     const previousLocation =
-      previousLocationRef.current
+      previousWorkerLocationRef.current
 
     if (!previousLocation) {
-      previousLocationRef.current =
-        location
+      previousWorkerLocationRef.current =
+        workerLocation
+
+      fitMapToBothLocations()
 
       return
     }
 
-    markerRef.current?.animateMarkerToCoordinate(
+    workerMarkerRef.current?.animateMarkerToCoordinate(
       {
         latitude:
-          location.latitude,
-
+          workerLocation.latitude,
         longitude:
-          location.longitude,
+          workerLocation.longitude,
       },
       900,
     )
 
-    mapRef.current?.animateCamera(
-      {
-        center: {
-          latitude:
-            location.latitude,
+    fitMapToBothLocations()
 
-          longitude:
-            location.longitude,
-        },
-      },
-      {
-        duration: 700,
-      },
-    )
-
-    previousLocationRef.current =
-      location
+    previousWorkerLocationRef.current =
+      workerLocation
   }, [
-    location.latitude,
-    location.longitude,
+    workerLocation.latitude,
+    workerLocation.longitude,
+    customerLocation.latitude,
+    customerLocation.longitude,
   ])
 
   return (
@@ -102,14 +194,42 @@ export default function LiveWorkerMap({
         style={styles.map}
         initialRegion={{
           latitude:
-            location.latitude,
+            (
+              workerLocation.latitude +
+              customerLocation.latitude
+            ) /
+            2,
 
           longitude:
-            location.longitude,
+            (
+              workerLocation.longitude +
+              customerLocation.longitude
+            ) /
+            2,
 
-          latitudeDelta: 0.01,
+          latitudeDelta:
+            distanceKm < 0.5
+              ? 0.01
+              : Math.max(
+                  0.02,
+                  Math.min(
+                    1.5,
+                    distanceKm /
+                      40,
+                  ),
+                ),
 
-          longitudeDelta: 0.01,
+          longitudeDelta:
+            distanceKm < 0.5
+              ? 0.01
+              : Math.max(
+                  0.02,
+                  Math.min(
+                    1.5,
+                    distanceKm /
+                      40,
+                  ),
+                ),
         }}
         showsUserLocation={false}
         showsMyLocationButton={false}
@@ -119,27 +239,128 @@ export default function LiveWorkerMap({
         scrollEnabled
         rotateEnabled={false}
         pitchEnabled={false}
+        onMapReady={
+          fitMapToBothLocations
+        }
       >
         <Marker
-          ref={
-            ref => {
-              markerRef.current =
-                ref
-                  ? (ref as unknown as MarkerRef)
-                  : null
-            }
-          }
+          ref={ref => {
+            workerMarkerRef.current =
+              ref
+                ? (ref as unknown as MarkerRef)
+                : null
+          }}
           coordinate={{
             latitude:
-              location.latitude,
-
+              workerLocation.latitude,
             longitude:
-              location.longitude,
+              workerLocation.longitude,
           }}
+          pinColor="red"
           title="Worker"
           description="Live worker location"
         />
+
+        <Marker
+          coordinate={{
+            latitude:
+              customerLocation.latitude,
+            longitude:
+              customerLocation.longitude,
+          }}
+          pinColor="blue"
+          title="Service location"
+          description="Customer booking location"
+        />
+
+        <Polyline
+          coordinates={[
+            {
+              latitude:
+                workerLocation.latitude,
+              longitude:
+                workerLocation.longitude,
+            },
+            {
+              latitude:
+                customerLocation.latitude,
+              longitude:
+                customerLocation.longitude,
+            },
+          ]}
+          strokeWidth={4}
+        />
       </MapView>
+
+      <View
+        style={
+          styles.overlay
+        }
+      >
+        <View
+          style={
+            styles.overlayItem
+          }
+        >
+          <View
+            style={[
+              styles.dot,
+              styles.workerDot,
+            ]}
+          />
+
+          <Text
+            style={
+              styles.overlayText
+            }
+          >
+            Worker
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.overlayItem
+          }
+        >
+          <View
+            style={[
+              styles.dot,
+              styles.customerDot,
+            ]}
+          />
+
+          <Text
+            style={
+              styles.overlayText
+            }
+          >
+            Your location
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.distanceBadge
+          }
+        >
+          <Text
+            style={
+              styles.distanceText
+            }
+          >
+            {distanceKm <
+            1
+              ? `${Math.round(
+                  distanceKm *
+                    1000,
+                )} m away`
+              : `${distanceKm.toFixed(
+                  1,
+                )} km away`}
+          </Text>
+        </View>
+      </View>
     </View>
   )
 }
@@ -148,13 +369,83 @@ const styles =
   StyleSheet.create({
     container: {
       width: '100%',
-      height: 280,
+      height: 360,
       overflow: 'hidden',
       borderRadius: 16,
+      backgroundColor:
+        '#EEF5F8',
     },
 
     map: {
       width: '100%',
       height: '100%',
+    },
+
+    overlay: {
+      position:
+        'absolute',
+      left: 12,
+      right: 12,
+      bottom: 12,
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+      backgroundColor:
+        'rgba(255,255,255,0.95)',
+      gap: 14,
+    },
+
+    overlayItem: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      gap: 6,
+    },
+
+    dot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+
+    workerDot: {
+      backgroundColor:
+        '#D32F2F',
+    },
+
+    customerDot: {
+      backgroundColor:
+        '#1976D2',
+    },
+
+    overlayText: {
+      color:
+        '#062F52',
+      fontSize: 11,
+      fontWeight:
+        '700',
+    },
+
+    distanceBadge: {
+      marginLeft:
+        'auto',
+      paddingHorizontal: 9,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor:
+        '#E8F7F7',
+    },
+
+    distanceText: {
+      color:
+        '#008A88',
+      fontSize: 11,
+      fontWeight:
+        '800',
     },
   })

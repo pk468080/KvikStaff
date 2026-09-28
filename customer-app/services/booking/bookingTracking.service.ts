@@ -15,6 +15,7 @@ export type BookingStatus =
 
 export type CustomerBooking = {
   id: string
+  address_id: string
   status: BookingStatus
   booking_type?: string | null
   service_name: string | null
@@ -278,7 +279,7 @@ export async function getCustomerBooking(
   } = await supabase
     .from('bookings')
     .select(
-      'id, status, booking_type:fulfillment_type, created_at, scheduled_start, scheduled_end, total_working_hours, total_amount, worker_id, started_at, completed_at, journey_started_at, arrived_at, service_variant:service_variants(service:services(name,image_url))',
+      'id, status, booking_type:fulfillment_type, address_id, created_at, scheduled_start, scheduled_end, total_working_hours, total_amount, worker_id, started_at, completed_at, journey_started_at, arrived_at, service_variant:service_variants(service:services(name,image_url))',
     )
     .eq('id', bookingId)
     .single()
