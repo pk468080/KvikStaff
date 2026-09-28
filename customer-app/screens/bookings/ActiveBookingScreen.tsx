@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import LiveWorkerMap from '../../components/booking/LiveWorkerMap'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +15,7 @@ import {
   View,
 } from 'react-native'
 
+import LiveWorkerMap from '../../components/booking/LiveWorkerMap'
 
 import {
   ScreenContainer,
@@ -30,12 +35,17 @@ import {
   type WorkerLocationFreshness,
 } from '../../services/booking/bookingTracking.service'
 
-import { cancelCustomerBooking } from '../../services/booking/bookingCancellation.service'
+import {
+  cancelCustomerBooking,
+} from '../../services/booking/bookingCancellation.service'
 
-import { supabase } from '../../lib/supabase'
+import {
+  supabase,
+} from '../../lib/supabase'
 
 type ActiveBookingScreenProps = {
   bookingId: string
+
   onReschedule: (
     bookingId: string,
     currentStart: string,
@@ -43,10 +53,15 @@ type ActiveBookingScreenProps = {
   ) => void
 }
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
-const trackingHero = require('../../assets/home/hero-worker.png')
+const tempStaffLogo =
+  require('../../assets/branding/tempstuff-logo.png')
 
-function formatStatus(status: BookingStatus) {
+const trackingHero =
+  require('../../assets/home/hero-worker.png')
+
+function formatStatus(
+  status: BookingStatus,
+) {
   return status
     .replace(/_/g, ' ')
     .replace(/\b\w/g, value =>
@@ -54,7 +69,9 @@ function formatStatus(status: BookingStatus) {
     )
 }
 
-function formatMoney(amount: number | null) {
+function formatMoney(
+  amount: number | null,
+) {
   if (amount === null) {
     return '—'
   }
@@ -62,14 +79,21 @@ function formatMoney(amount: number | null) {
   return amount.toFixed(2)
 }
 
-function formatDateTime(value: string | null) {
+function formatDateTime(
+  value: string | null,
+) {
   if (!value) {
     return 'Not set'
   }
 
-  const date = new Date(value)
+  const date =
+    new Date(value)
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
     return value
   }
 
@@ -80,30 +104,44 @@ function elapsedSince(
   startedAt: string,
   completedAt: string | null,
 ) {
-  const end = completedAt
-    ? Date.parse(completedAt)
-    : Date.now()
+  const end =
+    completedAt
+      ? Date.parse(
+          completedAt,
+        )
+      : Date.now()
 
-  const start = Date.parse(startedAt)
+  const start =
+    Date.parse(startedAt)
 
-  if (!Number.isFinite(start)) {
+  if (
+    !Number.isFinite(start)
+  ) {
     return '00:00:00'
   }
 
-  const seconds = Math.max(
-    0,
-    Math.floor((end - start) / 1000),
-  )
+  const seconds =
+    Math.max(
+      0,
+      Math.floor(
+        (end - start) /
+          1000,
+      ),
+    )
 
-  const hours = Math.floor(
-    seconds / 3600,
-  )
+  const hours =
+    Math.floor(
+      seconds / 3600,
+    )
 
-  const minutes = Math.floor(
-    (seconds % 3600) / 60,
-  )
+  const minutes =
+    Math.floor(
+      (seconds % 3600) /
+        60,
+    )
 
-  const remainder = seconds % 60
+  const remainder =
+    seconds % 60
 
   return [
     hours,
@@ -111,7 +149,9 @@ function elapsedSince(
     remainder,
   ]
     .map(value =>
-      String(value).padStart(2, '0'),
+      String(
+        value,
+      ).padStart(2, '0'),
     )
     .join(':')
 }
@@ -120,9 +160,12 @@ function isTerminalStatus(
   status: BookingStatus,
 ) {
   return (
-    status === 'completed' ||
-    status === 'cancelled' ||
-    status === 'expired'
+    status ===
+      'completed' ||
+    status ===
+      'cancelled' ||
+    status ===
+      'expired'
   )
 }
 
@@ -130,9 +173,12 @@ function isTrackingStatus(
   status: BookingStatus,
 ) {
   return (
-    status === 'on_the_way' ||
-    status === 'arrived' ||
-    status === 'in_progress'
+    status ===
+      'on_the_way' ||
+    status ===
+      'arrived' ||
+    status ===
+      'in_progress'
   )
 }
 
@@ -237,39 +283,82 @@ function getTrackingLabel(
   }
 }
 
-
-
 export default function ActiveBookingScreen({
   bookingId,
   onReschedule,
 }: ActiveBookingScreenProps) {
-  const [booking, setBooking] =
-    useState<CustomerBooking | null>(null)
+  const [
+    booking,
+    setBooking,
+  ] =
+    useState<CustomerBooking | null>(
+      null,
+    )
 
-  const [location, setLocation] =
-    useState<WorkerLocation | null>(null)
+  const [
+    location,
+    setLocation,
+  ] =
+    useState<WorkerLocation | null>(
+      null,
+    )
 
-  const [statusHistory, setStatusHistory] =
-    useState<BookingStatusHistoryItem[]>([])
+  const [
+    statusHistory,
+    setStatusHistory,
+  ] =
+    useState<BookingStatusHistoryItem[]>(
+      [],
+    )
 
-  const [locationNow, setLocationNow] =
+  const [
+    locationNow,
+    setLocationNow,
+  ] =
     useState(Date.now())
 
-  const [loading, setLoading] =
-    useState(true)
+  const [
+    loading,
+    setLoading,
+  ] = useState(true)
 
-  const [error, setError] =
-    useState<string | null>(null)
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    )
 
-  const [otp, setOtp] =
-    useState<string | null>(null)
+  const [
+    otp,
+    setOtp,
+  ] =
+    useState<string | null>(
+      null,
+    )
 
-  const [timer, setTimer] =
-    useState('00:00:00')
+  const [
+    timer,
+    setTimer,
+  ] =
+    useState(
+      '00:00:00',
+    )
 
+  const locationFreshness =
+    useMemo(
+      () =>
+        getWorkerLocationFreshness(
+          location,
+          locationNow,
+        ),
+      [
+        location,
+        locationNow,
+      ],
+    )
 
-
-  
   const locationAgeSeconds =
     useMemo(
       () =>
@@ -277,7 +366,10 @@ export default function ActiveBookingScreen({
           location,
           locationNow,
         ),
-      [location, locationNow],
+      [
+        location,
+        locationNow,
+      ],
     )
 
   async function refresh() {
@@ -287,29 +379,42 @@ export default function ActiveBookingScreen({
           bookingId,
         )
 
-      setBooking(nextBooking)
+      setBooking(
+        nextBooking,
+      )
 
       const nextHistory =
         await getCustomerBookingStatusHistory(
           bookingId,
         )
 
-      setStatusHistory(nextHistory)
+      setStatusHistory(
+        nextHistory,
+      )
 
-      if (nextBooking.worker_id) {
-  const nextLocation =
-    await getLatestWorkerLocation(
-      bookingId,
-    )
+      if (
+        nextBooking.worker_id
+      ) {
+        const nextLocation =
+          await getLatestWorkerLocation(
+            bookingId,
+          )
 
-  setLocation(nextLocation)
-} else {
-  setLocation(null)
-}
+        setLocation(
+          nextLocation,
+        )
+      } else {
+        setLocation(null)
+      }
 
-      setLocationNow(Date.now())
+      setLocationNow(
+        Date.now(),
+      )
+
       setError(null)
-    } catch (nextError) {
+    } catch (
+      nextError
+    ) {
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -320,25 +425,27 @@ export default function ActiveBookingScreen({
     }
   }
 
-    useEffect(() => {
+  useEffect(() => {
     void refresh()
 
     const refreshInterval =
       setInterval(
-        () => void refresh(),
+        () => {
+          void refresh()
+        },
         15000,
       )
 
     const clockInterval =
       setInterval(
-        () => setLocationNow(Date.now()),
+        () => {
+          setLocationNow(
+            Date.now(),
+          )
+        },
         1000,
       )
 
-    // Use a unique channel name for every screen instance.
-    // This prevents Supabase Realtime from reusing an already
-    // subscribed channel when the screen is replaced/remounted
-    // quickly, such as after rescheduling.
     const channelName =
       `customer-booking-${bookingId}-${Date.now()}-${Math.random()
         .toString(36)
@@ -346,85 +453,178 @@ export default function ActiveBookingScreen({
 
     const channel =
       supabase
-        .channel(channelName)
-        .on(
-  'postgres_changes',
-  {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'worker_locations',
-    filter: `booking_id=eq.${bookingId}`,
-  },
-  payload => {
-    const nextLocation =
-      payload.new as WorkerLocation
+        .channel(
+          channelName,
+        )
 
-    setLocation(nextLocation)
-    setLocationNow(Date.now())
-  },
-)
+        /*
+         * Booking status realtime.
+         */
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'bookings',
+            filter:
+              `id=eq.${bookingId}`,
+          },
+          () => {
+            void refresh()
+          },
+        )
+
+        /*
+         * Status history realtime.
+         */
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'worker_locations',
-            filter: `booking_id=eq.${bookingId}`,
+            table:
+              'booking_status_history',
+            filter:
+              `booking_id=eq.${bookingId}`,
+          },
+          payload => {
+            const nextHistory =
+              payload.new as BookingStatusHistoryItem
+
+            setStatusHistory(
+              current => {
+                if (
+                  current.some(
+                    item =>
+                      item.id ===
+                      nextHistory.id,
+                  )
+                ) {
+                  return current
+                }
+
+                return [
+                  ...current,
+                  nextHistory,
+                ].sort(
+                  (
+                    left,
+                    right,
+                  ) =>
+                    Date.parse(
+                      left.created_at,
+                    ) -
+                    Date.parse(
+                      right.created_at,
+                    ),
+                )
+              },
+            )
+          },
+        )
+
+        /*
+         * LIVE WORKER TRACKING.
+         *
+         * Every new booking-scoped
+         * worker_locations row is pushed
+         * to the customer immediately.
+         */
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table:
+              'worker_locations',
+            filter:
+              `booking_id=eq.${bookingId}`,
           },
           payload => {
             const nextLocation =
               payload.new as WorkerLocation
 
-            setLocation(nextLocation)
-            setLocationNow(Date.now())
+            setLocation(
+              nextLocation,
+            )
 
-            if (
-              getWorkerLocationFreshness(
-                nextLocation,
-              ) === 'fresh'
-            ) {
-              setMapRegion(
-                toMapRegion(nextLocation),
-              )
-            }
+            setLocationNow(
+              Date.now(),
+            )
           },
         )
         .subscribe()
 
     return () => {
-      clearInterval(refreshInterval)
-      clearInterval(clockInterval)
+      clearInterval(
+        refreshInterval,
+      )
 
-      void supabase.removeChannel(channel)
+      clearInterval(
+        clockInterval,
+      )
+
+      void supabase.removeChannel(
+        channel,
+      )
     }
   }, [bookingId])
 
   useEffect(() => {
     if (!booking?.started_at) {
-      setTimer('00:00:00')
+      setTimer(
+        '00:00:00',
+      )
+
       return
     }
 
-    const update = () => {
+    function updateTimer() {
       setTimer(
         elapsedSince(
           booking.started_at!,
           booking.completed_at,
         ),
       )
-    }
+    }useEffect(() => {
+  const currentBooking =
+    booking
 
-    update()
+  if (
+    !currentBooking?.started_at
+  ) {
+    setTimer(
+      '00:00:00',
+    )
 
-    const interval =
-      setInterval(update, 1000)
+    return
+  }
 
-    return () =>
-      clearInterval(interval)
-  }, [
-    booking?.started_at,
-    booking?.completed_at,
-  ])
+  const update = () => {
+    setTimer(
+      elapsedSince(
+        currentBooking.started_at,
+        currentBooking.completed_at,
+      ),
+    )
+  }
+
+  update()
+
+  const interval =
+    setInterval(
+      update,
+      1000,
+    )
+
+  return () =>
+    clearInterval(
+      interval,
+    )
+}, [
+  booking?.started_at,
+  booking?.completed_at,
+])
 
   async function handleCancelBooking() {
     if (!booking) {
@@ -432,9 +632,12 @@ export default function ActiveBookingScreen({
     }
 
     if (
-      booking.status === 'completed' ||
-      booking.status === 'cancelled' ||
-      booking.status === 'expired'
+      booking.status ===
+        'completed' ||
+      booking.status ===
+        'cancelled' ||
+      booking.status ===
+        'expired'
     ) {
       return
     }
@@ -456,13 +659,18 @@ export default function ActiveBookingScreen({
             void (async () => {
               try {
                 setError(null)
+
                 await cancelCustomerBooking(
                   booking.id,
                   booking.booking_type,
                 )
+
                 setOtp(null)
+
                 await refresh()
-              } catch (nextError) {
+              } catch (
+                nextError
+              ) {
                 setError(
                   nextError instanceof Error
                     ? nextError.message
@@ -485,21 +693,25 @@ export default function ActiveBookingScreen({
 
     if (
       type === 'start' &&
-      booking.status !== 'arrived'
+      booking.status !==
+        'arrived'
     ) {
       setError(
         'The start OTP is available after the worker arrives.',
       )
+
       return
     }
 
     if (
       type === 'end' &&
-      booking.status !== 'in_progress'
+      booking.status !==
+        'in_progress'
     ) {
       setError(
         'The end OTP is available while the service is in progress.',
       )
+
       return
     }
 
@@ -516,7 +728,9 @@ export default function ActiveBookingScreen({
       )
 
       setError(null)
-    } catch (nextError) {
+    } catch (
+      nextError
+    ) {
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -528,10 +742,28 @@ export default function ActiveBookingScreen({
   if (loading) {
     return (
       <ScreenContainer>
-        <View style={styles.loading}>
+        <View
+          style={
+            styles.loading
+          }
+        >
           <ActivityIndicator />
-          <Image source={tempStaffLogo} style={styles.loadingLogo} resizeMode="contain" />
-          <Text style={styles.loadingText}>
+
+          <Image
+            source={
+              tempStaffLogo
+            }
+            style={
+              styles.loadingLogo
+            }
+            resizeMode="contain"
+          />
+
+          <Text
+            style={
+              styles.loadingText
+            }
+          >
             Loading your booking...
           </Text>
         </View>
@@ -542,16 +774,48 @@ export default function ActiveBookingScreen({
   if (!booking) {
     return (
       <ScreenContainer>
-        <View style={styles.container}>
-          <View style={styles.brandRow}>
-            <Image source={tempStaffLogo} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.brandLabel}>BOOKING</Text>
+        <View
+          style={
+            styles.container
+          }
+        >
+          <View
+            style={
+              styles.brandRow
+            }
+          >
+            <Image
+              source={
+                tempStaffLogo
+              }
+              style={
+                styles.logo
+              }
+              resizeMode="contain"
+            />
+
+            <Text
+              style={
+                styles.brandLabel
+              }
+            >
+              BOOKING
+            </Text>
           </View>
-          <Text style={styles.title}>
+
+          <Text
+            style={
+              styles.title
+            }
+          >
             Booking unavailable
           </Text>
 
-          <Text style={styles.error}>
+          <Text
+            style={
+              styles.error
+            }
+          >
             {error ??
               'Booking could not be loaded.'}
           </Text>
@@ -561,18 +825,30 @@ export default function ActiveBookingScreen({
   }
 
   const workerAssigned =
-    booking.worker_id !== null
-    const canReschedule =
-  booking.booking_type === 'scheduled' &&
-  booking.worker_id === null &&
-  booking.status !== 'completed' &&
-  booking.status !== 'cancelled' &&
-  booking.status !== 'expired' &&
-  booking.status !== 'on_the_way' &&
-  booking.status !== 'arrived' &&
-  booking.status !== 'in_progress' &&
-  booking.status !== 'pending_payment' &&
-  booking.status !== 'payment_failed'
+    booking.worker_id !==
+    null
+
+  const canReschedule =
+    booking.booking_type ===
+      'scheduled' &&
+    booking.worker_id ===
+      null &&
+    booking.status !==
+      'completed' &&
+    booking.status !==
+      'cancelled' &&
+    booking.status !==
+      'expired' &&
+    booking.status !==
+      'on_the_way' &&
+    booking.status !==
+      'arrived' &&
+    booking.status !==
+      'in_progress' &&
+    booking.status !==
+      'pending_payment' &&
+    booking.status !==
+      'payment_failed'
 
   const terminal =
     isTerminalStatus(
@@ -586,29 +862,91 @@ export default function ActiveBookingScreen({
 
   const showLiveMap =
     tracking &&
-    locationFreshness === 'fresh' &&
-    location !== null
+    locationFreshness ===
+      'fresh' &&
+    location !==
+      null
 
   return (
     <ScreenContainer>
       <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.container
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-        <View style={styles.brandRow}>
-          <Image source={tempStaffLogo} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.brandLabel}>
-            {tracking ? 'LIVE TRACKING' : 'BOOKING'}
+        <View
+          style={
+            styles.brandRow
+          }
+        >
+          <Image
+            source={
+              tempStaffLogo
+            }
+            style={
+              styles.logo
+            }
+            resizeMode="contain"
+          />
+
+          <Text
+            style={
+              styles.brandLabel
+            }
+          >
+            {tracking
+              ? 'LIVE TRACKING'
+              : 'BOOKING'}
           </Text>
         </View>
-        <View style={styles.headingRow}>
-          <View style={styles.stepBadge}><Text style={styles.stepBadgeText}>{tracking ? '12' : '11'}</Text></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>
-              {tracking ? 'Your worker is on the move' : 'Booking confirmed'}
+
+        <View
+          style={
+            styles.headingRow
+          }
+        >
+          <View
+            style={
+              styles.stepBadge
+            }
+          >
+            <Text
+              style={
+                styles.stepBadgeText
+              }
+            >
+              {tracking
+                ? '12'
+                : '11'}
             </Text>
-            <Text style={styles.subtitle}>
-              {tracking ? 'Follow the latest verified worker location below.' : 'Your TempStaff booking status and details are shown here.'}
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+            }}
+          >
+            <Text
+              style={
+                styles.title
+              }
+            >
+              {tracking
+                ? 'Your worker is on the move'
+                : 'Booking confirmed'}
+            </Text>
+
+            <Text
+              style={
+                styles.subtitle
+              }
+            >
+              {tracking
+                ? 'Follow the latest verified worker location below.'
+                : 'Your TempStaff booking status and details are shown here.'}
             </Text>
           </View>
         </View>
@@ -616,28 +954,67 @@ export default function ActiveBookingScreen({
         <View
           style={[
             styles.stateCard,
+
             booking.status ===
               'searching_worker' &&
               styles.searchingCard,
+
             booking.status ===
               'on_the_way' &&
               styles.trackingCard,
+
             booking.status ===
               'in_progress' &&
               styles.progressCard,
           ]}
         >
-          <View style={styles.stateTopRow}>
-            <View style={styles.stateIcon}><Text style={styles.stateIconText}>{tracking ? 'LIVE' : 'OK'}</Text></View>
-            <Image source={trackingHero} style={styles.stateHero} resizeMode="cover" />
+          <View
+            style={
+              styles.stateTopRow
+            }
+          >
+            <View
+              style={
+                styles.stateIcon
+              }
+            >
+              <Text
+                style={
+                  styles.stateIconText
+                }
+              >
+                {tracking
+                  ? 'LIVE'
+                  : 'OK'}
+              </Text>
+            </View>
+
+            <Image
+              source={
+                trackingHero
+              }
+              style={
+                styles.stateHero
+              }
+              resizeMode="cover"
+            />
           </View>
-          <Text style={styles.stateTitle}>
+
+          <Text
+            style={
+              styles.stateTitle
+            }
+          >
             {getStateTitle(
               booking,
             )}
           </Text>
 
-          <Text style={styles.stateMessage}>
+          <Text
+            style={
+              styles.stateMessage
+            }
+          >
             {getStateMessage(
               booking,
             )}
@@ -645,16 +1022,26 @@ export default function ActiveBookingScreen({
         </View>
 
         {error ? (
-          <Text style={styles.error}>
+          <Text
+            style={
+              styles.error
+            }
+          >
             {error}
           </Text>
         ) : null}
 
         {tracking &&
         workerAssigned ? (
-          <View style={styles.mapCard}>
+          <View
+            style={
+              styles.mapCard
+            }
+          >
             <View
-              style={styles.mapHeader}
+              style={
+                styles.mapHeader
+              }
             >
               <Text
                 style={
@@ -667,9 +1054,11 @@ export default function ActiveBookingScreen({
               <Text
                 style={[
                   styles.freshness,
+
                   locationFreshness ===
                     'fresh' &&
                     styles.freshText,
+
                   locationFreshness ===
                     'stale' &&
                     styles.staleText,
@@ -682,16 +1071,16 @@ export default function ActiveBookingScreen({
             </View>
 
             {showLiveMap ? (
-  <LiveWorkerMap
-    location={{
-      latitude:
-        location.latitude,
+              <LiveWorkerMap
+                location={{
+                  latitude:
+                    location.latitude,
 
-      longitude:
-        location.longitude,
-    }}
-  />
-) : (
+                  longitude:
+                    location.longitude,
+                }}
+              />
+            ) : (
               <View
                 style={
                   styles.mapUnavailable
@@ -736,100 +1125,214 @@ export default function ActiveBookingScreen({
           </View>
         ) : null}
 
-        <View style={styles.card}>
-          <View style={styles.timelineHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sectionTitle}>
+        <View
+          style={
+            styles.card
+          }
+        >
+          <View
+            style={
+              styles.timelineHeader
+            }
+          >
+            <View
+              style={{
+                flex: 1,
+              }}
+            >
+              <Text
+                style={
+                  styles.sectionTitle
+                }
+              >
                 Booking timeline
               </Text>
-              <Text style={styles.timelineSubtitle}>
-                Status changes recorded for this booking.
+
+              <Text
+                style={
+                  styles.timelineSubtitle
+                }
+              >
+                Status changes recorded
+                for this booking.
               </Text>
             </View>
 
-            <View style={styles.timelineCount}>
-              <Text style={styles.timelineCountText}>
+            <View
+              style={
+                styles.timelineCount
+              }
+            >
+              <Text
+                style={
+                  styles.timelineCountText
+                }
+              >
                 {statusHistory.length}
               </Text>
             </View>
           </View>
 
-          {statusHistory.length > 0 ? (
-            <View style={styles.timeline}>
-              {statusHistory.map((item, index) => {
-                const isLast =
-                  index === statusHistory.length - 1
-                const isCurrent =
-                  isLast && item.new_status === booking.status
+          {statusHistory.length >
+          0 ? (
+            <View
+              style={
+                styles.timeline
+              }
+            >
+              {statusHistory.map(
+                (
+                  item,
+                  index,
+                ) => {
+                  const isLast =
+                    index ===
+                    statusHistory.length -
+                      1
 
-                return (
-                  <View
-                    key={item.id}
-                    style={styles.timelineItem}
-                  >
-                    <View style={styles.timelineRail}>
-                      <View
-                        style={[
-                          styles.timelineDot,
-                          isCurrent && styles.timelineDotCurrent,
-                        ]}
-                      />
-                      {!isLast ? (
-                        <View style={styles.timelineLine} />
-                      ) : null}
-                    </View>
+                  const isCurrent =
+                    isLast &&
+                    item.new_status ===
+                      booking.status
 
+                  return (
                     <View
-                      style={[
-                        styles.timelineContent,
-                        !isLast && styles.timelineContentSpaced,
-                      ]}
+                      key={
+                        item.id
+                      }
+                      style={
+                        styles.timelineItem
+                      }
                     >
-                      <View style={styles.timelineTitleRow}>
-                        <Text style={styles.timelineTitle}>
-                          {formatStatus(item.new_status)}
-                        </Text>
-                        {isCurrent ? (
-                          <View style={styles.currentPill}>
-                            <Text style={styles.currentPillText}>
-                              Current
-                            </Text>
-                          </View>
+                      <View
+                        style={
+                          styles.timelineRail
+                        }
+                      >
+                        <View
+                          style={[
+                            styles.timelineDot,
+
+                            isCurrent &&
+                              styles.timelineDotCurrent,
+                          ]}
+                        />
+
+                        {!isLast ? (
+                          <View
+                            style={
+                              styles.timelineLine
+                            }
+                          />
                         ) : null}
                       </View>
 
-                      {item.old_status ? (
-                        <Text style={styles.timelineTransition}>
-                          From {formatStatus(item.old_status)}
-                        </Text>
-                      ) : (
-                        <Text style={styles.timelineTransition}>
-                          Initial booking status
-                        </Text>
-                      )}
+                      <View
+                        style={[
+                          styles.timelineContent,
 
-                      <Text style={styles.timelineDate}>
-                        {formatDateTime(item.created_at)}
-                      </Text>
+                          !isLast &&
+                            styles.timelineContentSpaced,
+                        ]}
+                      >
+                        <View
+                          style={
+                            styles.timelineTitleRow
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.timelineTitle
+                            }
+                          >
+                            {formatStatus(
+                              item.new_status,
+                            )}
+                          </Text>
+
+                          {isCurrent ? (
+                            <View
+                              style={
+                                styles.currentPill
+                              }
+                            >
+                              <Text
+                                style={
+                                  styles.currentPillText
+                                }
+                              >
+                                Current
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+
+                        <Text
+                          style={
+                            styles.timelineTransition
+                          }
+                        >
+                          {item.old_status
+                            ? `From ${formatStatus(
+                                item.old_status,
+                              )}`
+                            : 'Initial booking status'}
+                        </Text>
+
+                        <Text
+                          style={
+                            styles.timelineDate
+                          }
+                        >
+                          {formatDateTime(
+                            item.created_at,
+                          )}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                )
-              })}
+                  )
+                },
+              )}
             </View>
           ) : (
-            <View style={styles.timelineEmpty}>
-              <Text style={styles.timelineEmptyTitle}>
+            <View
+              style={
+                styles.timelineEmpty
+              }
+            >
+              <Text
+                style={
+                  styles.timelineEmptyTitle
+                }
+              >
                 No status history yet
               </Text>
-              <Text style={styles.timelineEmptyMessage}>
-                The current booking status is still available above. New status changes will appear here automatically.
+
+              <Text
+                style={
+                  styles.timelineEmptyMessage
+                }
+              >
+                The current booking
+                status is still available
+                above. New status changes
+                will appear here
+                automatically.
               </Text>
             </View>
           )}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
+        <View
+          style={
+            styles.card
+          }
+        >
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
             Booking details
           </Text>
 
@@ -850,7 +1353,9 @@ export default function ActiveBookingScreen({
 
           <Row
             label="Booking ID"
-            value={booking.id}
+            value={
+              booking.id
+            }
           />
 
           <Row
@@ -892,18 +1397,34 @@ export default function ActiveBookingScreen({
           'pending_payment' &&
         booking.status !==
           'payment_failed' ? (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>
+          <View
+            style={
+              styles.card
+            }
+          >
+            <Text
+              style={
+                styles.sectionTitle
+              }
+            >
               Worker
             </Text>
 
             {workerAssigned ? (
               <>
-                <Text style={styles.worker}>
+                <Text
+                  style={
+                    styles.worker
+                  }
+                >
                   Worker assigned
                 </Text>
 
-                <Text style={styles.workerId}>
+                <Text
+                  style={
+                    styles.workerId
+                  }
+                >
                   Worker ID:{' '}
                   {booking.worker_id}
                 </Text>
@@ -925,9 +1446,11 @@ export default function ActiveBookingScreen({
                     <Text
                       style={[
                         styles.freshness,
+
                         locationFreshness ===
                           'fresh' &&
                           styles.freshText,
+
                         locationFreshness ===
                           'stale' &&
                           styles.staleText,
@@ -975,10 +1498,11 @@ export default function ActiveBookingScreen({
                           styles.staleMessage
                         }
                       >
-                        The last known location is
-                        too old to be presented as
-                        live. We will continue
-                        checking for a fresh update.
+                        The last known location
+                        is too old to be
+                        presented as live. We
+                        will continue checking
+                        for a fresh update.
                       </Text>
                     ) : (
                       <Text
@@ -986,15 +1510,20 @@ export default function ActiveBookingScreen({
                           styles.staleMessage
                         }
                       >
-                        Waiting for the worker's
-                        first location update.
+                        Waiting for the
+                        worker's first
+                        location update.
                       </Text>
                     )}
                   </View>
                 ) : null}
               </>
             ) : (
-              <Text style={styles.worker}>
+              <Text
+                style={
+                  styles.worker
+                }
+              >
                 Searching for a worker...
               </Text>
             )}
@@ -1004,12 +1533,24 @@ export default function ActiveBookingScreen({
         {booking.status ===
           'in_progress' &&
         booking.started_at ? (
-          <View style={styles.timerCard}>
-            <Text style={styles.timerLabel}>
+          <View
+            style={
+              styles.timerCard
+            }
+          >
+            <Text
+              style={
+                styles.timerLabel
+              }
+            >
               Service duration
             </Text>
 
-            <Text style={styles.timer}>
+            <Text
+              style={
+                styles.timer
+              }
+            >
               {timer}
             </Text>
           </View>
@@ -1018,12 +1559,20 @@ export default function ActiveBookingScreen({
         {booking.status ===
         'arrived' ? (
           <Pressable
-            style={styles.button}
+            style={
+              styles.button
+            }
             onPress={() =>
-              void showOtp('start')
+              void showOtp(
+                'start',
+              )
             }
           >
-            <Text style={styles.buttonText}>
+            <Text
+              style={
+                styles.buttonText
+              }
+            >
               Show start OTP
             </Text>
           </Pressable>
@@ -1032,57 +1581,93 @@ export default function ActiveBookingScreen({
         {booking.status ===
         'in_progress' ? (
           <Pressable
-            style={styles.button}
+            style={
+              styles.button
+            }
             onPress={() =>
-              void showOtp('end')
+              void showOtp(
+                'end',
+              )
             }
           >
-            <Text style={styles.buttonText}>
+            <Text
+              style={
+                styles.buttonText
+              }
+            >
               Show end OTP
             </Text>
           </Pressable>
         ) : null}
 
         {canReschedule &&
-booking.scheduled_start &&
-booking.scheduled_end ? (
-  <Pressable
-    style={styles.rescheduleButton}
-    onPress={() =>
-      onReschedule(
-        booking.id,
-        booking.scheduled_start!,
-        booking.scheduled_end!,
-      )
-    }
-  >
-    <Text style={styles.rescheduleButtonText}>
-      Reschedule booking
-    </Text>
-  </Pressable>
-) : null}
+        booking.scheduled_start &&
+        booking.scheduled_end ? (
+          <Pressable
+            style={
+              styles.rescheduleButton
+            }
+            onPress={() =>
+              onReschedule(
+                booking.id,
+                booking.scheduled_start!,
+                booking.scheduled_end!,
+              )
+            }
+          >
+            <Text
+              style={
+                styles.rescheduleButtonText
+              }
+            >
+              Reschedule booking
+            </Text>
+          </Pressable>
+        ) : null}
 
         {!terminal &&
         !workerAssigned &&
-        booking.status !== 'in_progress' &&
-        booking.status !== 'arrived' ? (
+        booking.status !==
+          'in_progress' &&
+        booking.status !==
+          'arrived' ? (
           <Pressable
-            style={styles.cancelButton}
-            onPress={handleCancelBooking}
+            style={
+              styles.cancelButton
+            }
+            onPress={
+              handleCancelBooking
+            }
           >
-            <Text style={styles.cancelButtonText}>
+            <Text
+              style={
+                styles.cancelButtonText
+              }
+            >
               Cancel booking
             </Text>
           </Pressable>
         ) : null}
 
         {otp ? (
-          <View style={styles.otpCard}>
-            <Text style={styles.otpLabel}>
+          <View
+            style={
+              styles.otpCard
+            }
+          >
+            <Text
+              style={
+                styles.otpLabel
+              }
+            >
               Booking OTP
             </Text>
 
-            <Text style={styles.otp}>
+            <Text
+              style={
+                styles.otp
+              }
+            >
               {otp}
             </Text>
           </View>
@@ -1090,15 +1675,24 @@ booking.scheduled_end ? (
 
         {booking.status ===
           'searching_worker' ? (
-          <Text style={styles.refreshHint}>
-            We will continue checking for an
-            eligible worker automatically.
+          <Text
+            style={
+              styles.refreshHint
+            }
+          >
+            We will continue checking
+            for an eligible worker
+            automatically.
           </Text>
         ) : null}
 
         {booking.status ===
           'completed' ? (
-          <Text style={styles.completedMessage}>
+          <Text
+            style={
+              styles.completedMessage
+            }
+          >
             Service completed at{' '}
             {formatDateTime(
               booking.completed_at,
@@ -1119,12 +1713,24 @@ function Row({
   value: string
 }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.label}>
+    <View
+      style={
+        styles.row
+      }
+    >
+      <Text
+        style={
+          styles.label
+        }
+      >
         {label}
       </Text>
 
-      <Text style={styles.value}>
+      <Text
+        style={
+          styles.value
+        }
+      >
         {value}
       </Text>
     </View>
@@ -1144,6 +1750,14 @@ const styles =
       width: 150,
       height: 52,
       marginBottom: 8,
+    },
+
+    loadingText: {
+      color: '#6B7280',
+    },
+
+    container: {
+      padding: 18,
     },
 
     brandRow: {
@@ -1187,6 +1801,13 @@ const styles =
       fontWeight: '900',
     },
 
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: '#062F52',
+      marginBottom: 16,
+    },
+
     subtitle: {
       marginTop: 4,
       color: '#607789',
@@ -1194,21 +1815,24 @@ const styles =
       lineHeight: 19,
     },
 
-    rescheduleButton: {
-  marginTop: 4,
-  marginBottom: 12,
-  padding: 14,
-  borderRadius: 10,
-  borderWidth: 1,
-  borderColor: '#00A7A7',
-  backgroundColor: '#E8F7F7',
-  alignItems: 'center',
-},
+    stateCard: {
+      padding: 18,
+      borderRadius: 16,
+      backgroundColor: '#E8F7F7',
+      marginBottom: 16,
+    },
 
-rescheduleButtonText: {
-  color: '#008A88',
-  fontWeight: '800',
-},
+    searchingCard: {
+      backgroundColor: '#EAF4FB',
+    },
+
+    trackingCard: {
+      backgroundColor: '#EEF5F8',
+    },
+
+    progressCard: {
+      backgroundColor: '#FFFFFF',
+    },
 
     stateTopRow: {
       minHeight: 70,
@@ -1240,40 +1864,6 @@ rescheduleButtonText: {
       borderRadius: 18,
     },
 
-    loadingText: {
-      color: '#6B7280',
-    },
-
-    container: {
-      padding: 18,
-    },
-
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: '#062F52',
-      marginBottom: 16,
-    },
-
-    stateCard: {
-      padding: 18,
-      borderRadius: 16,
-      backgroundColor: '#E8F7F7',
-      marginBottom: 16,
-    },
-
-    searchingCard: {
-      backgroundColor: '#EAF4FB',
-    },
-
-    trackingCard: {
-      backgroundColor: '#EEF5F8',
-    },
-
-    progressCard: {
-      backgroundColor: '#FFFFFF',
-    },
-
     stateTitle: {
       fontSize: 20,
       fontWeight: '800',
@@ -1303,11 +1893,6 @@ rescheduleButtonText: {
       fontSize: 17,
       fontWeight: '800',
       color: '#062F52',
-    },
-
-    map: {
-      width: '100%',
-      height: 280,
     },
 
     mapUnavailable: {
@@ -1591,6 +2176,22 @@ rescheduleButtonText: {
     buttonText: {
       color: '#FFFFFF',
       fontWeight: '700',
+    },
+
+    rescheduleButton: {
+      marginTop: 4,
+      marginBottom: 12,
+      padding: 14,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: '#00A7A7',
+      backgroundColor: '#E8F7F7',
+      alignItems: 'center',
+    },
+
+    rescheduleButtonText: {
+      color: '#008A88',
+      fontWeight: '800',
     },
 
     cancelButton: {

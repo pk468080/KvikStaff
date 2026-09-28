@@ -22,6 +22,16 @@ type Props = {
   location: LiveWorkerMapLocation
 }
 
+type MarkerRef = {
+  animateMarkerToCoordinate: (
+    coordinate: {
+      latitude: number
+      longitude: number
+    },
+    duration: number,
+  ) => void
+}
+
 export default function LiveWorkerMap({
   location,
 }: Props) {
@@ -29,7 +39,7 @@ export default function LiveWorkerMap({
     useRef<MapView | null>(null)
 
   const markerRef =
-    useRef<Marker | null>(null)
+    useRef<MarkerRef | null>(null)
 
   const previousLocationRef =
     useRef<LiveWorkerMapLocation | null>(
@@ -47,11 +57,6 @@ export default function LiveWorkerMap({
       return
     }
 
-    /*
-     * Smoothly move the worker marker
-     * from the previous GPS coordinate
-     * to the newest coordinate.
-     */
     markerRef.current?.animateMarkerToCoordinate(
       {
         latitude:
@@ -63,11 +68,6 @@ export default function LiveWorkerMap({
       900,
     )
 
-    /*
-     * Move the camera to follow the worker.
-     * The customer can still interact with
-     * the map normally.
-     */
     mapRef.current?.animateCamera(
       {
         center: {
@@ -92,7 +92,9 @@ export default function LiveWorkerMap({
 
   return (
     <View
-      style={styles.container}
+      style={
+        styles.container
+      }
     >
       <MapView
         ref={mapRef}
@@ -119,7 +121,14 @@ export default function LiveWorkerMap({
         pitchEnabled={false}
       >
         <Marker
-          ref={markerRef}
+          ref={
+            ref => {
+              markerRef.current =
+                ref
+                  ? (ref as unknown as MarkerRef)
+                  : null
+            }
+          }
           coordinate={{
             latitude:
               location.latitude,
@@ -135,16 +144,17 @@ export default function LiveWorkerMap({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    height: 280,
-    overflow: 'hidden',
-    borderRadius: 16,
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      width: '100%',
+      height: 280,
+      overflow: 'hidden',
+      borderRadius: 16,
+    },
 
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-})
+    map: {
+      width: '100%',
+      height: '100%',
+    },
+  })
