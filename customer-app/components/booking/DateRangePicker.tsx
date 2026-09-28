@@ -44,21 +44,45 @@ export default function DateRangePicker({
   const [pickerDate, setPickerDate] = useState(new Date())
 
   function handleDatePicked(date: Date) {
-    const normalizedDate = startOfDay(date)
+  const normalizedDate =
+    startOfDay(date)
 
-    if (pickerMode === 'start') {
-      onStartDateChange(normalizedDate)
+  const minimumAllowedDate =
+    pickerMode === 'end'
+      ? startOfDay(effectiveEndMinDate)
+      : startOfDay(minDate)
 
-      // Keep the range valid when the start date moves past the current end date.
-      if (endDate && normalizedDate > endDate) {
-        onEndDateChange(normalizedDate)
-      }
-    } else if (pickerMode === 'end') {
-      onEndDateChange(normalizedDate)
-    }
-
+  // Never allow a date earlier than
+  // the business-defined minimum date.
+  if (
+    normalizedDate.getTime() <
+    minimumAllowedDate.getTime()
+  ) {
     setPickerMode(null)
+    return
   }
+
+  if (pickerMode === 'start') {
+    onStartDateChange(normalizedDate)
+
+    // Keep the range valid when the start date
+    // moves past the current end date.
+    if (
+      endDate &&
+      normalizedDate > endDate
+    ) {
+      onEndDateChange(
+        normalizedDate,
+      )
+    }
+  } else if (pickerMode === 'end') {
+    onEndDateChange(
+      normalizedDate,
+    )
+  }
+
+  setPickerMode(null)
+}
 
   function handlePickerChange(
     event: DateTimePickerEvent,
@@ -134,11 +158,20 @@ export default function DateRangePicker({
           disabled && styles.dateButtonDisabled,
         ]}
         onPress={() => {
-          if (!disabled) {
-            setPickerDate(startDate || new Date())
-            setPickerMode('start')
-          }
-        }}
+  if (!disabled) {
+    const nextPickerDate =
+      startDate &&
+      startOfDay(startDate).getTime() >=
+        startOfDay(minDate).getTime()
+        ? startDate
+        : minDate
+
+    setPickerDate(
+      nextPickerDate,
+    )
+    setPickerMode('start')
+  }
+}}
         disabled={disabled}
       >
         <Text style={styles.dateButtonLabel}>
