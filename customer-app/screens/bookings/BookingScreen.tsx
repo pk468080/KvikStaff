@@ -25,10 +25,6 @@ import { useAvailability } from '../../hooks/useAvailability'
 
 import { getOrCreateCustomerAddress } from '../../services/addresses/customerAddress.service'
 
-import {
-  getScheduledAvailabilitySlots,
-  type ScheduledAvailabilitySlot,
-} from '../../services/availability/scheduledAvailability.service'
 
 import {
   getInstantAvailabilitySlots,
@@ -167,28 +163,7 @@ export default function BookingScreen({
     checkInstant,
   } = useAvailability()
 
-  const [scheduledSlots, setScheduledSlots] =
-    useState<ScheduledAvailabilitySlot[]>([])
-
-  const [
-    scheduledAvailabilityLoading,
-    setScheduledAvailabilityLoading,
-  ] = useState(false)
-
-  const [
-    scheduledAvailabilityError,
-    setScheduledAvailabilityError,
-  ] = useState<string | null>(null)
-
-  const [
-    scheduledServiceAreaAvailable,
-    setScheduledServiceAreaAvailable,
-  ] = useState<boolean | null>(null)
-
-  const [
-    selectedScheduledSlotKey,
-    setSelectedScheduledSlotKey,
-  ] = useState<string | null>(null)
+  
 
   const [instantSlots, setInstantSlots] =
     useState<InstantAvailabilitySlot[]>([])
@@ -228,57 +203,13 @@ export default function BookingScreen({
   const timeRangeValid =
     isValidTimeRange(startTime, endTime)
 
-  const isTodaySelected =
-    !!startDate &&
-    startOfDay(startDate).getTime() ===
-      today.getTime()
-
-  const isTomorrowSelected =
-    !!startDate &&
-    startOfDay(startDate).getTime() ===
-      tomorrow.getTime()
-
-  /*
-   * The near-term customer slot API is used for tomorrow.
-   * Future scheduled dates remain valid without requiring
-   * a live slot because they can be matched later or assigned
-   * manually by admin.
-   */
-  const canSelectScheduledSlots =
-    bookingType === 'scheduled' &&
-    isTomorrowSelected
-
-  const visibleScheduledSlots = useMemo(() => {
-    if (!isTodaySelected) {
-      return scheduledSlots
-    }
-
-    return scheduledSlots.filter(
-      slot =>
-        new Date(slot.start).getTime() >=
-        currentTime.getTime(),
-    )
-  }, [
-    currentTime,
-    isTodaySelected,
-    scheduledSlots,
-  ])
-
-  const selectedScheduledSlotIsAvailable =
-    visibleScheduledSlots.some(
-      slot =>
-        `${slot.start}-${slot.end}` ===
-          selectedScheduledSlotKey &&
-        slot.available_worker_count > 0,
-    )
-
   const selectedInstantSlotIsAvailable =
-    instantSlots.some(
-      slot =>
-        `${slot.start}-${slot.end}` ===
-          selectedInstantSlotKey &&
-        slot.available_worker_count > 0,
-    )
+  instantSlots.some(
+    slot =>
+      `${slot.start}-${slot.end}` ===
+        selectedInstantSlotKey &&
+      slot.available_worker_count > 0,
+  )
 
   const recurringOccurrences = useMemo(() => {
     if (
@@ -425,131 +356,9 @@ export default function BookingScreen({
     return () => clearInterval(interval)
   }, [bookingType])
 
-  /*
-   * Scheduled availability is limited to tomorrow.
-   * Future dates still remain bookable without a current
-   * worker slot because assignment can happen later/admin.
-   */
-  useEffect(() => {
-    let cancelled = false
+  
 
-    async function loadScheduledSlots() {
-      setScheduledSlots([])
-      setScheduledAvailabilityError(null)
-      setScheduledServiceAreaAvailable(null)
 
-      if (
-        !canSelectScheduledSlots ||
-        !startDate ||
-        !location
-      ) {
-        setScheduledAvailabilityLoading(false)
-        return
-      }
-
-      if (!timeRangeValid) {
-        setScheduledAvailabilityError(
-          'Select a time range of at least 1 hour.',
-        )
-        setScheduledAvailabilityLoading(false)
-        return
-      }
-
-      setScheduledAvailabilityLoading(true)
-
-      try {
-        const addressId =
-          await getOrCreateCustomerAddress(
-            location,
-          )
-
-        const startOfSelectedDay =
-          startOfDay(startDate)
-
-        const endOfSelectedDay =
-          new Date(startOfSelectedDay)
-
-        endOfSelectedDay.setHours(
-          23,
-          59,
-          59,
-          999,
-        )
-
-        const result =
-          await getScheduledAvailabilitySlots(
-            service.serviceVariantId,
-            addressId,
-            startOfSelectedDay.toISOString(),
-            endOfSelectedDay.toISOString(),
-            durationHours,
-          )
-
-        if (cancelled) {
-          return
-        }
-
-        if (!result.service_area_available) {
-          setScheduledServiceAreaAvailable(
-            false,
-          )
-
-          setScheduledAvailabilityError(
-            'Service is not available in this area for the selected date.',
-          )
-
-          return
-        }
-
-        setScheduledServiceAreaAvailable(
-          true,
-        )
-
-        setScheduledSlots(result.slots)
-      } catch (error) {
-        if (cancelled) {
-          return
-        }
-
-        setScheduledAvailabilityError(
-          error instanceof Error
-            ? error.message
-            : 'Unable to load availability.',
-        )
-      } finally {
-        if (!cancelled) {
-          setScheduledAvailabilityLoading(
-            false,
-          )
-        }
-      }
-    }
-
-    void loadScheduledSlots()
-
-    return () => {
-      cancelled = true
-    }
-  }, [
-    canSelectScheduledSlots,
-    startDate,
-    location,
-    service.serviceVariantId,
-    durationHours,
-    timeRangeValid,
-  ])
-
-  useEffect(() => {
-    if (
-      selectedScheduledSlotKey &&
-      !selectedScheduledSlotIsAvailable
-    ) {
-      setSelectedScheduledSlotKey(null)
-    }
-  }, [
-    selectedScheduledSlotKey,
-    selectedScheduledSlotIsAvailable,
-  ])
 
   useEffect(() => {
     if (
@@ -674,36 +483,55 @@ export default function BookingScreen({
   ])
 
   function handleSelectBookingType(
-    type: BookingType,
+  type: BookingType,
+) {
+  if (
+    type === 'instant' &&
+    !hasInstantAvailability
   ) {
+    return
+  }
+
+setBookingType(type)
+setSelectedInstantSlotKey(null)
+
+  if (
+    type === 'scheduled' ||
+    type === 'recurring'
+  ) {
+    // Scheduled and recurring bookings
+    // can only start from tomorrow onward.
+    const minimumBookingDate =
+      new Date(tomorrow)
+
     if (
-      type === 'instant' &&
-      !hasInstantAvailability
+      !startDate ||
+      startOfDay(startDate).getTime() <
+        minimumBookingDate.getTime()
     ) {
-      return
+      setStartDate(
+        new Date(minimumBookingDate),
+      )
     }
 
-    setBookingType(type)
-    setSelectedScheduledSlotKey(null)
-    setSelectedInstantSlotKey(null)
+    if (
+      !endDate ||
+      startOfDay(endDate).getTime() <
+        minimumBookingDate.getTime()
+    ) {
+      const defaultEndDate =
+        new Date(minimumBookingDate)
 
-    if (type === 'recurring') {
-      if (!startDate) {
-        setStartDate(new Date(tomorrow))
-      }
-
-      if (!endDate) {
-        const recurringEndDate =
-          new Date(tomorrow)
-
-        recurringEndDate.setDate(
-          recurringEndDate.getDate() + 6,
+      if (type === 'recurring') {
+        defaultEndDate.setDate(
+          defaultEndDate.getDate() + 6,
         )
-
-        setEndDate(recurringEndDate)
       }
+
+      setEndDate(defaultEndDate)
     }
   }
+}
 
   function handleSelectInstantSlot(
     slot: InstantAvailabilitySlot,
@@ -720,48 +548,30 @@ export default function BookingScreen({
     setEndTime(new Date(slot.end))
   }
 
-  function handleSelectScheduledSlot(
-    slot: ScheduledAvailabilitySlot,
-  ) {
-    if (slot.available_worker_count <= 0) {
-      return
-    }
-
-    setSelectedScheduledSlotKey(
-      `${slot.start}-${slot.end}`,
-    )
-
-    setStartTime(new Date(slot.start))
-    setEndTime(new Date(slot.end))
-  }
 
   function handleStartDateChange(date: Date) {
-    setSelectedScheduledSlotKey(null)
-    setSelectedInstantSlotKey(null)
-    setStartDate(date)
+  setSelectedInstantSlotKey(null)
+  setStartDate(date)
 
-    if (endDate && date > endDate) {
-      setEndDate(date)
-    }
-  }
-
-  function handleEndDateChange(date: Date) {
-    setSelectedScheduledSlotKey(null)
-    setSelectedInstantSlotKey(null)
+  if (endDate && date > endDate) {
     setEndDate(date)
   }
+}
 
-  function handleStartTimeChange(time: Date) {
-    setSelectedScheduledSlotKey(null)
-    setSelectedInstantSlotKey(null)
-    setStartTime(time)
-  }
+function handleEndDateChange(date: Date) {
+  setSelectedInstantSlotKey(null)
+  setEndDate(date)
+}
 
-  function handleEndTimeChange(time: Date) {
-    setSelectedScheduledSlotKey(null)
-    setSelectedInstantSlotKey(null)
-    setEndTime(time)
-  }
+function handleStartTimeChange(time: Date) {
+  setSelectedInstantSlotKey(null)
+  setStartTime(time)
+}
+
+function handleEndTimeChange(time: Date) {
+  setSelectedInstantSlotKey(null)
+  setEndTime(time)
+}
 
   function handleToggleExcludedDate(
     dateKey: string,
@@ -1863,177 +1673,55 @@ export default function BookingScreen({
               }
             />
 
-            {canSelectScheduledSlots && (
-              <View
-                style={
-                  styles.availabilitySection
-                }
-              >
-                <View
-                  style={
-                    styles.availabilityHeader
-                  }
-                >
-                  <View
-                    style={
-                      styles.availabilityHeaderText
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.availabilityHeading
-                      }
-                    >
-                      Available worker slots
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.availabilitySubheading
-                      }
-                    >
-                      {startDate
-                        ? formatDateDisplay(
-                            startDate,
-                          )
-                        : 'Select a date'}
-                    </Text>
-                  </View>
-
-                  {scheduledServiceAreaAvailable ===
-                    true && (
-                    <View
-                      style={
-                        styles.slotConfirmedBadge
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.slotConfirmedBadgeText
-                        }
-                      >
-                        Area covered
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {scheduledAvailabilityLoading && (
-                  <BookingLoadingState />
-                )}
-
-                {scheduledAvailabilityError && (
-                  <BookingErrorState
-                    message={
-                      scheduledAvailabilityError
-                    }
-                  />
-                )}
-
-                {!scheduledAvailabilityLoading &&
-                  !scheduledAvailabilityError &&
-                  visibleScheduledSlots.length ===
-                    0 && (
-                    <View
-                      style={
-                        styles.emptySlotsCard
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.emptySlotsTitle
-                        }
-                      >
-                        No matching slots
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.emptySlotsText
-                        }
-                      >
-                        No worker slot is currently
-                        available for this duration.
-                        You can still request the
-                        scheduled booking.
-                      </Text>
-                    </View>
-                  )}
-
-                {!scheduledAvailabilityLoading &&
-                  !scheduledAvailabilityError &&
-                  visibleScheduledSlots.map(
-                    (slot, index) => (
-                      <AvailabilitySlot
-                        key={`${slot.start}-${slot.end}-${index}`}
-                        start={slot.start}
-                        end={slot.end}
-                        availableWorkerCount={
-                          slot.available_worker_count
-                        }
-                        selected={
-                          selectedScheduledSlotKey ===
-                          `${slot.start}-${slot.end}`
-                        }
-                        onPress={() =>
-                          handleSelectScheduledSlot(
-                            slot,
-                          )
-                        }
-                      />
-                    ),
-                  )}
-              </View>
-            )}
+        
 
             {startDate &&
-              endDate &&
-              !canSelectScheduledSlots && (
-                <View
-                  style={
-                    styles.futureBookingCard
-                  }
-                >
-                  <View
-                    style={
-                      styles.futureBookingIcon
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.futureBookingIconText
-                      }
-                    >
-                      F
-                    </Text>
-                  </View>
+  endDate && (
+    <View
+      style={
+        styles.futureBookingCard
+      }
+    >
+      <View
+        style={
+          styles.futureBookingIcon
+        }
+      >
+        <Text
+          style={
+            styles.futureBookingIconText
+          }
+        >
+          F
+        </Text>
+      </View>
 
-                  <View
-                    style={
-                      styles.futureBookingContent
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.futureBookingTitle
-                      }
-                    >
-                      Future booking
-                    </Text>
+      <View
+        style={
+          styles.futureBookingContent
+        }
+      >
+        <Text
+          style={
+            styles.futureBookingTitle
+          }
+        >
+          Future booking
+        </Text>
 
-                    <Text
-                      style={
-                        styles.futureBookingText
-                      }
-                    >
-                      Your request will be matched
-                      with an eligible worker for the
-                      selected schedule. Assignment can
-                      also be completed by admin.
-                    </Text>
-                  </View>
-                </View>
-              )}
+        <Text
+          style={
+            styles.futureBookingText
+          }
+        >
+          Your request will be matched
+          with an eligible worker for the
+          selected schedule. Assignment can
+          also be completed by admin.
+        </Text>
+      </View>
+    </View>
+  )}
           </BookingSection>
         )}
 
