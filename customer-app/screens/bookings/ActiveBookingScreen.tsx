@@ -401,8 +401,14 @@ const [
         nextHistory,
       )
 
-      nextBooking.worker_id
+if (nextBooking.worker_id) {
+  const nextLocation =
+    await getLatestWorkerLocation(bookingId)
 
+  setLocation(nextLocation)
+} else {
+  setLocation(null)
+}
       setLocationNow(
         Date.now(),
       )

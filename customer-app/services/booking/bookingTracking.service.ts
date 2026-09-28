@@ -74,7 +74,24 @@ export type WorkerLocationFreshness =
   | 'fresh'
   | 'stale'
 
-type BookingRow = CustomerBooking & {
+type BookingRow = {
+  id: string
+  address_id: string
+  status: BookingStatus
+  booking_type?: string | null
+  service_name?: string | null
+  service_image_url?: string | null
+  scheduled_start: string | null
+  scheduled_end: string | null
+  total_working_hours: number | null
+  total_amount: number | null
+  worker_id: string | null
+  started_at: string | null
+  completed_at: string | null
+  journey_started_at: string | null
+  arrived_at: string | null
+  created_at?: string | null
+
   service_variant?: {
     service?: {
       name?: string | null
@@ -87,15 +104,83 @@ function mapBooking(
   row: BookingRow,
 ): CustomerBooking {
   return {
-    ...row,
+    id: row.id,
+
+    address_id:
+      row.address_id,
+
+    status:
+      row.status,
+
+    booking_type:
+      row.booking_type ??
+      null,
+
     service_name:
       row.service_variant?.service?.name ??
+      row.service_name ??
       null,
+
     service_image_url:
       row.service_variant?.service?.image_url ??
+      row.service_image_url ??
+      null,
+
+    scheduled_start:
+      row.scheduled_start,
+
+    scheduled_end:
+      row.scheduled_end,
+
+    total_working_hours:
+      row.total_working_hours,
+
+    total_amount:
+      row.total_amount,
+
+    worker_id:
+      row.worker_id,
+
+    started_at:
+      row.started_at,
+
+    completed_at:
+      row.completed_at,
+
+    journey_started_at:
+      row.journey_started_at,
+
+    arrived_at:
+      row.arrived_at,
+
+    created_at:
+      row.created_at ??
       null,
   }
 }
+
+const BOOKING_SELECT = `
+  id,
+  status,
+  fulfillment_type,
+  address_id,
+  created_at,
+  scheduled_start,
+  scheduled_end,
+  total_working_hours,
+  total_amount,
+  worker_id,
+  started_at,
+  completed_at,
+  journey_started_at,
+  arrived_at,
+  service_variant:service_variants(
+    service:services(
+      name,
+      image_url
+    )
+  )
+`
 
 const OCCURRENCE_LIFECYCLE_STATUSES:
   BookingStatus[] = [
@@ -117,7 +202,9 @@ function selectPreferredOccurrence(
   occurrences: CustomerBookingOccurrence[],
   nowMs = Date.now(),
 ): CustomerBookingOccurrence | null {
-  if (occurrences.length === 0) {
+  if (
+    occurrences.length === 0
+  ) {
     return null
   }
 
@@ -125,71 +212,91 @@ function selectPreferredOccurrence(
     occurrences
       .filter(
         occurrence =>
-          Boolean(occurrence.worker_id) &&
+          Boolean(
+            occurrence.worker_id,
+          ) &&
           OCCURRENCE_LIFECYCLE_STATUSES.includes(
             occurrence.status as BookingStatus,
           ),
       )
-      .sort((left, right) => {
-        const leftPriority =
-          OCCURRENCE_STATUS_PRIORITY[
-            left.status as BookingStatus
-          ] ?? 0
+      .sort(
+        (
+          left,
+          right,
+        ) => {
+          const leftPriority =
+            OCCURRENCE_STATUS_PRIORITY[
+              left.status as BookingStatus
+            ] ?? 0
 
-        const rightPriority =
-          OCCURRENCE_STATUS_PRIORITY[
-            right.status as BookingStatus
-          ] ?? 0
+          const rightPriority =
+            OCCURRENCE_STATUS_PRIORITY[
+              right.status as BookingStatus
+            ] ?? 0
 
-        if (
-          leftPriority !==
-          rightPriority
-        ) {
+          if (
+            leftPriority !==
+            rightPriority
+          ) {
+            return (
+              rightPriority -
+              leftPriority
+            )
+          }
+
+          const leftStart =
+            Date.parse(
+              left.scheduled_start,
+            )
+
+          const rightStart =
+            Date.parse(
+              right.scheduled_start,
+            )
+
           return (
-            rightPriority -
-            leftPriority
+            Math.abs(
+              leftStart -
+                nowMs,
+            ) -
+            Math.abs(
+              rightStart -
+                nowMs,
+            )
           )
-        }
+        },
+      )
 
-        const leftStart =
-          Date.parse(
-            left.scheduled_start,
-          )
-
-        const rightStart =
-          Date.parse(
-            right.scheduled_start,
-          )
-
-        return (
-          Math.abs(
-            leftStart - nowMs,
-          ) -
-          Math.abs(
-            rightStart - nowMs,
-          )
-        )
-      })
-
-  if (lifecycleOccurrences[0]) {
-    return lifecycleOccurrences[0]
+  if (
+    lifecycleOccurrences[0]
+  ) {
+    return (
+      lifecycleOccurrences[0]
+    )
   }
 
   const futureOccurrences =
     occurrences
-      .filter(occurrence => {
-        const start =
-          Date.parse(
-            occurrence.scheduled_start,
-          )
+      .filter(
+        occurrence => {
+          const start =
+            Date.parse(
+              occurrence.scheduled_start,
+            )
 
-        return (
-          Number.isFinite(start) &&
-          start >= nowMs
-        )
-      })
+          return (
+            Number.isFinite(
+              start,
+            ) &&
+            start >= nowMs
+          )
+        },
+      )
       .sort(
-        (left, right) =>
+        (
+          left,
+          right,
+        ) =>
           Date.parse(
             left.scheduled_start,
           ) -
@@ -198,13 +305,20 @@ function selectPreferredOccurrence(
           ),
       )
 
-  if (futureOccurrences[0]) {
-    return futureOccurrences[0]
+  if (
+    futureOccurrences[0]
+  ) {
+    return (
+      futureOccurrences[0]
+    )
   }
 
   return [...occurrences]
     .sort(
-      (left, right) =>
+      (
+        left,
+        right,
+      ) =>
         Date.parse(
           right.scheduled_start,
         ) -
@@ -225,12 +339,8 @@ function applyActiveOccurrenceToBooking(
   }
 
   /*
-   * Scheduled/recurring bookings can keep worker assignment
-   * on the active occurrence rather than the parent booking.
-   *
-   * If the parent has a worker, the occurrence must match it.
-   * If the parent has no worker, an assigned occurrence is still
-   * authoritative for that occurrence.
+   * Scheduled/recurring bookings can keep
+   * worker assignment on the active occurrence.
    */
   if (!occurrence.worker_id) {
     return booking
@@ -238,7 +348,8 @@ function applyActiveOccurrenceToBooking(
 
   if (
     booking.worker_id &&
-    occurrence.worker_id !== booking.worker_id
+    occurrence.worker_id !==
+      booking.worker_id
   ) {
     return booking
   }
@@ -253,20 +364,30 @@ function applyActiveOccurrenceToBooking(
 
   return {
     ...booking,
+
     status:
       occurrence.status as BookingStatus,
+
     scheduled_start:
       occurrence.scheduled_start,
+
     scheduled_end:
       occurrence.scheduled_end,
+
     journey_started_at:
       occurrence.journey_started_at,
+
     arrived_at:
       occurrence.arrived_at,
+
     started_at:
       occurrence.started_at,
+
     completed_at:
       occurrence.completed_at,
+
+    worker_id:
+      occurrence.worker_id,
   }
 }
 
@@ -279,13 +400,22 @@ export async function getCustomerBooking(
   } = await supabase
     .from('bookings')
     .select(
-      'id, status, booking_type:fulfillment_type, address_id, created_at, scheduled_start, scheduled_end, total_working_hours, total_amount, worker_id, started_at, completed_at, journey_started_at, arrived_at, service_variant:service_variants(service:services(name,image_url))',
+      BOOKING_SELECT,
     )
-    .eq('id', bookingId)
+    .eq(
+      'id',
+      bookingId,
+    )
     .single()
 
   if (error) {
     throw error
+  }
+
+  if (!data) {
+    throw new Error(
+      'Booking could not be loaded.',
+    )
   }
 
   const booking =
@@ -294,11 +424,11 @@ export async function getCustomerBooking(
     )
 
   if (
-  booking.booking_type !==
-  'recurring'
-) {
-  return booking
-}
+    booking.booking_type !==
+    'recurring'
+  ) {
+    return booking
+  }
 
   const occurrence =
     await getCustomerActiveBookingOccurrence(
@@ -320,36 +450,53 @@ export async function getCustomerBookings(): Promise<
   } = await supabase
     .from('bookings')
     .select(
-      'id, status, booking_type:fulfillment_type, created_at, scheduled_start, scheduled_end, total_working_hours, total_amount, worker_id, started_at, completed_at, journey_started_at, arrived_at, service_variant:service_variants(service:services(name,image_url))',
+      BOOKING_SELECT,
     )
-    .order('created_at', {
-      ascending: false,
-    })
+    .order(
+      'created_at',
+      {
+        ascending: false,
+      },
+    )
 
   if (error) {
     throw error
   }
 
-  const bookings = (
-    (data ?? []) as unknown as BookingRow[]
-  ).map(mapBooking)
+  const bookings =
+    (
+      (data ?? []) as unknown as BookingRow[]
+    ).map(
+      mapBooking,
+    )
 
-  const occurrenceBookingIds = bookings
-  .filter(
-    booking =>
-      booking.booking_type === 'recurring',
-  )
-  .map(booking => booking.id)
+  const occurrenceBookingIds =
+    bookings
+      .filter(
+        booking =>
+          booking.booking_type ===
+          'recurring',
+      )
+      .map(
+        booking =>
+          booking.id,
+      )
 
-  if (occurrenceBookingIds.length === 0) {
+  if (
+    occurrenceBookingIds.length ===
+    0
+  ) {
     return bookings
   }
 
   const {
     data: occurrenceRows,
-    error: occurrenceError,
+    error:
+      occurrenceError,
   } = await supabase
-    .from('booking_schedule_occurrences')
+    .from(
+      'booking_schedule_occurrences',
+    )
     .select(
       `
         id,
@@ -396,15 +543,20 @@ export async function getCustomerBookings(): Promise<
       CustomerBookingOccurrence[]
     >()
 
-  for (const row of (
-    occurrenceRows ?? []
-  ) as unknown as CustomerBookingOccurrence[]) {
+  for (
+    const row of (
+      occurrenceRows ??
+      []
+    ) as unknown as CustomerBookingOccurrence[]
+  ) {
     const existing =
       occurrencesByBooking.get(
         row.booking_id,
       ) ?? []
 
-    existing.push(row)
+    existing.push(
+      row,
+    )
 
     occurrencesByBooking.set(
       row.booking_id,
@@ -412,15 +564,16 @@ export async function getCustomerBookings(): Promise<
     )
   }
 
-  return bookings.map(booking =>
-    applyActiveOccurrenceToBooking(
-      booking,
-      selectPreferredOccurrence(
-        occurrencesByBooking.get(
-          booking.id,
-        ) ?? [],
+  return bookings.map(
+    booking =>
+      applyActiveOccurrenceToBooking(
+        booking,
+        selectPreferredOccurrence(
+          occurrencesByBooking.get(
+            booking.id,
+          ) ?? [],
+        ),
       ),
-    ),
   )
 }
 
@@ -431,7 +584,9 @@ export async function getCustomerBookingStatusHistory(
     data,
     error,
   } = await supabase
-    .from('booking_status_history')
+    .from(
+      'booking_status_history',
+    )
     .select(
       'id, booking_id, old_status, new_status, changed_by, created_at',
     )
@@ -439,9 +594,12 @@ export async function getCustomerBookingStatusHistory(
       'booking_id',
       bookingId,
     )
-    .order('created_at', {
-      ascending: true,
-    })
+    .order(
+      'created_at',
+      {
+        ascending: true,
+      },
+    )
 
   if (error) {
     throw error
@@ -504,14 +662,17 @@ export async function getCustomerActiveBookingOccurrence(
   }
 
   return selectPreferredOccurrence(
-    (data ?? []) as unknown as
-      CustomerBookingOccurrence[],
+    (
+      data ?? []
+    ) as unknown as CustomerBookingOccurrence[],
   )
 }
 
 export async function getCustomerBookingOccurrences(
   bookingId: string,
-): Promise<CustomerBookingOccurrence[]> {
+): Promise<
+  CustomerBookingOccurrence[]
+> {
   const {
     data,
     error,
@@ -567,7 +728,9 @@ export async function getLatestWorkerLocation(
     data,
     error,
   } = await supabase
-    .from('worker_locations')
+    .from(
+      'worker_locations',
+    )
     .select(
       'latitude, longitude, recorded_at',
     )
@@ -575,9 +738,12 @@ export async function getLatestWorkerLocation(
       'booking_id',
       bookingId,
     )
-    .order('recorded_at', {
-      ascending: false,
-    })
+    .order(
+      'recorded_at',
+      {
+        ascending: false,
+      },
+    )
     .limit(1)
     .maybeSingle()
 
@@ -585,7 +751,24 @@ export async function getLatestWorkerLocation(
     throw error
   }
 
-  return data as WorkerLocation | null
+  if (!data) {
+    return null
+  }
+
+  return {
+    latitude:
+      Number(
+        data.latitude,
+      ),
+
+    longitude:
+      Number(
+        data.longitude,
+      ),
+
+    recorded_at:
+      data.recorded_at,
+  }
 }
 
 export function getWorkerLocationFreshness(
@@ -601,17 +784,23 @@ export function getWorkerLocationFreshness(
       location.recorded_at,
     )
 
-  if (!Number.isFinite(recordedAt)) {
+  if (
+    !Number.isFinite(
+      recordedAt,
+    )
+  ) {
     return 'stale'
   }
 
   const ageMs =
     Math.max(
       0,
-      nowMs - recordedAt,
+      nowMs -
+        recordedAt,
     )
 
-  return ageMs <= 60_000
+  return ageMs <=
+    60_000
     ? 'fresh'
     : 'stale'
 }
@@ -629,14 +818,19 @@ export function getWorkerLocationAgeSeconds(
       location.recorded_at,
     )
 
-  if (!Number.isFinite(recordedAt)) {
+  if (
+    !Number.isFinite(
+      recordedAt,
+    )
+  ) {
     return null
   }
 
   return Math.max(
     0,
     Math.floor(
-      (nowMs - recordedAt) /
+      (nowMs -
+        recordedAt) /
         1000,
     ),
   )
@@ -644,7 +838,9 @@ export function getWorkerLocationAgeSeconds(
 
 async function resolveOccurrenceIdForOtp(
   bookingId: string,
-): Promise<string | undefined> {
+): Promise<
+  string | undefined
+> {
   const {
     data,
     error,
@@ -668,19 +864,23 @@ async function resolveOccurrenceIdForOtp(
       data?.fulfillment_type ??
         '',
     )
-if (
-  bookingType !==
-  'recurring'
-) {
-  return undefined
-}
+
+  if (
+    bookingType !==
+    'recurring'
+  ) {
+    return undefined
+  }
 
   const occurrence =
     await getCustomerActiveBookingOccurrence(
       bookingId,
     )
 
-  if (!occurrence || !occurrence.worker_id) {
+  if (
+    !occurrence ||
+    !occurrence.worker_id
+  ) {
     return undefined
   }
 
@@ -697,7 +897,9 @@ if (
 
 export async function requestBookingOtp(
   bookingId: string,
-  otpType: 'start' | 'end',
+  otpType:
+    | 'start'
+    | 'end',
   occurrenceId?: string,
 ) {
   let resolvedOccurrenceId =
