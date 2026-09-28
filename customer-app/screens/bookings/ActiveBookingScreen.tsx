@@ -571,7 +571,13 @@ export default function ActiveBookingScreen({
   }, [bookingId])
 
   useEffect(() => {
-    if (!booking?.started_at) {
+    const currentBooking =
+      booking
+
+    const startedAt =
+      currentBooking?.started_at
+
+    if (!startedAt) {
       setTimer(
         '00:00:00',
       )
@@ -579,64 +585,46 @@ export default function ActiveBookingScreen({
       return
     }
 
-    function updateTimer() {
+    const update = () => {
       setTimer(
         elapsedSince(
-          booking.started_at!,
-          booking.completed_at,
+          startedAt,
+          currentBooking.completed_at,
         ),
       )
-    }useEffect(() => {
-  const currentBooking =
-    booking
+    }
 
-  if (
-    !currentBooking?.started_at
-  ) {
-    setTimer(
-      '00:00:00',
-    )
+    update()
 
-    return
-  }
+    const interval =
+      setInterval(
+        update,
+        1000,
+      )
 
-  const update = () => {
-    setTimer(
-      elapsedSince(
-        currentBooking.started_at,
-        currentBooking.completed_at,
-      ),
-    )
-  }
-
-  update()
-
-  const interval =
-    setInterval(
-      update,
-      1000,
-    )
-
-  return () =>
-    clearInterval(
-      interval,
-    )
-}, [
-  booking?.started_at,
-  booking?.completed_at,
-])
+    return () =>
+      clearInterval(
+        interval,
+      )
+  }, [
+    booking?.started_at,
+    booking?.completed_at,
+  ])
 
   async function handleCancelBooking() {
-    if (!booking) {
+    const currentBooking =
+      booking
+
+    if (!currentBooking) {
       return
     }
 
     if (
-      booking.status ===
+      currentBooking.status ===
         'completed' ||
-      booking.status ===
+      currentBooking.status ===
         'cancelled' ||
-      booking.status ===
+      currentBooking.status ===
         'expired'
     ) {
       return
@@ -644,7 +632,7 @@ export default function ActiveBookingScreen({
 
     Alert.alert(
       'Cancel booking?',
-      booking.worker_id
+      currentBooking.worker_id
         ? 'This booking has an assigned worker and requires support/admin cancellation.'
         : 'The cancellation policy will be applied. If a refund is due, a refund request will be created for processing.',
       [
@@ -661,8 +649,8 @@ export default function ActiveBookingScreen({
                 setError(null)
 
                 await cancelCustomerBooking(
-                  booking.id,
-                  booking.booking_type,
+                  currentBooking.id,
+                  currentBooking.booking_type,
                 )
 
                 setOtp(null)
