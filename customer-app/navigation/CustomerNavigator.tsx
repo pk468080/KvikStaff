@@ -143,18 +143,26 @@ export default function CustomerNavigator({
               }}
             >
               {() => (
-                <HomeScreen
-                  location={location}
-                  onLocationChange={
-                    onLocationChange
-                  }
-                  onServicePress={service => {
-                    stackNavigation.navigate(
-                      'Booking',
-                      { service },
-                    )
-                  }}
-                />
+               <HomeScreen
+  location={location}
+  onLocationChange={
+    onLocationChange
+  }
+  onServicePress={service => {
+    stackNavigation.navigate(
+      'Booking',
+      { service },
+    )
+  }}
+  onBookingPress={bookingId => {
+    stackNavigation.navigate(
+      'ActiveBooking',
+      {
+        bookingId,
+      },
+    )
+  }}
+/>
               )}
             </Tab.Screen>
 

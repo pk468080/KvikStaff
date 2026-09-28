@@ -13,7 +13,12 @@ import {
   View,
 } from 'react-native'
 import * as Location from 'expo-location'
+import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
 
+import {
+  getCustomerBookings,
+  type CustomerBooking,
+} from '../../services/booking/bookingTracking.service'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import {
   getCustomerFavouriteServiceIds,
@@ -48,12 +53,16 @@ type HomeScreenProps = {
   onServicePress?: (
     service: HomeService,
   ) => void
+  onBookingPress?: (
+  bookingId: string,
+) => void
 }
 
 export default function HomeScreen({
   location,
   onLocationChange,
   onServicePress,
+  onBookingPress,
 }: HomeScreenProps) {
   const [services, setServices] = useState<HomeService[]>([])
   const [address, setAddress] = useState('Current location')
@@ -76,7 +85,15 @@ export default function HomeScreen({
   const [contentLoading, setContentLoading] = useState(true)
   const [contentError, setContentError] = useState('')
   const automaticLocationRequestStarted = useRef(false)
+const [
+  activeBookings,
+  setActiveBookings,
+] = useState<CustomerBooking[]>([])
 
+const [
+  activeBookingsLoading,
+  setActiveBookingsLoading,
+] = useState(true)
   const serviceCategories = Array.from(
     new Map(
       services
@@ -170,6 +187,57 @@ export default function HomeScreen({
     setServices(nextServices)
     return nextServices
   }
+  async function loadActiveBookings() {
+  try {
+    setActiveBookingsLoading(
+      true,
+    )
+
+    const bookings =
+      await getCustomerBookings()
+
+    const active = bookings.filter(
+      booking =>
+        booking.status ===
+          'searching_worker' ||
+        booking.status ===
+          'assigned' ||
+        booking.status ===
+          'on_the_way' ||
+        booking.status ===
+          'arrived' ||
+        booking.status ===
+          'in_progress',
+    )
+
+    active.sort((a, b) => {
+      const aTime = a.scheduled_start
+        ? Date.parse(
+            a.scheduled_start,
+          )
+        : Number.MAX_SAFE_INTEGER
+
+      const bTime = b.scheduled_start
+        ? Date.parse(
+            b.scheduled_start,
+          )
+        : Number.MAX_SAFE_INTEGER
+
+      return aTime - bTime
+    })
+
+    setActiveBookings(active)
+  } catch (error) {
+    console.error(
+      'Active booking home card error:',
+      error,
+    )
+  } finally {
+    setActiveBookingsLoading(
+      false,
+    )
+  }
+}
 
   async function loadHomeContent(availableServices: HomeService[]) {
     setContentLoading(true)
@@ -515,6 +583,17 @@ export default function HomeScreen({
     location?.longitude,
     location?.address,
   ])
+  useEffect(() => {
+  void loadActiveBookings()
+
+  const interval =
+    setInterval(() => {
+      void loadActiveBookings()
+    }, 15000)
+
+  return () =>
+    clearInterval(interval)
+}, [])
 
   if (
     loading ||
@@ -727,6 +806,29 @@ export default function HomeScreen({
             </View>
           </View>
         ) : null}
+        {!activeBookingsLoading &&
+  activeBookings.length > 0 && (
+    <ActiveBookingHomeCard
+      booking={
+        activeBookings[0]
+      }
+      activeBookingCount={
+        activeBookings.length
+      }
+      onPress={() => {
+        const booking =
+          activeBookings[0]
+
+        if (!booking) {
+          return
+        }
+
+        onBookingPress?.(
+          booking.id,
+        )
+      }}
+    />
+  )}
 
         {featuredServices.length > 0 &&
         normalizedServiceQuery.length === 0 &&
