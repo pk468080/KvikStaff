@@ -36,6 +36,12 @@ import {
 } from '../../services/bookings/workerBookingOccurrences.service'
 
 import {
+  getWorkerBooking,
+} from '../../services/bookings/workerBookings.service'
+
+import BookingChatPanel from '../../components/bookings/BookingChatPanel'
+
+import {
   performWorkerOccurrenceAction,
 } from '../../services/bookings/workerBookingOccurrences.service'
 
@@ -224,6 +230,13 @@ export default function BookingOccurrenceScreen({
     )
 
   const [
+    customerId,
+    setCustomerId,
+  ] = useState<string | null>(
+    null,
+  )
+
+  const [
     loading,
     setLoading,
   ] = useState(true)
@@ -285,6 +298,25 @@ export default function BookingOccurrenceScreen({
           setOccurrence(
             nextOccurrence,
           )
+
+          /*
+           * Chat is optional here. A failure to load
+           * the parent booking must not block normal
+           * occurrence actions for the worker.
+           */
+          try {
+            const parentBooking =
+              await getWorkerBooking(
+                nextOccurrence.bookingId,
+              )
+
+            setCustomerId(
+              parentBooking?.customerId ??
+                null,
+            )
+          } catch {
+            setCustomerId(null)
+          }
         } catch (cause) {
           setError(
             cause instanceof Error
@@ -692,6 +724,16 @@ export default function BookingOccurrenceScreen({
             )}
           </Text>
         </View>
+
+        {occurrence.status ===
+          'on_the_way' &&
+        customerId ? (
+          <BookingChatPanel
+            bookingId={occurrence.bookingId}
+            customerId={customerId}
+            occurrenceId={occurrence.id}
+          />
+        ) : null}
 
         {primaryAction ? (
           <View

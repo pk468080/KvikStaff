@@ -29,6 +29,7 @@ export type CustomerBooking = {
   completed_at: string | null
   journey_started_at: string | null
   arrived_at: string | null
+  activeOccurrenceId?: string | null
   created_at?: string | null
 }
 
@@ -152,6 +153,8 @@ function mapBooking(
 
     arrived_at:
       row.arrived_at,
+
+    activeOccurrenceId: null,
 
     created_at:
       row.created_at ??
@@ -388,6 +391,9 @@ function applyActiveOccurrenceToBooking(
 
     worker_id:
       occurrence.worker_id,
+
+    activeOccurrenceId:
+      occurrence.id,
   }
 }
 

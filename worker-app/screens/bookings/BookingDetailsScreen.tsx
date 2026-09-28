@@ -15,6 +15,8 @@ import {
 } from 'react-native'
 
 import WorkerBookingOtpPanel from '../../components/bookings/WorkerBookingOtpPanel'
+
+import BookingChatPanel from '../../components/bookings/BookingChatPanel'
 import {
   AppButton,
 } from '../../components/ui/AppButton'
@@ -639,6 +641,16 @@ const nextOccurrences =
               }}
             />
           </View>
+        ) : null}
+
+        {booking.bookingType !==
+          'recurring' &&
+        booking.status ===
+          'on_the_way' ? (
+          <BookingChatPanel
+            bookingId={booking.id}
+            customerId={booking.customerId}
+          />
         ) : null}
 
         {canCancel ? (

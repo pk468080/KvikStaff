@@ -368,6 +368,30 @@ export type Database = {
         created_at: string
       }>
 
+      conversations: TableDefinition<{
+        id: string
+        booking_id: string
+        customer_id: string
+        worker_id: string
+        occurrence_id: string | null
+        status: 'active' | 'closed'
+        created_at: string
+        updated_at: string
+        last_message_at: string | null
+      }>
+
+      messages: TableDefinition<{
+        id: string
+        conversation_id: string
+        sender_id: string
+        sender_role: 'customer' | 'worker' | 'system'
+        message_type: 'text' | 'system'
+        body: string
+        created_at: string
+        edited_at: string | null
+        deleted_at: string | null
+      }>
+
       push_tokens: TableDefinition<{
         id: string
         user_id: string

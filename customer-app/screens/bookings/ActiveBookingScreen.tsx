@@ -17,6 +17,8 @@ import {
 
 import LiveWorkerMap from '../../components/booking/LiveWorkerMap'
 
+import BookingChatPanel from '../../components/booking/BookingChatPanel'
+
 import {
   ScreenContainer,
 } from '../../components/layout/ScreenContainer'
@@ -1194,6 +1196,19 @@ const [
               </Text>
             ) : null}
           </View>
+        ) : null}
+
+        {booking.status ===
+          'on_the_way' &&
+        booking.worker_id ? (
+          <BookingChatPanel
+            bookingId={booking.id}
+            workerId={booking.worker_id}
+            occurrenceId={
+              booking.activeOccurrenceId ??
+              null
+            }
+          />
         ) : null}
 
         <View
