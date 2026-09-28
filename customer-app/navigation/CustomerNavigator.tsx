@@ -215,6 +215,7 @@ export default function CustomerNavigator({
           </Tab.Navigator>
     </>
         )}
+        
       </Stack.Screen>
 
       <Stack.Screen name="Booking">

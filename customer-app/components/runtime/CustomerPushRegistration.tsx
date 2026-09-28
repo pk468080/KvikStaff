@@ -68,79 +68,6 @@ async function configureAndroidNotifications(): Promise<void> {
   )
 }
 
-async function registerPushToken(): Promise<void> {
-  await configureAndroidNotifications()
-
-  const {
-    status: existingStatus,
-  } =
-    await Notifications.getPermissionsAsync()
-
-  let finalStatus =
-    existingStatus
-
-  if (
-    existingStatus !==
-    'granted'
-  ) {
-    const {
-      status,
-    } =
-      await Notifications.requestPermissionsAsync()
-
-    finalStatus =
-      status
-  }
-
-  if (
-    finalStatus !==
-    'granted'
-  ) {
-    throw new Error(
-      'Notification permission was not granted.',
-    )
-  }
-
-  const projectId =
-    getExpoProjectId()
-
-  if (!projectId) {
-    throw new Error(
-      'Expo/EAS projectId is not configured.',
-    )
-  }
-
-  const tokenResponse =
-    await Notifications.getExpoPushTokenAsync({
-      projectId,
-    })
-
-  const token =
-    tokenResponse.data?.trim()
-
-  if (!token) {
-    throw new Error(
-      'Expo did not return a push token.',
-    )
-  }
-
-  const platform =
-    Platform.OS === 'ios'
-      ? 'ios'
-      : Platform.OS === 'android'
-        ? 'android'
-        : 'web'
-
-  await registerCustomerPushToken(
-    token,
-    platform,
-  )
-
-  console.log(
-    'Customer push token registered successfully.',
-  )
-}
-
 export default function CustomerPushRegistration({
   onOpenBooking,
 }: {
@@ -153,7 +80,127 @@ export default function CustomerPushRegistration({
       null,
     )
 
+  const latestOnOpenBookingRef =
+    useRef(onOpenBooking)
+
+  const registeredTokenRef =
+    useRef<string | null>(
+      null,
+    )
+
+  const registrationPromiseRef =
+    useRef<Promise<void> | null>(
+      null,
+    )
+
   useEffect(() => {
+    latestOnOpenBookingRef.current =
+      onOpenBooking
+  }, [
+    onOpenBooking,
+  ])
+
+  useEffect(() => {
+    const registerPushToken = async (): Promise<void> => {
+      if (
+        registrationPromiseRef.current
+      ) {
+        return registrationPromiseRef.current
+      }
+
+      const registrationPromise =
+        (async () => {
+          await configureAndroidNotifications()
+
+          const {
+            status: existingStatus,
+          } =
+            await Notifications.getPermissionsAsync()
+
+          let finalStatus =
+            existingStatus
+
+          if (
+            existingStatus !==
+            'granted'
+          ) {
+            const {
+              status,
+            } =
+              await Notifications.requestPermissionsAsync()
+
+            finalStatus =
+              status
+          }
+
+          if (
+            finalStatus !==
+            'granted'
+          ) {
+            throw new Error(
+              'Notification permission was not granted.',
+            )
+          }
+
+          const projectId =
+            getExpoProjectId()
+
+          if (!projectId) {
+            throw new Error(
+              'Expo/EAS projectId is not configured.',
+            )
+          }
+
+          const tokenResponse =
+            await Notifications.getExpoPushTokenAsync({
+              projectId,
+            })
+
+          const token =
+            tokenResponse.data?.trim()
+
+          if (!token) {
+            throw new Error(
+              'Expo did not return a push token.',
+            )
+          }
+
+          if (
+            registeredTokenRef.current ===
+            token
+          ) {
+            return
+          }
+
+          const platform =
+            Platform.OS === 'ios'
+              ? 'ios'
+              : Platform.OS === 'android'
+                ? 'android'
+                : 'web'
+
+          await registerCustomerPushToken(
+            token,
+            platform,
+          )
+
+          registeredTokenRef.current =
+            token
+
+          console.log(
+            'Customer push token registered successfully.',
+          )
+        })().finally(() => {
+          registrationPromiseRef.current =
+            null
+        })
+
+      registrationPromiseRef.current =
+        registrationPromise
+
+      return registrationPromise
+    }
+
     void registerPushToken().catch(
       error => {
         console.error(
@@ -210,7 +257,7 @@ export default function CustomerPushRegistration({
           : null
 
       if (bookingId) {
-        onOpenBooking(
+        latestOnOpenBookingRef.current(
           bookingId,
         )
       }
@@ -240,9 +287,7 @@ export default function CustomerPushRegistration({
       pushTokenSubscription.remove()
       responseSubscription.remove()
     }
-  }, [
-    onOpenBooking,
-  ])
+  }, [])
 
   return null
 }
