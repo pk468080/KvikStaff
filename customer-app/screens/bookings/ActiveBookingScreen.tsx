@@ -401,17 +401,78 @@ const [
         nextHistory,
       )
 
-if (nextBooking.worker_id) {
+if (
+  nextBooking.worker_id
+) {
   const nextLocation =
-    await getLatestWorkerLocation(bookingId)
+    await getLatestWorkerLocation(
+      bookingId,
+    )
 
-  setLocation(nextLocation)
+  setLocation(
+    nextLocation,
+  )
 } else {
-  setLocation(null)
+  setLocation(
+    null,
+  )
 }
-      setLocationNow(
-        Date.now(),
-      )
+
+
+/*
+ * Load the customer's service location
+ * from the address attached to this booking.
+ */
+const {
+  data: addressRow,
+  error: addressError,
+} = await supabase
+  .from('addresses')
+  .select(
+    'latitude, longitude',
+  )
+  .eq(
+    'id',
+    nextBooking.address_id,
+  )
+  .maybeSingle()
+
+if (addressError) {
+  throw addressError
+}
+
+if (
+  addressRow &&
+  Number.isFinite(
+    Number(
+      addressRow.latitude,
+    ),
+  ) &&
+  Number.isFinite(
+    Number(
+      addressRow.longitude,
+    ),
+  )
+) {
+  setCustomerLocation({
+    latitude:
+      Number(
+        addressRow.latitude,
+      ),
+    longitude:
+      Number(
+        addressRow.longitude,
+      ),
+  })
+} else {
+  setCustomerLocation(
+    null,
+  )
+}
+
+setLocationNow(
+  Date.now(),
+)
 
       setError(null)
     } catch (
@@ -851,11 +912,13 @@ if (nextBooking.worker_id) {
     )
 
   const showLiveMap =
-    tracking &&
-    locationFreshness ===
-      'fresh' &&
-    location !==
-      null
+  tracking &&
+  locationFreshness ===
+    'fresh' &&
+  location !==
+    null &&
+  customerLocation !==
+    null
 
   return (
     <ScreenContainer>
@@ -1059,9 +1122,7 @@ if (nextBooking.worker_id) {
                 )}
               </Text>
             </View>
-
-            {showLiveMap &&
-customerLocation ? (
+{showLiveMap ? (
   <LiveWorkerMap
     workerLocation={{
       latitude:
@@ -1070,7 +1131,7 @@ customerLocation ? (
         location.longitude,
     }}
     customerLocation={
-      customerLocation
+      customerLocation!
     }
   />
 ) : (
@@ -1080,26 +1141,34 @@ customerLocation ? (
                 }
               >
                 <Text
-                  style={
-                    styles.mapUnavailableTitle
-                  }
-                >
-                  {locationFreshness ===
-                  'stale'
-                    ? 'Live location unavailable'
-                    : 'Waiting for worker location'}
-                </Text>
+  style={
+    styles.mapUnavailableTitle
+  }
+>
+  {!location
+    ? 'Waiting for worker location'
+    : locationFreshness ===
+        'stale'
+      ? 'Live location unavailable'
+      : !customerLocation
+        ? 'Service location unavailable'
+        : 'Preparing live map'}
+</Text>
 
-                <Text
-                  style={
-                    styles.mapUnavailableMessage
-                  }
-                >
-                  {locationFreshness ===
-                  'stale'
-                    ? 'The last location update is too old to display as the worker’s current position.'
-                    : 'The worker has not sent a location update yet.'}
-                </Text>
+<Text
+  style={
+    styles.mapUnavailableMessage
+  }
+>
+  {!location
+    ? 'The worker has not sent a location update yet.'
+    : locationFreshness ===
+        'stale'
+      ? 'The last worker location update is too old to display as live.'
+      : !customerLocation
+        ? 'The booking address coordinates could not be loaded.'
+        : 'Loading the worker and customer locations.'}
+</Text>
               </View>
             )}
 

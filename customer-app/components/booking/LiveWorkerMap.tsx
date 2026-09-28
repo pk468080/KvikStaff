@@ -13,7 +13,6 @@ import {
 import MapView, {
   Marker,
   Polyline,
-  PROVIDER_GOOGLE,
 } from 'react-native-maps'
 
 export type LiveWorkerMapLocation = {
@@ -189,8 +188,7 @@ export default function LiveWorkerMap({
       }
     >
       <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
+  ref={mapRef}
         style={styles.map}
         initialRegion={{
           latitude:
