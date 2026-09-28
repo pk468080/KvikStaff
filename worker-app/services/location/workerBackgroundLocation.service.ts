@@ -97,13 +97,13 @@ TaskManager.defineTask(
       )
 
       /*
-       * Available workers need their presence
-       * heartbeat refreshed so the backend does
-       * not expire their online state.
+       * Available workers use the presence
+       * heartbeat.
        *
-       * Busy workers cannot use the presence
-       * heartbeat RPC, so their generic location
-       * is updated instead.
+       * Workers handling an active booking
+       * fall through to updateWorkerLocation()
+       * so the booking-scoped location rows
+       * are written.
        */
       try {
         const result =
@@ -120,10 +120,10 @@ TaskManager.defineTask(
         }
       } catch {
         /*
-         * The worker may be busy, or the presence
-         * heartbeat may no longer be eligible.
-         * Fall through to the generic location
-         * update.
+         * Busy/tracking workers may not be
+         * eligible for the presence heartbeat.
+         * Continue with the generic location
+         * update so active bookings receive it.
          */
       }
 
@@ -134,8 +134,8 @@ TaskManager.defineTask(
       )
     } catch {
       /*
-       * Background tasks should not throw for a
-       * transient location/auth/network failure.
+       * Background tasks should not throw for
+       * transient location/auth/network errors.
        */
     }
   },
@@ -151,7 +151,10 @@ export async function isWorkerBackgroundLocationTrackingStarted(): Promise<boole
   )
 }
 
-export async function startWorkerBackgroundLocationTracking(): Promise<void> {
+export async function startWorkerBackgroundLocationTracking(
+  intervalSeconds: number = WORKER.location
+    .defaultUpdateIntervalSeconds,
+): Promise<void> {
   await ensureWorkerBackgroundLocationPermission()
 
   const servicesEnabled =
@@ -172,6 +175,29 @@ export async function startWorkerBackgroundLocationTracking(): Promise<void> {
     )
   }
 
+  if (
+    !Number.isFinite(
+      intervalSeconds,
+    ) ||
+    intervalSeconds <= 0
+  ) {
+    throw new Error(
+      'Worker background location interval must be greater than zero.',
+    )
+  }
+
+  const safeIntervalSeconds =
+    Math.max(
+      1,
+      Math.trunc(
+        intervalSeconds,
+      ),
+    )
+
+  const intervalMs =
+    safeIntervalSeconds *
+    1000
+
   const alreadyStarted =
     await isWorkerBackgroundLocationTrackingStarted()
 
@@ -185,14 +211,23 @@ export async function startWorkerBackgroundLocationTracking(): Promise<void> {
       accuracy:
         Location.Accuracy.Balanced,
 
+      /*
+       * Active booking:
+       * 10 seconds from WORKER.location.
+       *
+       * Normal/available:
+       * 30 seconds from WORKER.location.
+       */
+      timeInterval:
+        intervalMs,
+
+      /*
+       * The worker may also publish when they
+       * have moved the configured minimum distance.
+       */
       distanceInterval:
         WORKER.location
           .minimumDistanceMeters,
-
-      timeInterval:
-        WORKER.location
-          .defaultUpdateIntervalSeconds *
-        1000,
 
       pausesUpdatesAutomatically:
         false,
@@ -203,14 +238,15 @@ export async function startWorkerBackgroundLocationTracking(): Promise<void> {
       activityType:
         Location.ActivityType.OtherNavigation,
 
+      /*
+       * Avoid aggressive batching. The interval
+       * above remains the requested update cadence.
+       */
       deferredUpdatesDistance:
-        WORKER.location
-          .minimumDistanceMeters,
+        0,
 
       deferredUpdatesInterval:
-        WORKER.location
-          .defaultUpdateIntervalSeconds *
-        1000,
+        intervalMs,
     },
   )
 }
@@ -228,8 +264,13 @@ export async function stopWorkerBackgroundLocationTracking(): Promise<void> {
   )
 }
 
-export async function restartWorkerBackgroundLocationTracking(): Promise<void> {
+export async function restartWorkerBackgroundLocationTracking(
+  intervalSeconds: number = WORKER.location
+    .defaultUpdateIntervalSeconds,
+): Promise<void> {
   await stopWorkerBackgroundLocationTracking()
 
-  await startWorkerBackgroundLocationTracking()
+  await startWorkerBackgroundLocationTracking(
+    intervalSeconds,
+  )
 }
