@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import LiveWorkerMap from '../../components/booking/LiveWorkerMap'
 import {
   ActivityIndicator,
   Alert,
@@ -9,11 +10,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import MapView, {
-  Marker,
-  PROVIDER_GOOGLE,
-  type Region,
-} from 'react-native-maps'
+
 
 import {
   ScreenContainer,
@@ -240,16 +237,7 @@ function getTrackingLabel(
   }
 }
 
-function toMapRegion(
-  location: WorkerLocation,
-): Region {
-  return {
-    latitude: location.latitude,
-    longitude: location.longitude,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  }
-}
+
 
 export default function ActiveBookingScreen({
   bookingId,
@@ -279,19 +267,9 @@ export default function ActiveBookingScreen({
   const [timer, setTimer] =
     useState('00:00:00')
 
-  const [mapRegion, setMapRegion] =
-    useState<Region | null>(null)
 
-  const locationFreshness =
-    useMemo(
-      () =>
-        getWorkerLocationFreshness(
-          location,
-          locationNow,
-        ),
-      [location, locationNow],
-    )
 
+  
   const locationAgeSeconds =
     useMemo(
       () =>
@@ -319,27 +297,15 @@ export default function ActiveBookingScreen({
       setStatusHistory(nextHistory)
 
       if (nextBooking.worker_id) {
-        const nextLocation =
-          await getLatestWorkerLocation(
-            bookingId,
-          )
+  const nextLocation =
+    await getLatestWorkerLocation(
+      bookingId,
+    )
 
-        setLocation(nextLocation)
-
-        if (
-          nextLocation &&
-          getWorkerLocationFreshness(
-            nextLocation,
-          ) === 'fresh'
-        ) {
-          setMapRegion(
-            toMapRegion(nextLocation),
-          )
-        }
-      } else {
-        setLocation(null)
-        setMapRegion(null)
-      }
+  setLocation(nextLocation)
+} else {
+  setLocation(null)
+}
 
       setLocationNow(Date.now())
       setError(null)
@@ -382,44 +348,21 @@ export default function ActiveBookingScreen({
       supabase
         .channel(channelName)
         .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'bookings',
-            filter: `id=eq.${bookingId}`,
-          },
-          () => void refresh(),
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'booking_status_history',
-            filter: `booking_id=eq.${bookingId}`,
-          },
-          payload => {
-            const nextHistory =
-              payload.new as BookingStatusHistoryItem
+  'postgres_changes',
+  {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'worker_locations',
+    filter: `booking_id=eq.${bookingId}`,
+  },
+  payload => {
+    const nextLocation =
+      payload.new as WorkerLocation
 
-            setStatusHistory(current => {
-              if (
-                current.some(
-                  item => item.id === nextHistory.id,
-                )
-              ) {
-                return current
-              }
-
-              return [...current, nextHistory].sort(
-                (left, right) =>
-                  Date.parse(left.created_at) -
-                  Date.parse(right.created_at),
-              )
-            })
-          },
-        )
+    setLocation(nextLocation)
+    setLocationNow(Date.now())
+  },
+)
         .on(
           'postgres_changes',
           {
@@ -739,36 +682,16 @@ export default function ActiveBookingScreen({
             </View>
 
             {showLiveMap ? (
-              <MapView
-                provider={PROVIDER_GOOGLE}
-                style={styles.map}
-                region={
-                  mapRegion ??
-                  toMapRegion(
-                    location,
-                  )
-                }
-                showsUserLocation={false}
-                showsMyLocationButton={false}
-                showsCompass
-                toolbarEnabled={false}
-                scrollEnabled
-                zoomEnabled
-                rotateEnabled={false}
-                pitchEnabled={false}
-              >
-                <Marker
-                  coordinate={{
-                    latitude:
-                      location.latitude,
-                    longitude:
-                      location.longitude,
-                  }}
-                  title="Worker"
-                  description="Current worker location"
-                />
-              </MapView>
-            ) : (
+  <LiveWorkerMap
+    location={{
+      latitude:
+        location.latitude,
+
+      longitude:
+        location.longitude,
+    }}
+  />
+) : (
               <View
                 style={
                   styles.mapUnavailable
