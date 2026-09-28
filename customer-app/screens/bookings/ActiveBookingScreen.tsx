@@ -381,7 +381,7 @@ const [
       ],
     )
 
-  async function refresh() {
+    async function refresh() {
     try {
       const nextBooking =
         await getCustomerBooking(
@@ -401,78 +401,87 @@ const [
         nextHistory,
       )
 
-if (
-  nextBooking.worker_id
-) {
-  const nextLocation =
-    await getLatestWorkerLocation(
-      bookingId,
-    )
+      if (nextBooking.worker_id) {
+        const nextLocation =
+          await getLatestWorkerLocation(
+            bookingId,
+          )
 
-  setLocation(
-    nextLocation,
-  )
-} else {
-  setLocation(
-    null,
-  )
-}
+        setLocation(
+          nextLocation,
+        )
+      } else {
+        setLocation(
+          null,
+        )
+      }
 
+      /*
+       * The map needs the booking's saved
+       * service address as its second coordinate.
+       */
+      const {
+        data: address,
+        error: addressError,
+      } = await supabase
+        .from('addresses')
+        .select(
+          'latitude, longitude',
+        )
+        .eq(
+          'id',
+          nextBooking.address_id,
+        )
+        .maybeSingle()
 
-/*
- * Load the customer's service location
- * from the address attached to this booking.
- */
-const {
-  data: addressRow,
-  error: addressError,
-} = await supabase
-  .from('addresses')
-  .select(
-    'latitude, longitude',
-  )
-  .eq(
-    'id',
-    nextBooking.address_id,
-  )
-  .maybeSingle()
+      if (
+        addressError ||
+        !address
+      ) {
+        console.warn(
+          'Unable to load booking service location:',
+          addressError,
+        )
 
-if (addressError) {
-  throw addressError
-}
+        setCustomerLocation(
+          null,
+        )
+      } else {
+        const latitude =
+          Number(
+            address.latitude,
+          )
 
-if (
-  addressRow &&
-  Number.isFinite(
-    Number(
-      addressRow.latitude,
-    ),
-  ) &&
-  Number.isFinite(
-    Number(
-      addressRow.longitude,
-    ),
-  )
-) {
-  setCustomerLocation({
-    latitude:
-      Number(
-        addressRow.latitude,
-      ),
-    longitude:
-      Number(
-        addressRow.longitude,
-      ),
-  })
-} else {
-  setCustomerLocation(
-    null,
-  )
-}
+        const longitude =
+          Number(
+            address.longitude,
+          )
 
-setLocationNow(
-  Date.now(),
-)
+        const validLocation =
+          Number.isFinite(
+            latitude,
+          ) &&
+          Number.isFinite(
+            longitude,
+          ) &&
+          latitude >= -90 &&
+          latitude <= 90 &&
+          longitude >= -180 &&
+          longitude <= 180
+
+        setCustomerLocation(
+          validLocation
+            ? {
+                latitude,
+                longitude,
+              }
+            : null,
+        )
+      }
+
+      setLocationNow(
+        Date.now(),
+      )
 
       setError(null)
     } catch (
