@@ -13,12 +13,14 @@ import {
   ScreenContainer,
 } from '../../components/layout/ScreenContainer'
 
-import ActiveBookingScreen from './ActiveBookingScreen'
-import RecurringBookingScreen from './RecurringBookingScreen'
-
 import {
   getCustomerBooking,
+  getCustomerBookingOccurrences,
 } from '../../services/booking/bookingTracking.service'
+
+import ActiveBookingScreen from './ActiveBookingScreen'
+import CompletedBookingScreen from './CompletedBookingScreen'
+import RecurringBookingScreen from './RecurringBookingScreen'
 
 type CustomerBookingRouterProps = {
   bookingId: string
@@ -29,30 +31,20 @@ type CustomerBookingRouterProps = {
   ) => void
 }
 
+type BookingView =
+  | 'active'
+  | 'recurring'
+  | 'completed'
+
 export default function CustomerBookingRouter({
   bookingId,
   onReschedule,
 }: CustomerBookingRouterProps) {
-  const [
-    bookingType,
-    setBookingType,
-  ] =
-    useState<string | null>(
-      null,
-    )
+  const [bookingView, setBookingView] =
+    useState<BookingView | null>(null)
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true)
-
-  const [
-    error,
-    setError,
-  ] =
-    useState<string | null>(
-      null,
-    )
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -61,23 +53,36 @@ export default function CustomerBookingRouter({
       try {
         setLoading(true)
         setError(null)
+        setBookingView(null)
 
-        const booking =
-          await getCustomerBooking(
-            bookingId,
-          )
+        const booking = await getCustomerBooking(bookingId)
 
         if (!mounted) {
           return
         }
 
-        setBookingType(
-          booking.booking_type ??
-            null,
-        )
-      } catch (
-        cause
-      ) {
+        if (booking.status === 'completed') {
+          setBookingView('completed')
+          return
+        }
+
+        if (booking.booking_type === 'recurring') {
+          const occurrences = await getCustomerBookingOccurrences(bookingId)
+
+          if (!mounted) {
+            return
+          }
+
+          const seriesCompleted =
+            occurrences.length > 0 &&
+            occurrences.every(occurrence => occurrence.status === 'completed')
+
+          setBookingView(seriesCompleted ? 'completed' : 'recurring')
+          return
+        }
+
+        setBookingView('active')
+      } catch (cause) {
         if (!mounted) {
           return
         }
@@ -99,9 +104,7 @@ export default function CustomerBookingRouter({
     return () => {
       mounted = false
     }
-  }, [
-    bookingId,
-  ])
+  }, [bookingId])
 
   if (loading) {
     return (
@@ -110,12 +113,10 @@ export default function CustomerBookingRouter({
           style={{
             flex: 1,
             alignItems: 'center',
-            justifyContent:
-              'center',
+            justifyContent: 'center',
           }}
         >
           <ActivityIndicator />
-
           <Text
             style={{
               marginTop: 12,
@@ -129,15 +130,14 @@ export default function CustomerBookingRouter({
     )
   }
 
-  if (error) {
+  if (error || !bookingView) {
     return (
       <ScreenContainer>
         <View
           style={{
             flex: 1,
             alignItems: 'center',
-            justifyContent:
-              'center',
+            justifyContent: 'center',
             padding: 24,
           }}
         >
@@ -148,34 +148,25 @@ export default function CustomerBookingRouter({
               lineHeight: 20,
             }}
           >
-            {error}
+            {error ?? 'Unable to determine the booking state.'}
           </Text>
         </View>
       </ScreenContainer>
     )
   }
 
-  if (
-    bookingType ===
-    'recurring'
-  ) {
-    return (
-      <RecurringBookingScreen
-        bookingId={
-          bookingId
-        }
-      />
-    )
+  if (bookingView === 'completed') {
+    return <CompletedBookingScreen bookingId={bookingId} />
+  }
+
+  if (bookingView === 'recurring') {
+    return <RecurringBookingScreen bookingId={bookingId} />
   }
 
   return (
     <ActiveBookingScreen
-      bookingId={
-        bookingId
-      }
-      onReschedule={
-        onReschedule
-      }
+      bookingId={bookingId}
+      onReschedule={onReschedule}
     />
   )
 }

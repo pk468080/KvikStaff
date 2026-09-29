@@ -10,6 +10,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -19,8 +20,8 @@ import {
 } from 'react-native'
 
 import {
-  AppButton,
-} from '../../components/ui/AppButton'
+  Ionicons,
+} from '@expo/vector-icons'
 
 import {
   ScreenContainer,
@@ -59,7 +60,6 @@ const CATEGORIES: WorkerSupportCategory[] = [
 ]
 
 const MAX_SUBJECT_LENGTH = 120
-
 const MAX_DESCRIPTION_LENGTH = 1000
 
 function getStatusLabel(
@@ -115,6 +115,87 @@ function getStatusVariant(
   }
 }
 
+function getCategoryIcon(
+  category: WorkerSupportCategory,
+): keyof typeof Ionicons.glyphMap {
+  switch (category) {
+    case 'booking':
+      return 'briefcase-outline'
+
+    case 'payment':
+      return 'card-outline'
+
+    case 'worker':
+      return 'person-outline'
+
+    case 'refund':
+      return 'cash-outline'
+
+    case 'technical':
+      return 'construct-outline'
+
+    default:
+      return 'help-circle-outline'
+  }
+}
+
+function getCategoryIconColors(
+  category: WorkerSupportCategory,
+): {
+  backgroundColor: string
+  color: string
+} {
+  switch (category) {
+    case 'booking':
+      return {
+        backgroundColor:
+          UI.colors.infoBackground,
+        color:
+          UI.colors.secondary,
+      }
+
+    case 'payment':
+      return {
+        backgroundColor:
+          UI.colors.successBackground,
+        color:
+          UI.colors.success,
+      }
+
+    case 'worker':
+      return {
+        backgroundColor:
+          UI.colors.background,
+        color:
+          UI.colors.primary,
+      }
+
+    case 'refund':
+      return {
+        backgroundColor:
+          UI.colors.warningBackground,
+        color:
+          UI.colors.warning,
+      }
+
+    case 'technical':
+      return {
+        backgroundColor:
+          UI.colors.errorBackground,
+        color:
+          UI.colors.error,
+      }
+
+    default:
+      return {
+        backgroundColor:
+          UI.colors.background,
+        color:
+          UI.colors.textSecondary,
+      }
+  }
+}
+
 function formatDateTime(
   value: string,
 ): string {
@@ -137,6 +218,96 @@ function formatDateTime(
       hour: '2-digit',
       minute: '2-digit',
     },
+  )
+}
+
+function SupportCategoryButton({
+  category,
+  selected,
+  disabled,
+  onPress,
+}: {
+  category: WorkerSupportCategory
+  selected: boolean
+  disabled: boolean
+  onPress: () => void
+}) {
+  const icon = getCategoryIcon(
+    category,
+  )
+
+  const iconStyle =
+    getCategoryIconColors(
+      category,
+    )
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={
+        getWorkerSupportCategoryLabel(
+          category,
+        )
+      }
+      style={({ pressed }) => [
+        styles.categoryCard,
+        selected &&
+          styles.categoryCardSelected,
+        pressed &&
+          !disabled &&
+          styles.categoryCardPressed,
+        disabled &&
+          styles.categoryCardDisabled,
+      ]}
+    >
+      <View
+        style={[
+          styles.categoryIcon,
+          {
+            backgroundColor:
+              selected
+                ? UI.colors.secondary
+                : iconStyle.backgroundColor,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={19}
+          color={
+            selected
+              ? UI.colors.surface
+              : iconStyle.color
+          }
+        />
+      </View>
+
+      <Text
+        style={[
+          styles.categoryTitle,
+          selected &&
+            styles.categoryTitleSelected,
+        ]}
+      >
+        {getWorkerSupportCategoryLabel(
+          category,
+        )}
+      </Text>
+
+      {selected ? (
+        <View
+          style={styles.selectedMark}
+        >
+          <Ionicons
+            name="checkmark"
+            size={12}
+            color={UI.colors.secondary}
+          />
+        </View>
+      ) : null}
+    </Pressable>
   )
 }
 
@@ -393,6 +564,15 @@ export default function SupportScreen({
     }
   }
 
+  function showUnavailable(
+    title: string,
+  ) {
+    Alert.alert(
+      title,
+      'This setting is not configured in the current worker app build.',
+    )
+  }
+
   if (
     loading &&
     tickets.length === 0
@@ -404,8 +584,22 @@ export default function SupportScreen({
             styles.loadingContainer
           }
         >
+          <View
+            style={
+              styles.loadingIcon
+            }
+          >
+            <Ionicons
+              name="headset-outline"
+              size={27}
+              color={
+                UI.colors.secondary
+              }
+            />
+          </View>
+
           <ActivityIndicator
-            size="large"
+            size="small"
             color={
               UI.colors.secondary
             }
@@ -474,6 +668,9 @@ export default function SupportScreen({
                   'refresh',
                 )
               }}
+              tintColor={
+                UI.colors.secondary
+              }
             />
           }
           showsVerticalScrollIndicator={
@@ -481,55 +678,192 @@ export default function SupportScreen({
           }
         >
           <View
-            style={styles.header}
+            style={styles.topBar}
           >
+            {onBack ? (
+              <Pressable
+                onPress={onBack}
+                disabled={submitting}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                style={({ pressed }) => [
+                  styles.headerButton,
+                  pressed &&
+                    styles.headerButtonPressed,
+                  submitting &&
+                    styles.headerButtonDisabled,
+                ]}
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={21}
+                  color={
+                    UI.colors.primary
+                  }
+                />
+              </Pressable>
+            ) : (
+              <View
+                style={
+                  styles.headerButtonPlaceholder
+                }
+              />
+            )}
+
             <View
               style={
-                styles.headerCopy
+                styles.headerCenter
               }
             >
               <Text
                 style={
-                  styles.eyebrow
+                  styles.headerEyebrow
                 }
               >
-                WORKER SUPPORT
+                TEMPSTAFF
               </Text>
 
               <Text
-                style={styles.title}
+                style={
+                  styles.headerTitle
+                }
               >
                 Support
               </Text>
-
-              <Text
-                style={
-                  styles.subtitle
-                }
-              >
-                Create a support ticket for booking,
-                payment, account, refund or technical issues.
-              </Text>
             </View>
 
-            {onBack ? (
+            <Pressable
+              onPress={() => {
+                void loadTickets(
+                  'refresh',
+                )
+              }}
+              disabled={
+                refreshing ||
+                submitting
+              }
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh support tickets"
+              style={({ pressed }) => [
+                styles.headerButton,
+                pressed &&
+                  styles.headerButtonPressed,
+                (refreshing ||
+                  submitting) &&
+                  styles.headerButtonDisabled,
+              ]}
+            >
+              <Ionicons
+                name="refresh"
+                size={20}
+                color={
+                  UI.colors.primary
+                }
+              />
+            </Pressable>
+          </View>
+
+          <View
+            style={
+              styles.heroCard
+            }
+          >
+            <View
+              style={
+                styles.heroIcon
+              }
+            >
+              <Ionicons
+                name="headset-outline"
+                size={27}
+                color={
+                  UI.colors.surface
+                }
+              />
+            </View>
+
+            <Text
+              style={
+                styles.heroEyebrow
+              }
+            >
+              WORKER SUPPORT
+            </Text>
+
+            <Text
+              style={
+                styles.heroTitle
+              }
+            >
+              Need help with a job?
+            </Text>
+
+            <Text
+              style={
+                styles.heroText
+              }
+            >
+              Create a support ticket for booking,
+              payment, account, refund or technical issues.
+            </Text>
+
+            <View
+              style={
+                styles.heroMetrics
+              }
+            >
               <View
                 style={
-                  styles.headerButton
+                  styles.heroMetric
                 }
               >
-                <AppButton
-                  title="Back"
-                  variant="secondary"
-                  onPress={
-                    onBack
+                <Text
+                  style={
+                    styles.heroMetricValue
                   }
-                  disabled={
-                    submitting
+                >
+                  {openTicketCount}
+                </Text>
+
+                <Text
+                  style={
+                    styles.heroMetricLabel
                   }
-                />
+                >
+                  Open
+                </Text>
               </View>
-            ) : null}
+
+              <View
+                style={
+                  styles.heroMetricDivider
+                }
+              />
+
+              <View
+                style={
+                  styles.heroMetric
+                }
+              >
+                <Text
+                  style={
+                    styles.heroMetricValue
+                  }
+                >
+                  {tickets.length}
+                </Text>
+
+                <Text
+                  style={
+                    styles.heroMetricLabel
+                  }
+                >
+                  Total
+                </Text>
+              </View>
+            </View>
           </View>
 
           {error ? (
@@ -538,133 +872,95 @@ export default function SupportScreen({
                 styles.warningBox
               }
             >
-              <Text
+              <View
                 style={
-                  styles.warningTitle
+                  styles.warningIcon
                 }
               >
-                Support update notice
-              </Text>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={18}
+                  color={
+                    UI.colors.warning
+                  }
+                />
+              </View>
 
-              <Text
+              <View
                 style={
-                  styles.warningText
+                  styles.warningCopy
                 }
               >
-                {error}
-              </Text>
+                <Text
+                  style={
+                    styles.warningTitle
+                  }
+                >
+                  Support update notice
+                </Text>
+
+                <Text
+                  style={
+                    styles.warningText
+                  }
+                >
+                  {error}
+                </Text>
+              </View>
             </View>
           ) : null}
 
           <View
-            style={
-              styles.summaryCard
-            }
-          >
-            <View
-              style={
-                styles.summaryCopy
-              }
-            >
-              <Text
-                style={
-                  styles.summaryTitle
-                }
-              >
-                Your support tickets
-              </Text>
-
-              <Text
-                style={
-                  styles.summaryText
-                }
-              >
-                {openTicketCount === 0
-                  ? 'No open support tickets.'
-                  : `${openTicketCount} open support ticket${
-                      openTicketCount === 1
-                        ? ''
-                        : 's'
-                    }`}
-              </Text>
-            </View>
-
-            <StatusBadge
-              label={`${tickets.length} total`}
-              variant="default"
-            />
-          </View>
-
-          <View
             style={styles.card}
           >
-            <Text
-              style={styles.sectionTitle}
-            >
-              Create a support ticket
-            </Text>
-
-            <Text
+            <View
               style={
-                styles.sectionDescription
+                styles.sectionHeader
               }
             >
-              Provide enough detail for the support team
-              to identify and resolve the issue.
-            </Text>
-
-            <View
-              style={styles.field}
-            >
-              <Text
-                style={styles.label}
+              <View
+                style={
+                  styles.sectionHeaderCopy
+                }
               >
-                Category
-              </Text>
+                <Text
+                  style={
+                    styles.sectionEyebrow
+                  }
+                >
+                  NEW REQUEST
+                </Text>
+
+                <Text
+                  style={
+                    styles.sectionTitle
+                  }
+                >
+                  Create a support ticket
+                </Text>
+
+                <Text
+                  style={
+                    styles.sectionDescription
+                  }
+                >
+                  Select the issue type and give the
+                  support team the details they need.
+                </Text>
+              </View>
 
               <View
                 style={
-                  styles.categoryGrid
+                  styles.sectionHeaderIcon
                 }
               >
-                {CATEGORIES.map(
-                  item => {
-                    const selected =
-                      category ===
-                      item
-
-                    return (
-                      <View
-                        key={item}
-                        style={
-                          styles.categoryButton
-                        }
-                      >
-                        <AppButton
-                          title={getWorkerSupportCategoryLabel(
-                            item,
-                          )}
-                          variant={
-                            selected
-                              ? 'primary'
-                              : 'secondary'
-                          }
-                          onPress={() => {
-                            setCategory(
-                              item,
-                            )
-                            setLocalError(
-                              '',
-                            )
-                          }}
-                          disabled={
-                            submitting
-                          }
-                        />
-                      </View>
-                    )
-                  },
-                )}
+                <Ionicons
+                  name="create-outline"
+                  size={19}
+                  color={
+                    UI.colors.secondary
+                  }
+                />
               </View>
             </View>
 
@@ -674,8 +970,65 @@ export default function SupportScreen({
               <Text
                 style={styles.label}
               >
-                Subject
+                Issue category
               </Text>
+
+              <View
+                style={
+                  styles.categoryGrid
+                }
+              >
+                {CATEGORIES.map(
+                  item => (
+                    <SupportCategoryButton
+                      key={item}
+                      category={item}
+                      selected={
+                        category ===
+                        item
+                      }
+                      disabled={
+                        submitting
+                      }
+                      onPress={() => {
+                        setCategory(
+                          item,
+                        )
+                        setLocalError(
+                          '',
+                        )
+                      }}
+                    />
+                  ),
+                )}
+              </View>
+            </View>
+
+            <View
+              style={styles.field}
+            >
+              <View
+                style={
+                  styles.labelRow
+                }
+              >
+                <Text
+                  style={styles.label}
+                >
+                  Subject
+                </Text>
+
+                <Text
+                  style={
+                    styles.counterText
+                  }
+                >
+                  {subject.length}/
+                  {
+                    MAX_SUBJECT_LENGTH
+                  }
+                </Text>
+              </View>
 
               <TextInput
                 value={subject}
@@ -688,8 +1041,7 @@ export default function SupportScreen({
                 }}
                 placeholder="Describe the issue briefly"
                 placeholderTextColor={
-                  UI.colors
-                    .textMuted
+                  UI.colors.textMuted
                 }
                 editable={
                   !submitting
@@ -701,17 +1053,6 @@ export default function SupportScreen({
                   styles.input
                 }
               />
-
-              <Text
-                style={
-                  styles.helperText
-                }
-              >
-                {subject.length}/
-                {
-                  MAX_SUBJECT_LENGTH
-                }
-              </Text>
             </View>
 
             <View
@@ -723,57 +1064,87 @@ export default function SupportScreen({
                 Booking reference
               </Text>
 
-              <TextInput
-                value={
-                  bookingId
-                }
-                onChangeText={value => {
-                  setBookingId(
-                    value,
-                  )
-                  setLocalError('')
-                  setError('')
-                }}
-                placeholder={
-                  category ===
-                  'booking'
-                    ? 'Required for booking issues'
-                    : 'Optional'
-                }
-                placeholderTextColor={
-                  UI.colors
-                    .textMuted
-                }
-                autoCapitalize="none"
-                autoCorrect={
-                  false
-                }
-                editable={
-                  !submitting
-                }
+              <View
                 style={
-                  styles.input
+                  styles.inputWithIcon
                 }
-              />
+              >
+                <Ionicons
+                  name="pricetag-outline"
+                  size={18}
+                  color={
+                    UI.colors.textMuted
+                  }
+                />
+
+                <TextInput
+                  value={
+                    bookingId
+                  }
+                  onChangeText={value => {
+                    setBookingId(
+                      value,
+                    )
+                    setLocalError('')
+                    setError('')
+                  }}
+                  placeholder={
+                    category ===
+                    'booking'
+                      ? 'Required for booking issues'
+                      : 'Optional booking ID'
+                  }
+                  placeholderTextColor={
+                    UI.colors.textMuted
+                  }
+                  autoCapitalize="none"
+                  autoCorrect={
+                    false
+                  }
+                  editable={
+                    !submitting
+                  }
+                  style={
+                    styles.inputIconText
+                  }
+                />
+              </View>
 
               <Text
                 style={
                   styles.helperText
                 }
               >
-                Provide the booking ID when the issue is
-                related to a specific booking.
+                Add the booking ID when this issue is
+                connected to a specific job.
               </Text>
             </View>
 
             <View
               style={styles.field}
             >
-              <Text
-                style={styles.label}
+              <View
+                style={
+                  styles.labelRow
+                }
               >
-                Description
-              </Text>
+                <Text
+                  style={styles.label}
+                >
+                  Description
+                </Text>
+
+                <Text
+                  style={
+                    styles.counterText
+                  }
+                >
+                  {description.length}/
+                  {
+                    MAX_DESCRIPTION_LENGTH
+                  }
+                </Text>
+              </View>
 
               <TextInput
                 value={
@@ -788,8 +1159,7 @@ export default function SupportScreen({
                 }}
                 placeholder="Explain what happened and what you need help with"
                 placeholderTextColor={
-                  UI.colors
-                    .textMuted
+                  UI.colors.textMuted
                 }
                 multiline
                 textAlignVertical="top"
@@ -804,17 +1174,6 @@ export default function SupportScreen({
                   styles.multiline,
                 ]}
               />
-
-              <Text
-                style={
-                  styles.helperText
-                }
-              >
-                {description.length}/
-                {
-                  MAX_DESCRIPTION_LENGTH
-                }
-              </Text>
             </View>
 
             {localError ? (
@@ -823,6 +1182,14 @@ export default function SupportScreen({
                   styles.formError
                 }
               >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={18}
+                  color={
+                    UI.colors.error
+                  }
+                />
+
                 <Text
                   style={
                     styles.formErrorText
@@ -833,37 +1200,129 @@ export default function SupportScreen({
               </View>
             ) : null}
 
-            <View
-              style={
-                styles.submitButton
+            <Pressable
+              onPress={() => {
+                void handleSubmit()
+              }}
+              disabled={
+                submitting
               }
+              accessibilityRole="button"
+              accessibilityLabel="Create support ticket"
+              style={({ pressed }) => [
+                styles.submitButton,
+                pressed &&
+                  !submitting &&
+                  styles.submitButtonPressed,
+                submitting &&
+                  styles.submitButtonDisabled,
+              ]}
             >
-              <AppButton
-                title={
-                  submitting
+              <View
+                style={
+                  styles.submitIcon
+                }
+              >
+                <Ionicons
+                  name={
+                    submitting
+                      ? 'hourglass-outline'
+                      : 'paper-plane-outline'
+                  }
+                  size={20}
+                  color={
+                    UI.colors.surface
+                  }
+                />
+              </View>
+
+              <View
+                style={
+                  styles.submitCopy
+                }
+              >
+                <Text
+                  style={
+                    styles.submitTitle
+                  }
+                >
+                  {submitting
                     ? 'Creating ticket...'
-                    : 'Create support ticket'
-                }
-                onPress={() => {
-                  void handleSubmit()
-                }}
-                disabled={
-                  submitting
-                }
-              />
-            </View>
+                    : 'Create support ticket'}
+                </Text>
+
+                <Text
+                  style={
+                    styles.submitSubtitle
+                  }
+                >
+                  Send this request to TempStaff support
+                </Text>
+              </View>
+
+              {!submitting ? (
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  color={
+                    UI.colors.surface
+                  }
+                />
+              ) : (
+                <ActivityIndicator
+                  size="small"
+                  color={
+                    UI.colors.surface
+                  }
+                />
+              )}
+            </Pressable>
           </View>
 
           <View
             style={styles.card}
           >
-            <Text
+            <View
               style={
-                styles.sectionTitle
+                styles.sectionHeader
               }
             >
-              Ticket history
-            </Text>
+              <View
+                style={
+                  styles.sectionHeaderCopy
+                }
+              >
+                <Text
+                  style={
+                    styles.sectionEyebrow
+                  }
+                >
+                  REQUEST HISTORY
+                </Text>
+
+                <Text
+                  style={
+                    styles.sectionTitle
+                  }
+                >
+                  Your support tickets
+                </Text>
+              </View>
+
+              <View
+                style={
+                  styles.countBadge
+                }
+              >
+                <Text
+                  style={
+                    styles.countBadgeText
+                  }
+                >
+                  {tickets.length}
+                </Text>
+              </View>
+            </View>
 
             {tickets.length ===
             0 ? (
@@ -872,6 +1331,20 @@ export default function SupportScreen({
                   styles.emptyWrapper
                 }
               >
+                <View
+                  style={
+                    styles.emptyIcon
+                  }
+                >
+                  <Ionicons
+                    name="chatbubbles-outline"
+                    size={28}
+                    color={
+                      UI.colors.secondary
+                    }
+                  />
+                </View>
+
                 <EmptyState
                   title="No support tickets"
                   message="Your support requests will appear here after you create the first ticket."
@@ -884,143 +1357,255 @@ export default function SupportScreen({
                 }
               >
                 {tickets.map(
-                  ticket => (
-                    <View
-                      key={
-                        ticket.id
-                      }
-                      style={
-                        styles.ticket
-                      }
-                    >
+                  ticket => {
+                    const categoryStyle =
+                      getCategoryIconColors(
+                        ticket.category,
+                      )
+
+                    return (
                       <View
+                        key={
+                          ticket.id
+                        }
                         style={
-                          styles.ticketHeader
+                          styles.ticket
                         }
                       >
                         <View
                           style={
-                            styles.ticketCopy
+                            styles.ticketTop
                           }
                         >
-                          <Text
-                            style={
-                              styles.ticketSubject
-                            }
+                          <View
+                            style={[
+                              styles.ticketIcon,
+                              {
+                                backgroundColor:
+                                  categoryStyle.backgroundColor,
+                              },
+                            ]}
                           >
-                            {
-                              ticket.subject
-                            }
-                          </Text>
+                            <Ionicons
+                              name={getCategoryIcon(
+                                ticket.category,
+                              )}
+                              size={19}
+                              color={
+                                categoryStyle.color
+                              }
+                            />
+                          </View>
 
-                          <Text
+                          <View
                             style={
-                              styles.ticketMeta
+                              styles.ticketCopy
                             }
                           >
-                            {
-                              ticket.id
-                            }
-                          </Text>
+                            <Text
+                              style={
+                                styles.ticketSubject
+                              }
+                              numberOfLines={
+                                2
+                              }
+                            >
+                              {
+                                ticket.subject
+                              }
+                            </Text>
+
+                            <Text
+                              style={
+                                styles.ticketMeta
+                              }
+                            >
+                              {
+                                getWorkerSupportCategoryLabel(
+                                  ticket.category,
+                                )
+                              }{' '}
+                              ·{' '}
+                              {
+                                formatDateTime(
+                                  ticket.createdAt,
+                                )
+                              }
+                            </Text>
+                          </View>
+
+                          <StatusBadge
+                            label={getStatusLabel(
+                              ticket.status,
+                            )}
+                            variant={getStatusVariant(
+                              ticket.status,
+                            )}
+                          />
                         </View>
 
-                        <StatusBadge
-                          label={getStatusLabel(
-                            ticket.status,
-                          )}
-                          variant={getStatusVariant(
-                            ticket.status,
-                          )}
-                        />
-                      </View>
-
-                      <Text
-                        style={
-                          styles.ticketCategory
-                        }
-                      >
-                        {getWorkerSupportCategoryLabel(
-                          ticket.category,
-                        )}
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.ticketDescription
-                        }
-                      >
-                        {
-                          ticket.description
-                        }
-                      </Text>
-
-                      {ticket.bookingId ? (
                         <Text
                           style={
-                            styles.ticketBooking
+                            styles.ticketDescription
+                          }
+                          numberOfLines={
+                            4
                           }
                         >
-                          Booking:{' '}
                           {
-                            ticket.bookingId
+                            ticket.description
                           }
                         </Text>
-                      ) : null}
 
-                      {ticket.adminNotes ? (
+                        {ticket.bookingId ? (
+                          <View
+                            style={
+                              styles.ticketBooking
+                            }
+                          >
+                            <Ionicons
+                              name="briefcase-outline"
+                              size={15}
+                              color={
+                                UI.colors.secondary
+                              }
+                            />
+
+                            <Text
+                              style={
+                                styles.ticketBookingText
+                              }
+                              numberOfLines={
+                                1
+                              }
+                            >
+                              Booking{' '}
+                              {
+                                ticket.bookingId
+                              }
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        {ticket.adminNotes ? (
+                          <View
+                            style={
+                              styles.adminNotes
+                            }
+                          >
+                            <View
+                              style={
+                                styles.adminNotesHeader
+                              }
+                            >
+                              <Ionicons
+                                name="chatbox-ellipses-outline"
+                                size={16}
+                                color={
+                                  UI.colors.info
+                                }
+                              />
+
+                              <Text
+                                style={
+                                  styles.adminNotesTitle
+                                }
+                              >
+                                Support response
+                              </Text>
+                            </View>
+
+                            <Text
+                              style={
+                                styles.adminNotesText
+                              }
+                            >
+                              {
+                                ticket.adminNotes
+                              }
+                            </Text>
+                          </View>
+                        ) : null}
+
                         <View
                           style={
-                            styles.adminNotes
+                            styles.ticketFooter
                           }
                         >
                           <Text
                             style={
-                              styles.adminNotesTitle
+                              styles.ticketDate
                             }
                           >
-                            Support response
+                            Created{' '}
+                            {formatDateTime(
+                              ticket.createdAt,
+                            )}
                           </Text>
 
-                          <Text
-                            style={
-                              styles.adminNotesText
-                            }
-                          >
-                            {
-                              ticket.adminNotes
-                            }
-                          </Text>
+                          {ticket.resolvedAt ? (
+                            <Text
+                              style={
+                                styles.ticketDate
+                              }
+                            >
+                              Resolved{' '}
+                              {formatDateTime(
+                                ticket.resolvedAt,
+                              )}
+                            </Text>
+                          ) : null}
                         </View>
-                      ) : null}
-
-                      <Text
-                        style={
-                          styles.ticketDate
-                        }
-                      >
-                        Created:{' '}
-                        {formatDateTime(
-                          ticket.createdAt,
-                        )}
-                      </Text>
-
-                      {ticket.resolvedAt ? (
-                        <Text
-                          style={
-                            styles.ticketDate
-                          }
-                        >
-                          Resolved:{' '}
-                          {formatDateTime(
-                            ticket.resolvedAt,
-                          )}
-                        </Text>
-                      ) : null}
-                    </View>
-                  ),
+                      </View>
+                    )
+                  },
                 )}
               </View>
             )}
+          </View>
+
+          <View
+            style={
+              styles.quickHelpCard
+            }
+          >
+            <View
+              style={
+                styles.quickHelpIcon
+              }
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={21}
+                color={
+                  UI.colors.secondary
+                }
+              />
+            </View>
+
+            <View
+              style={
+                styles.quickHelpCopy
+              }
+            >
+              <Text
+                style={
+                  styles.quickHelpTitle
+                }
+              >
+                Before creating a ticket
+              </Text>
+
+              <Text
+                style={
+                  styles.quickHelpText
+                }
+              >
+                Include the booking reference and explain
+                exactly what happened. This helps the team
+                review the request faster.
+              </Text>
+            </View>
           </View>
 
           <Text
@@ -1044,72 +1629,195 @@ const styles = StyleSheet.create({
 
   content: {
     paddingHorizontal:
-      UI.spacing.xl,
+      UI.spacing.lg,
     paddingTop:
-      UI.spacing.xl,
+      UI.spacing.md,
     paddingBottom:
       UI.spacing.xxxl,
   },
 
-  header: {
-    flexDirection:
-      'row',
-    alignItems:
-      'flex-start',
-    marginBottom:
-      UI.spacing.lg,
+  topBar: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent:
+      'space-between',
   },
 
-  headerCopy: {
-    flex: 1,
-    paddingRight:
-      UI.spacing.md,
+  headerCenter: {
+    alignItems: 'center',
   },
 
-  headerButton: {
-    width: 76,
-  },
-
-  eyebrow: {
-    fontSize: 10,
+  headerEyebrow: {
+    fontSize: 9,
     fontWeight: '800',
-    letterSpacing: 1.1,
+    letterSpacing: 1,
     color:
       UI.colors.secondary,
   },
 
-  title: {
-    marginTop:
-      UI.spacing.sm,
+  headerTitle: {
+    marginTop: 2,
     fontSize:
-      UI.typography.title,
-    lineHeight: 30,
-    fontWeight: '800',
+      UI.typography.bodyLarge,
+    fontWeight: '900',
     color:
       UI.colors.text,
   },
 
-  subtitle: {
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  headerButtonPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+
+  headerButtonPressed: {
+    opacity: 0.7,
+  },
+
+  headerButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  heroCard: {
+    marginTop:
+      UI.spacing.lg,
+    padding:
+      UI.spacing.xl,
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.primary,
+  },
+
+  heroIcon: {
+    width: 52,
+    height: 52,
+    borderRadius:
+      UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.secondary,
+  },
+
+  heroEyebrow: {
+    marginTop:
+      UI.spacing.lg,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.05,
+    color:
+      UI.colors.surface,
+    opacity: 0.72,
+  },
+
+  heroTitle: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.title,
+    lineHeight: 30,
+    fontWeight: '900',
+    color:
+      UI.colors.surface,
+  },
+
+  heroText: {
     marginTop:
       UI.spacing.sm,
     fontSize:
-      UI.typography.body,
-    lineHeight: 21,
+      UI.typography.small,
+    lineHeight: 18,
     color:
-      UI.colors.textSecondary,
+      UI.colors.surface,
+    opacity: 0.76,
+  },
+
+  heroMetrics: {
+    marginTop:
+      UI.spacing.lg,
+    paddingTop:
+      UI.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor:
+      'rgba(255,255,255,0.14)',
+  },
+
+  heroMetric: {
+    flex: 1,
+  },
+
+  heroMetricValue: {
+    fontSize:
+      UI.typography.subtitle,
+    fontWeight: '900',
+    color:
+      UI.colors.surface,
+  },
+
+  heroMetricLabel: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.caption,
+    color:
+      UI.colors.surface,
+    opacity: 0.68,
+  },
+
+  heroMetricDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor:
+      'rgba(255,255,255,0.14)',
   },
 
   warningBox: {
-    marginBottom:
+    marginTop:
       UI.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     padding:
       UI.spacing.md,
     borderRadius:
-      UI.radius.md,
+      UI.radius.lg,
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
     borderColor: '#FDE68A',
+  },
+
+  warningIcon: {
+    width: 32,
+    height: 32,
+    borderRadius:
+      UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  warningCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
   },
 
   warningTitle: {
@@ -1130,54 +1838,13 @@ const styles = StyleSheet.create({
       UI.colors.textSecondary,
   },
 
-  summaryCard: {
-    flexDirection:
-      'row',
-    alignItems:
-      'center',
-    justifyContent:
-      'space-between',
-    padding:
-      UI.spacing.lg,
-    borderRadius:
-      UI.radius.lg,
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
-
-  summaryCopy: {
-    flex: 1,
-    paddingRight:
-      UI.spacing.md,
-  },
-
-  summaryTitle: {
-    fontSize:
-      UI.typography.bodyLarge,
-    fontWeight: '800',
-    color:
-      UI.colors.text,
-  },
-
-  summaryText: {
-    marginTop:
-      UI.spacing.xs,
-    fontSize:
-      UI.typography.small,
-    color:
-      UI.colors.textSecondary,
-  },
-
   card: {
     marginTop:
       UI.spacing.lg,
     padding:
       UI.spacing.lg,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.surface,
     borderWidth: 1,
@@ -1185,9 +1852,33 @@ const styles = StyleSheet.create({
       UI.colors.border,
   },
 
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent:
+      'space-between',
+  },
+
+  sectionHeaderCopy: {
+    flex: 1,
+    paddingRight:
+      UI.spacing.md,
+  },
+
+  sectionEyebrow: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color:
+      UI.colors.secondary,
+  },
+
   sectionTitle: {
+    marginTop:
+      UI.spacing.xs,
     fontSize:
       UI.typography.subtitle,
+    lineHeight: 23,
     fontWeight: '800',
     color:
       UI.colors.text,
@@ -1203,9 +1894,48 @@ const styles = StyleSheet.create({
       UI.colors.textSecondary,
   },
 
+  sectionHeaderIcon: {
+    width: 38,
+    height: 38,
+    borderRadius:
+      UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  countBadge: {
+    minWidth: 38,
+    height: 38,
+    paddingHorizontal:
+      UI.spacing.sm,
+    borderRadius:
+      UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  countBadgeText: {
+    fontSize:
+      UI.typography.small,
+    fontWeight: '800',
+    color:
+      UI.colors.secondary,
+  },
+
   field: {
     marginTop:
       UI.spacing.lg,
+  },
+
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent:
+      'space-between',
   },
 
   label: {
@@ -1213,26 +1943,101 @@ const styles = StyleSheet.create({
       UI.spacing.sm,
     fontSize:
       UI.typography.small,
-    fontWeight: '700',
+    fontWeight: '800',
     color:
       UI.colors.text,
   },
 
+  counterText: {
+    marginBottom:
+      UI.spacing.sm,
+    fontSize:
+      UI.typography.caption,
+    color:
+      UI.colors.textMuted,
+  },
+
   categoryGrid: {
-    flexDirection:
-      'row',
-    flexWrap:
-      'wrap',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginLeft:
+      -UI.spacing.sm,
+    marginTop:
       -UI.spacing.sm,
   },
 
-  categoryButton: {
+  categoryCard: {
     width: '50%',
-    marginBottom:
+    minHeight: 86,
+    marginTop:
       UI.spacing.sm,
-    paddingLeft:
+    padding:
+      UI.spacing.md,
+    marginLeft:
       UI.spacing.sm,
+    borderRadius:
+      UI.radius.lg,
+    backgroundColor:
+      UI.colors.background,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  categoryCardSelected: {
+    backgroundColor:
+      '#F4FFFD',
+    borderColor:
+      UI.colors.secondary,
+  },
+
+  categoryCardPressed: {
+    opacity: 0.72,
+  },
+
+  categoryCardDisabled: {
+    opacity: 0.5,
+  },
+
+  categoryIcon: {
+    width: 36,
+    height: 36,
+    borderRadius:
+      UI.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  categoryTitle: {
+    marginTop:
+      UI.spacing.sm,
+    paddingRight:
+      UI.spacing.lg,
+    fontSize:
+      UI.typography.small,
+    lineHeight: 17,
+    fontWeight: '800',
+    color:
+      UI.colors.text,
+  },
+
+  categoryTitleSelected: {
+    color:
+      UI.colors.secondary,
+  },
+
+  selectedMark: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 20,
+    height: 20,
+    borderRadius:
+      UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.surface,
   },
 
   input: {
@@ -1255,8 +2060,38 @@ const styles = StyleSheet.create({
       UI.colors.text,
   },
 
+  inputWithIcon: {
+    minHeight:
+      UI.sizes.inputHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal:
+      UI.spacing.md,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.inputBorder,
+    borderRadius:
+      UI.radius.md,
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  inputIconText: {
+    flex: 1,
+    minHeight:
+      UI.sizes.inputHeight,
+    marginLeft:
+      UI.spacing.sm,
+    fontSize:
+      UI.typography.bodyLarge,
+    color:
+      UI.colors.text,
+  },
+
   multiline: {
-    minHeight: 120,
+    minHeight: 132,
+    paddingTop:
+      UI.spacing.md,
   },
 
   helperText: {
@@ -1272,6 +2107,8 @@ const styles = StyleSheet.create({
   formError: {
     marginTop:
       UI.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     padding:
       UI.spacing.md,
     borderRadius:
@@ -1283,6 +2120,9 @@ const styles = StyleSheet.create({
   },
 
   formErrorText: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
     fontSize:
       UI.typography.small,
     lineHeight: 18,
@@ -1291,13 +2131,69 @@ const styles = StyleSheet.create({
   },
 
   submitButton: {
+    minHeight: 68,
     marginTop:
       UI.spacing.lg,
+    paddingHorizontal:
+      UI.spacing.md,
+    paddingVertical:
+      UI.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.secondary,
+  },
+
+  submitButtonPressed: {
+    opacity: 0.78,
+  },
+
+  submitButtonDisabled: {
+    opacity: 0.55,
+  },
+
+  submitIcon: {
+    width: 42,
+    height: 42,
+    borderRadius:
+      UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      'rgba(255,255,255,0.14)',
+  },
+
+  submitCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+    paddingRight:
+      UI.spacing.sm,
+  },
+
+  submitTitle: {
+    fontSize:
+      UI.typography.body,
+    fontWeight: '900',
+    color:
+      UI.colors.surface,
+  },
+
+  submitSubtitle: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.caption,
+    color:
+      UI.colors.surface,
+    opacity: 0.72,
   },
 
   ticketList: {
     marginTop:
-      UI.spacing.md,
+      UI.spacing.sm,
   },
 
   ticket: {
@@ -1310,17 +2206,26 @@ const styles = StyleSheet.create({
       UI.colors.border,
   },
 
-  ticketHeader: {
-    flexDirection:
-      'row',
-    alignItems:
-      'flex-start',
+  ticketTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+
+  ticketIcon: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   ticketCopy: {
     flex: 1,
-    paddingRight:
+    marginLeft:
       UI.spacing.md,
+    paddingRight:
+      UI.spacing.sm,
   },
 
   ticketSubject: {
@@ -1337,23 +2242,14 @@ const styles = StyleSheet.create({
       UI.spacing.xs,
     fontSize:
       UI.typography.caption,
+    lineHeight: 16,
     color:
       UI.colors.textMuted,
   },
 
-  ticketCategory: {
-    marginTop:
-      UI.spacing.sm,
-    fontSize:
-      UI.typography.small,
-    fontWeight: '700',
-    color:
-      UI.colors.secondary,
-  },
-
   ticketDescription: {
     marginTop:
-      UI.spacing.sm,
+      UI.spacing.md,
     fontSize:
       UI.typography.body,
     lineHeight: 20,
@@ -1363,12 +2259,28 @@ const styles = StyleSheet.create({
 
   ticketBooking: {
     marginTop:
+      UI.spacing.md,
+    minHeight: 34,
+    paddingHorizontal:
       UI.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius:
+      UI.radius.pill,
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  ticketBookingText: {
+    maxWidth: 240,
+    marginLeft:
+      UI.spacing.xs,
     fontSize:
-      UI.typography.small,
-    fontWeight: '600',
+      UI.typography.caption,
+    fontWeight: '700',
     color:
-      UI.colors.text,
+      UI.colors.secondary,
   },
 
   adminNotes: {
@@ -1377,12 +2289,19 @@ const styles = StyleSheet.create({
     padding:
       UI.spacing.md,
     borderRadius:
-      UI.radius.md,
+      UI.radius.lg,
     backgroundColor:
       UI.colors.infoBackground,
   },
 
+  adminNotesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
   adminNotesTitle: {
+    marginLeft:
+      UI.spacing.xs,
     fontSize:
       UI.typography.small,
     fontWeight: '800',
@@ -1400,45 +2319,130 @@ const styles = StyleSheet.create({
       UI.colors.textSecondary,
   },
 
-  ticketDate: {
-    marginTop:
-      UI.spacing.sm,
-    fontSize:
-      UI.typography.caption,
-    color:
-      UI.colors.textMuted,
-  },
-
-  emptyWrapper: {
-    minHeight: 260,
+  ticketFooter: {
     marginTop:
       UI.spacing.md,
   },
 
-  footerText: {
+  ticketDate: {
     marginTop:
-      UI.spacing.lg,
+      UI.spacing.xs,
     fontSize:
       UI.typography.caption,
     lineHeight: 16,
     color:
       UI.colors.textMuted,
+  },
+
+  emptyWrapper: {
+    minHeight: 240,
+    marginTop:
+      UI.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  emptyIcon: {
+    width: 60,
+    height: 60,
+    borderRadius:
+      UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+    marginBottom:
+      UI.spacing.xs,
+  },
+
+  quickHelpCard: {
+    marginTop:
+      UI.spacing.lg,
+    padding:
+      UI.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  quickHelpIcon: {
+    width: 42,
+    height: 42,
+    borderRadius:
+      UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  quickHelpCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+  },
+
+  quickHelpTitle: {
+    fontSize:
+      UI.typography.small,
+    fontWeight: '800',
+    color:
+      UI.colors.text,
+  },
+
+  quickHelpText: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    lineHeight: 18,
+    color:
+      UI.colors.textSecondary,
+  },
+
+  footerText: {
+    marginTop:
+      UI.spacing.lg,
+    paddingHorizontal:
+      UI.spacing.sm,
+    fontSize:
+      UI.typography.caption,
+    lineHeight: 17,
     textAlign: 'center',
+    color:
+      UI.colors.textMuted,
   },
 
   loadingContainer: {
     flex: 1,
-    alignItems:
-      'center',
-    justifyContent:
-      'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal:
       UI.spacing.xxl,
   },
 
+  loadingIcon: {
+    width: 58,
+    height: 58,
+    marginBottom:
+      UI.spacing.md,
+    borderRadius:
+      UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
   loadingTitle: {
     marginTop:
-      UI.spacing.lg,
+      UI.spacing.md,
     fontSize:
       UI.typography.subtitle,
     fontWeight: '800',
@@ -1450,6 +2454,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop:
       UI.spacing.sm,
+    maxWidth: 300,
     fontSize:
       UI.typography.body,
     lineHeight: 20,
