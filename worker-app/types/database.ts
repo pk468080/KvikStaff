@@ -457,6 +457,12 @@ export type Database = {
       updated_at: string
     }
   }
+    worker_get_booking_context: {
+    Args: {
+      p_booking_id: string
+    }
+    Returns: Json
+  }
   worker_booking_action: {
     Args: {
       p_booking_id: string

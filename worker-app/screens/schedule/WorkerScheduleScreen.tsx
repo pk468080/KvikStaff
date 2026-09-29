@@ -390,40 +390,42 @@ export default function WorkerScheduleScreen({
   )
 
   const activeDayHours = useMemo(() => {
-    return DAY_ORDER.reduce(
-      (total, dayOfWeek) => {
-        const day = draftDays[dayOfWeek]
+  let total = 0
 
-        if (!day.enabled) {
-          return total
-        }
+  for (const dayOfWeek of DAY_ORDER) {
+    const day = draftDays[dayOfWeek]
 
-        const [startHour, startMinute] =
-          day.startTime.split(':').map(Number)
-        const [endHour, endMinute] =
-          day.endTime.split(':').map(Number)
+    if (!day.enabled) {
+      continue
+    }
 
-        if (
-          !Number.isFinite(startHour) ||
-          !Number.isFinite(startMinute) ||
-          !Number.isFinite(endHour) ||
-          !Number.isFinite(endMinute)
-        ) {
-          return total
-        }
+    const [startHour, startMinute] =
+      day.startTime.split(':').map(Number)
 
-        const duration =
-          endHour * 60 +
-          endMinute -
-          (startHour * 60 + startMinute)
+    const [endHour, endMinute] =
+      day.endTime.split(':').map(Number)
 
-        return duration > 0
-          ? total + duration / 60
-          : total
-      },
-      0,
-    )
-  }, [draftDays])
+    if (
+      !Number.isFinite(startHour) ||
+      !Number.isFinite(startMinute) ||
+      !Number.isFinite(endHour) ||
+      !Number.isFinite(endMinute)
+    ) {
+      continue
+    }
+
+    const duration =
+      endHour * 60 +
+      endMinute -
+      (startHour * 60 + startMinute)
+
+    if (duration > 0) {
+      total += duration / 60
+    }
+  }
+
+  return total
+}, [draftDays])
 
   const exceptions = useMemo(
     () =>
