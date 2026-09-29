@@ -1,13 +1,16 @@
 import {
   useEffect,
 } from 'react'
-import ActiveBookingScreen from '../screens/bookings/ActiveBookingScreen'
+
 import {
+  Alert,
   StyleSheet,
 } from 'react-native'
+
 import {
   Ionicons,
 } from '@expo/vector-icons'
+
 import {
   useNavigation,
 } from '@react-navigation/native'
@@ -32,41 +35,47 @@ import {
   useWorkerRuntime,
 } from '../context/WorkerRuntimeContext'
 
+import {
+  getWorkerBooking,
+} from '../services/bookings/workerBookings.service'
+
+import {
+  getWorkerBookingOccurrencesForBooking,
+} from '../services/bookings/workerBookingOccurrences.service'
+
+import {
+  isActiveBookingStatus,
+} from '../lib/workerBookingUtils'
+
+import type {
+  BookingStatus,
+  WorkerBookingOccurrence,
+} from '../types/booking'
+
 import type {
   WorkerStackParamList,
   WorkerTabParamList,
 } from '../types/navigation'
 
+import WorkerHomeScreen from '../screens/home/WorkerHomeScreen'
+import WorkerBookingsScreen from '../screens/bookings/WorkerBookingsScreen'
+import BookingOfferScreen from '../screens/bookings/BookingOfferScreen'
+import ActiveBookingScreen from '../screens/bookings/ActiveBookingScreen'
+import BookingDetailsScreen from '../screens/bookings/BookingDetailsScreen'
+import BookingOccurrenceScreen from '../screens/bookings/BookingOccurrenceScreen'
+import WorkerEarningsScreen from '../screens/earnings/WorkerEarningsScreen'
+import EarningDetailsScreen from '../screens/earnings/EarningDetailsScreen'
+import ProfileScreen from '../screens/profile/ProfileScreen'
+import EditProfileScreen from '../screens/profile/EditProfileScreen'
+import WorkerScheduleScreen from '../screens/schedule/WorkerScheduleScreen'
+import NotificationsScreen from '../screens/notifications/NotificationsScreen'
+import SupportScreen from '../screens/support/SupportScreen'
+import SettingsScreen from '../screens/settings/SettingsScreen'
+
 type WorkerStackNavigation =
   NativeStackNavigationProp<
     WorkerStackParamList
   >
-
-import WorkerHomeScreen from '../screens/home/WorkerHomeScreen'
-
-import WorkerBookingsScreen from '../screens/bookings/WorkerBookingsScreen'
-
-import BookingOfferScreen from '../screens/bookings/BookingOfferScreen'
-
-import BookingDetailsScreen from '../screens/bookings/BookingDetailsScreen'
-
-import BookingOccurrenceScreen from '../screens/bookings/BookingOccurrenceScreen'
-
-import WorkerEarningsScreen from '../screens/earnings/WorkerEarningsScreen'
-
-import EarningDetailsScreen from '../screens/earnings/EarningDetailsScreen'
-
-import ProfileScreen from '../screens/profile/ProfileScreen'
-
-import EditProfileScreen from '../screens/profile/EditProfileScreen'
-
-import WorkerScheduleScreen from '../screens/schedule/WorkerScheduleScreen'
-
-import NotificationsScreen from '../screens/notifications/NotificationsScreen'
-
-import SupportScreen from '../screens/support/SupportScreen'
-
-import SettingsScreen from '../screens/settings/SettingsScreen'
 
 const Tab =
   createBottomTabNavigator<
@@ -78,7 +87,96 @@ const Stack =
     WorkerStackParamList
   >()
 
+async function navigateToWorkerBooking(
+  navigation: WorkerStackNavigation,
+  bookingId: string,
+): Promise<void> {
+  try {
+    const booking =
+      await getWorkerBooking(
+        bookingId,
+      )
 
+    if (!booking) {
+      Alert.alert(
+        'Booking unavailable',
+        'This booking is no longer assigned to your worker account.',
+      )
+      return
+    }
+
+    /*
+     * Non-recurring active jobs use the dedicated
+     * operational screen.
+     *
+     * Recurring jobs currently continue to their
+     * occurrence screen so the existing recurring
+     * lifecycle is preserved. It will receive the same
+     * live-map treatment in the next recurring-booking
+     * phase.
+     */
+    if (
+      isActiveBookingStatus(
+        booking.status,
+      ) &&
+      booking.bookingType !==
+        'recurring'
+    ) {
+      navigation.navigate(
+        'ActiveBooking',
+        {
+          bookingId:
+            booking.id,
+        },
+      )
+      return
+    }
+
+    if (
+      booking.bookingType ===
+        'recurring'
+    ) {
+      const occurrences =
+        await getWorkerBookingOccurrencesForBooking(
+          booking.id,
+        )
+
+      const activeOccurrence =
+        occurrences.find(
+          occurrence =>
+            isActiveBookingStatus(
+              occurrence.status as BookingStatus,
+            ),
+        )
+
+      if (activeOccurrence) {
+        navigation.navigate(
+          'BookingOccurrence',
+          {
+            occurrenceId:
+              activeOccurrence.id,
+          },
+        )
+        return
+      }
+    }
+
+    navigation.navigate(
+      'BookingDetails',
+      {
+        bookingId:
+          booking.id,
+      },
+    )
+  } catch (cause) {
+    Alert.alert(
+      'Booking unavailable',
+      cause instanceof Error
+        ? cause.message
+        : 'Unable to open this booking.',
+    )
+  }
+}
 
 function WorkerTabs() {
   const navigation =
@@ -106,211 +204,197 @@ function WorkerTabs() {
   ])
 
   return (
-  <Tab.Navigator
-    screenOptions={{
-      headerShown: false,
-
-      tabBarStyle:
-        styles.tabBar,
-
-      tabBarLabelStyle:
-        styles.tabBarLabel,
-
-      tabBarActiveTintColor:
-        UI.colors.secondary,
-
-      tabBarInactiveTintColor:
-        UI.colors.textMuted,
-
-      tabBarHideOnKeyboard: true,
-
-    
-    }}
-  >
-    <Tab.Screen
-      name="Home"
-      options={{
-        tabBarLabel: 'Home',
-        tabBarIcon: ({
-          color,
-          size,
-          focused,
-        }) => (
-          <Ionicons
-            name={
-              focused
-                ? 'home'
-                : 'home-outline'
-            }
-            size={size}
-            color={color}
-          />
-        ),
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle:
+          styles.tabBar,
+        tabBarLabelStyle:
+          styles.tabBarLabel,
+        tabBarActiveTintColor:
+          UI.colors.secondary,
+        tabBarInactiveTintColor:
+          UI.colors.textMuted,
+        tabBarHideOnKeyboard:
+          true,
       }}
     >
-      {({ navigation }) => (
-        <WorkerHomeScreen
-          onBookings={() => {
-            navigation.navigate(
-              'Bookings',
-            )
-          }}
-          onSchedule={() => {
-            navigation
-              .getParent()
-              ?.navigate(
-                'Schedule',
+      <Tab.Screen
+        name="Home"
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({
+            color,
+            size,
+            focused,
+          }) => (
+            <Ionicons
+              name={
+                focused
+                  ? 'home'
+                  : 'home-outline'
+              }
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      >
+        {({ navigation }) => (
+          <WorkerHomeScreen
+            onBookings={() => {
+              navigation.navigate(
+                'Bookings',
               )
-          }}
-          onNotifications={() => {
-            navigation
-              .getParent()
-              ?.navigate(
-                'Notifications',
+            }}
+            onSchedule={() => {
+              navigation
+                .getParent()
+                ?.navigate(
+                  'Schedule',
+                )
+            }}
+            onNotifications={() => {
+              navigation
+                .getParent()
+                ?.navigate(
+                  'Notifications',
+                )
+            }}
+            onProfile={() => {
+              navigation.navigate(
+                'Profile',
               )
-          }}
-          onProfile={() => {
-            navigation.navigate(
-              'Profile',
-            )
-          }}
-        />
-      )}
-    </Tab.Screen>
-
-    <Tab.Screen
-      name="Bookings"
-      options={{
-        tabBarLabel: 'Jobs',
-        tabBarIcon: ({
-          color,
-          size,
-          focused,
-        }) => (
-          <Ionicons
-            name={
-              focused
-                ? 'briefcase'
-                : 'briefcase-outline'
-            }
-            size={size}
-            color={color}
+            }}
           />
-        ),
-      }}
-    >
-      {({ navigation }) => (
-        <WorkerBookingsScreen
-          onBookingPress={(
-  bookingId,
-) => {
-  navigation
-    .getParent()
-    ?.navigate(
-      'BookingDetails',
-      {
-        bookingId,
-      },
-    )
-}}
-        />
-      )}
-    </Tab.Screen>
+        )}
+      </Tab.Screen>
 
-    <Tab.Screen
-      name="Earnings"
-      options={{
-        tabBarLabel: 'Earnings',
-        tabBarIcon: ({
-          color,
-          size,
-          focused,
-        }) => (
-          <Ionicons
-            name={
-              focused
-                ? 'wallet'
-                : 'wallet-outline'
-            }
-            size={size}
-            color={color}
-          />
-        ),
-      }}
-    >
-      {({ navigation }) => (
-        <WorkerEarningsScreen
-          onEarningPress={(
-            earningId,
-          ) => {
-            navigation
-              .getParent()
-              ?.navigate(
-                'EarningDetails',
-                {
-                  earningId,
-                },
+      <Tab.Screen
+        name="Bookings"
+        options={{
+          tabBarLabel: 'Jobs',
+          tabBarIcon: ({
+            color,
+            size,
+            focused,
+          }) => (
+            <Ionicons
+              name={
+                focused
+                  ? 'briefcase'
+                  : 'briefcase-outline'
+              }
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      >
+        {() => (
+          <WorkerBookingsScreen
+            onBookingPress={bookingId => {
+              void navigateToWorkerBooking(
+                navigation,
+                bookingId,
               )
-          }}
-        />
-      )}
-    </Tab.Screen>
+            }}
+          />
+        )}
+      </Tab.Screen>
 
-    <Tab.Screen
-      name="Profile"
-      options={{
-        tabBarLabel: 'Profile',
-        tabBarIcon: ({
-          color,
-          size,
-          focused,
-        }) => (
-          <Ionicons
-            name={
-              focused
-                ? 'person'
-                : 'person-outline'
-            }
-            size={size}
-            color={color}
-          />
-        ),
-      }}
-    >
-      {({ navigation }) => (
-        <ProfileScreen
-          onEditProfile={() => {
-            navigation
-              .getParent()
-              ?.navigate(
-                'EditProfile',
-              )
-          }}
-          onSettings={() => {
-            navigation
-              .getParent()
-              ?.navigate(
-                'Settings',
-              )
-          }}
-          onSignedOut={() => {
-            navigation
-              .getParent()
-              ?.getParent()
-              ?.reset({
-                index: 0,
-                routes: [
+      <Tab.Screen
+        name="Earnings"
+        options={{
+          tabBarLabel: 'Earnings',
+          tabBarIcon: ({
+            color,
+            size,
+            focused,
+          }) => (
+            <Ionicons
+              name={
+                focused
+                  ? 'wallet'
+                  : 'wallet-outline'
+              }
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      >
+        {({ navigation }) => (
+          <WorkerEarningsScreen
+            onEarningPress={earningId => {
+              navigation
+                .getParent()
+                ?.navigate(
+                  'EarningDetails',
                   {
-                    name: 'Login',
+                    earningId,
                   },
-                ],
-              })
-          }}
-        />
-      )}
-    </Tab.Screen>
-  </Tab.Navigator>
-)
+                )
+            }}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Profile"
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({
+            color,
+            size,
+            focused,
+          }) => (
+            <Ionicons
+              name={
+                focused
+                  ? 'person'
+                  : 'person-outline'
+              }
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      >
+        {({ navigation }) => (
+          <ProfileScreen
+            onEditProfile={() => {
+              navigation
+                .getParent()
+                ?.navigate(
+                  'EditProfile',
+                )
+            }}
+            onSettings={() => {
+              navigation
+                .getParent()
+                ?.navigate(
+                  'Settings',
+                )
+            }}
+            onSignedOut={() => {
+              navigation
+                .getParent()
+                ?.getParent()
+                ?.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: 'Login',
+                    },
+                  ],
+                })
+            }}
+          />
+        )}
+      </Tab.Screen>
+    </Tab.Navigator>
+  )
 }
 
 export default function WorkerNavigator() {
@@ -328,7 +412,10 @@ export default function WorkerNavigator() {
       <Stack.Screen
         name="BookingOffer"
       >
-        {({ navigation, route }) => (
+        {({
+          navigation,
+          route,
+        }) => (
           <BookingOfferScreen
             bookingId={
               route.params.bookingId
@@ -337,43 +424,48 @@ export default function WorkerNavigator() {
               navigation.goBack()
             }}
             onAccepted={bookingId => {
-  navigation.replace(
-    'ActiveBooking',
-    {
-      bookingId,
-    },
-  )
-}}
+              void navigateToWorkerBooking(
+                navigation,
+                bookingId,
+              )
+            }}
           />
         )}
       </Stack.Screen>
 
-<Stack.Screen
-  name="ActiveBooking"
->
-  {({ navigation, route }) => (
-    <ActiveBookingScreen
-      bookingId={
-        route.params.bookingId
-      }
-      onBack={() => {
-        navigation.goBack()
-      }}
-      onFinished={bookingId => {
-        navigation.replace(
-          'BookingDetails',
-          {
-            bookingId,
-          },
-        )
-      }}
-    />
-  )}
-</Stack.Screen>
+      <Stack.Screen
+        name="ActiveBooking"
+      >
+        {({
+          navigation,
+          route,
+        }) => (
+          <ActiveBookingScreen
+            bookingId={
+              route.params.bookingId
+            }
+            onBack={() => {
+              navigation.goBack()
+            }}
+            onFinished={bookingId => {
+              navigation.replace(
+                'BookingDetails',
+                {
+                  bookingId,
+                },
+              )
+            }}
+          />
+        )}
+      </Stack.Screen>
+
       <Stack.Screen
         name="BookingDetails"
       >
-        {({ navigation, route }) => (
+        {({
+          navigation,
+          route,
+        }) => (
           <BookingDetailsScreen
             bookingId={
               route.params.bookingId
@@ -381,9 +473,15 @@ export default function WorkerNavigator() {
             onBack={() => {
               navigation.goBack()
             }}
-            onOccurrencePress={(
-              occurrenceId,
-            ) => {
+            onActiveBooking={bookingId => {
+              navigation.replace(
+                'ActiveBooking',
+                {
+                  bookingId,
+                },
+              )
+            }}
+            onOccurrencePress={occurrenceId => {
               navigation.navigate(
                 'BookingOccurrence',
                 {
@@ -398,7 +496,10 @@ export default function WorkerNavigator() {
       <Stack.Screen
         name="BookingOccurrence"
       >
-        {({ navigation, route }) => (
+        {({
+          navigation,
+          route,
+        }) => (
           <BookingOccurrenceScreen
             occurrenceId={
               route.params.occurrenceId
@@ -410,7 +511,9 @@ export default function WorkerNavigator() {
         )}
       </Stack.Screen>
 
-      <Stack.Screen name="Schedule">
+      <Stack.Screen
+        name="Schedule"
+      >
         {({ navigation }) => (
           <WorkerScheduleScreen
             onBack={() => {
@@ -421,38 +524,34 @@ export default function WorkerNavigator() {
       </Stack.Screen>
 
       <Stack.Screen
-  name="Notifications"
->
-  {({ navigation }) => (
-    <NotificationsScreen
-      onBack={() => {
-        navigation.goBack()
-      }}
-      onBookingPress={(
-        bookingId,
-      ) => {
-        navigation.navigate(
-          'BookingDetails',
-          {
-            bookingId,
-          },
-        )
-      }}
-      onBookingOfferPress={(
-        bookingId,
-      ) => {
-        navigation.navigate(
-          'BookingOffer',
-          {
-            bookingId,
-          },
-        )
-      }}
-    />
-  )}
-</Stack.Screen>
+        name="Notifications"
+      >
+        {({ navigation }) => (
+          <NotificationsScreen
+            onBack={() => {
+              navigation.goBack()
+            }}
+            onBookingPress={bookingId => {
+              void navigateToWorkerBooking(
+                navigation,
+                bookingId,
+              )
+            }}
+            onBookingOfferPress={bookingId => {
+              navigation.navigate(
+                'BookingOffer',
+                {
+                  bookingId,
+                },
+              )
+            }}
+          />
+        )}
+      </Stack.Screen>
 
-      <Stack.Screen name="Support">
+      <Stack.Screen
+        name="Support"
+      >
         {({ navigation }) => (
           <SupportScreen
             onBack={() => {
@@ -477,7 +576,9 @@ export default function WorkerNavigator() {
         )}
       </Stack.Screen>
 
-      <Stack.Screen name="Settings">
+      <Stack.Screen
+        name="Settings"
+      >
         {({ navigation }) => (
           <SettingsScreen
             onBack={() => {
@@ -522,7 +623,10 @@ export default function WorkerNavigator() {
       <Stack.Screen
         name="EarningDetails"
       >
-        {({ navigation, route }) => (
+        {({
+          navigation,
+          route,
+        }) => (
           <EarningDetailsScreen
             earningId={
               route.params.earningId
@@ -538,31 +642,23 @@ export default function WorkerNavigator() {
 }
 
 const styles = StyleSheet.create({
-
   tabBar: {
     height: 72,
     paddingTop: 8,
     paddingBottom: 8,
-
     borderTopWidth: 1,
     borderTopColor:
       UI.colors.border,
-
     backgroundColor:
       UI.colors.surface,
-
     elevation: 8,
-
     shadowColor:
       UI.colors.primary,
-
     shadowOffset: {
       width: 0,
       height: -2,
     },
-
     shadowOpacity: 0.06,
-
     shadowRadius: 8,
   },
 
@@ -571,5 +667,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 2,
   },
-
 })

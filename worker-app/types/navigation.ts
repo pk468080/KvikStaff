@@ -21,9 +21,11 @@ export type WorkerStackParamList = {
   BookingOffer: {
     bookingId: string
   }
-ActiveBooking: {
-  bookingId: string
-}
+
+  ActiveBooking: {
+    bookingId: string
+  }
+
   BookingDetails: {
     bookingId: string
   }

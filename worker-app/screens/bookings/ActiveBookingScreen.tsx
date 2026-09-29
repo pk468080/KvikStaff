@@ -50,12 +50,13 @@ import {
 } from '../../services/bookings/workerBookingActions.service'
 
 import {
+  getLatestWorkerBookingLocation,
+  hasRecentBookingLocation,
   recordWorkerBookingLocation,
 } from '../../services/bookings/workerBookingTracking.service'
 
 import {
   getCurrentWorkerLocation,
-  watchWorkerLocation,
 } from '../../services/location/workerLocation.service'
 
 import {
@@ -72,10 +73,6 @@ import {
   supabase,
 } from '../../lib/supabase'
 
-import {
-  WORKER,
-} from '../../constants/worker'
-
 import type {
   BookingStatus,
   WorkerBooking,
@@ -85,37 +82,33 @@ import type {
 type ActiveBookingScreenProps = {
   bookingId: string
   onBack?: () => void
-  onFinished?: (
-    bookingId: string,
-  ) => void
+  onFinished?: (bookingId: string) => void
+}
+
+type RealtimeLocationRow = {
+  booking_id?: unknown
+  latitude?: unknown
+  longitude?: unknown
+  recorded_at?: unknown
 }
 
 function getStatusVariant(
   status: BookingStatus,
-):
-  | 'default'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info' {
+): 'default' | 'success' | 'warning' | 'error' | 'info' {
   switch (status) {
     case 'assigned':
     case 'paid':
       return 'info'
-
     case 'on_the_way':
     case 'arrived':
     case 'in_progress':
       return 'warning'
-
     case 'completed':
       return 'success'
-
     case 'cancelled':
     case 'expired':
     case 'payment_failed':
       return 'error'
-
     default:
       return 'default'
   }
@@ -124,34 +117,27 @@ function getStatusVariant(
 function getInitials(
   value: string | null | undefined,
 ): string {
-  const normalized =
-    value?.trim() ?? ''
+  const normalized = value?.trim() ?? ''
 
   if (!normalized) {
     return 'CU'
   }
 
-  const words =
-    normalized
-      .split(/\s+/)
-      .filter(Boolean)
+  const words = normalized
+    .split(/\s+/)
+    .filter(Boolean)
 
   if (words.length >= 2) {
     return `${words[0][0]}${words[1][0]}`.toUpperCase()
   }
 
-  return normalized
-    .slice(0, 2)
-    .toUpperCase()
+  return normalized.slice(0, 2).toUpperCase()
 }
 
 function formatDuration(
   booking: WorkerBooking,
 ): string {
-  const hours =
-    getBookingDurationHours(
-      booking,
-    )
+  const hours = getBookingDurationHours(booking)
 
   if (hours === null) {
     return `${booking.durationValue} ${booking.durationUnit}`
@@ -160,19 +146,13 @@ function formatDuration(
   return `${booking.durationValue} ${booking.durationUnit} · ${hours}h`
 }
 
-function hasValidCoordinates(
-  location:
-    | WorkerBookingMapLocation
-    | null,
+function isValidMapLocation(
+  location: WorkerBookingMapLocation | null,
 ): boolean {
   return Boolean(
     location &&
-      Number.isFinite(
-        location.latitude,
-      ) &&
-      Number.isFinite(
-        location.longitude,
-      ) &&
+      Number.isFinite(location.latitude) &&
+      Number.isFinite(location.longitude) &&
       location.latitude >= -90 &&
       location.latitude <= 90 &&
       location.longitude >= -180 &&
@@ -189,6 +169,30 @@ function buildNavigationUrl(
   )
 }
 
+function toMapLocation(
+  latitude: unknown,
+  longitude: unknown,
+): WorkerBookingMapLocation | null {
+  const parsedLatitude =
+    typeof latitude === 'number'
+      ? latitude
+      : Number(latitude)
+
+  const parsedLongitude =
+    typeof longitude === 'number'
+      ? longitude
+      : Number(longitude)
+
+  const location = {
+    latitude: parsedLatitude,
+    longitude: parsedLongitude,
+  }
+
+  return isValidMapLocation(location)
+    ? location
+    : null
+}
+
 function ProgressRow({
   icon,
   label,
@@ -198,23 +202,21 @@ function ProgressRow({
   label: string
   value: string | null
 }) {
-  const completed =
-    Boolean(value)
+  const complete = Boolean(value)
 
   return (
     <View style={styles.progressRow}>
       <View
         style={[
           styles.progressIcon,
-          completed &&
-            styles.progressIconCompleted,
+          complete && styles.progressIconComplete,
         ]}
       >
         <Ionicons
           name={icon}
           size={18}
           color={
-            completed
+            complete
               ? UI.colors.success
               : UI.colors.textMuted
           }
@@ -229,14 +231,11 @@ function ProgressRow({
         <Text
           style={[
             styles.progressValue,
-            completed &&
-              styles.progressValueCompleted,
+            complete && styles.progressValueComplete,
           ]}
         >
           {value
-            ? formatBookingDateTime(
-                value,
-              )
+            ? formatBookingDateTime(value)
             : 'Pending'}
         </Text>
       </View>
@@ -244,90 +243,87 @@ function ProgressRow({
   )
 }
 
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  label: string
+  value: string
+}) {
+  return (
+    <View style={styles.infoRow}>
+      <View style={styles.infoIcon}>
+        <Ionicons
+          name={icon}
+          size={18}
+          color={UI.colors.secondary}
+        />
+      </View>
+
+      <View style={styles.infoCopy}>
+        <Text style={styles.infoLabel}>
+          {label}
+        </Text>
+
+        <Text
+          style={styles.infoValue}
+          numberOfLines={3}
+        >
+          {value}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+function InfoDivider() {
+  return <View style={styles.infoDivider} />
+}
+
 export default function ActiveBookingScreen({
   bookingId,
   onBack,
   onFinished,
 }: ActiveBookingScreenProps) {
-  const [
-    booking,
-    setBooking,
-  ] = useState<WorkerBooking | null>(
-    null,
-  )
+  const [booking, setBooking] =
+    useState<WorkerBooking | null>(null)
 
-  const [
-    context,
-    setContext,
-  ] = useState<WorkerBookingContext | null>(
-    null,
-  )
+  const [context, setContext] =
+    useState<WorkerBookingContext | null>(null)
 
-  const [
-    workerLocation,
-    setWorkerLocation,
-  ] =
-    useState<WorkerBookingMapLocation | null>(
-      null,
-    )
+  const [workerLocation, setWorkerLocation] =
+    useState<WorkerBookingMapLocation | null>(null)
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true)
+  const [loading, setLoading] =
+    useState(true)
 
-  const [
-    refreshing,
-    setRefreshing,
-  ] = useState(false)
+  const [refreshing, setRefreshing] =
+    useState(false)
 
-  const [
-    actionLoading,
-    setActionLoading,
-  ] = useState(false)
+  const [actionLoading, setActionLoading] =
+    useState(false)
 
-  const [
-    locationLoading,
-    setLocationLoading,
-  ] = useState(false)
+  const [locationLoading, setLocationLoading] =
+    useState(false)
 
-  const [
-    error,
-    setError,
-  ] = useState<string | null>(
-    null,
-  )
+  const [error, setError] =
+    useState<string | null>(null)
 
-  const [
-    contextError,
-    setContextError,
-  ] = useState<string | null>(
-    null,
-  )
+  const [contextError, setContextError] =
+    useState<string | null>(null)
 
-  const [
-    locationError,
-    setLocationError,
-  ] = useState<string | null>(
-    null,
-  )
-
-  const locationSubscriptionRef =
-    useRef<
-      Awaited<
-        ReturnType<
-          typeof watchWorkerLocation
-        >
-      > | null
-    >(null)
-
-  const publishingLocationRef =
-    useRef(false)
+  const [locationError, setLocationError] =
+    useState<string | null>(null)
 
   const finishedRef =
     useRef(false)
 
-  const refreshBooking =
+  const initialSyncKeyRef =
+    useRef<string | null>(null)
+
+  const loadBooking =
     useCallback(
       async (
         isRefresh = false,
@@ -348,24 +344,32 @@ export default function ActiveBookingScreen({
 
           if (!nextBooking) {
             throw new Error(
-              'Active booking could not be found.',
+              'This booking is no longer assigned to your worker account.',
             )
           }
 
+          /*
+           * ActiveBookingScreen is only for the live
+           * operational lifecycle. Once a booking leaves
+           * that lifecycle, hand control back to the
+           * historical details screen.
+           */
           if (
-            isTerminalBookingStatus(
-              nextBooking.status,
-            ) ||
             !isActiveBookingStatus(
               nextBooking.status,
             )
           ) {
             if (
-              !finishedRef.current
+              !finishedRef.current &&
+              (
+                isTerminalBookingStatus(
+                  nextBooking.status,
+                ) ||
+                nextBooking.status !==
+                  'assigned'
+              )
             ) {
-              finishedRef.current =
-                true
-
+              finishedRef.current = true
               onFinished?.(
                 nextBooking.id,
               )
@@ -391,21 +395,12 @@ export default function ActiveBookingScreen({
             setContext(
               nextContext,
             )
-
+            setContextError(null)
+          } catch (cause) {
+            setContext(null)
             setContextError(
-              null,
-            )
-          } catch (
-            contextCause
-          ) {
-            setContext(
-              null,
-            )
-
-            setContextError(
-              contextCause instanceof
-                Error
-                ? contextCause.message
+              cause instanceof Error
+                ? cause.message
                 : 'Customer and service location details are unavailable.',
             )
           }
@@ -413,7 +408,7 @@ export default function ActiveBookingScreen({
           setError(
             cause instanceof Error
               ? cause.message
-              : 'Unable to load active booking.',
+              : 'Unable to load the active booking.',
           )
         } finally {
           setLoading(false)
@@ -427,7 +422,7 @@ export default function ActiveBookingScreen({
     )
 
   useEffect(() => {
-    void refreshBooking()
+    void loadBooking()
 
     const channel =
       supabase
@@ -437,25 +432,21 @@ export default function ActiveBookingScreen({
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'UPDATE',
             schema: 'public',
             table: 'bookings',
             filter:
               `id=eq.${bookingId}`,
           },
           () => {
-            void refreshBooking(
-              true,
-            )
+            void loadBooking(true)
           },
         )
         .subscribe()
 
     const refreshInterval =
       setInterval(() => {
-        void refreshBooking(
-          true,
-        )
+        void loadBooking(true)
       }, 15000)
 
     return () => {
@@ -469,209 +460,238 @@ export default function ActiveBookingScreen({
     }
   }, [
     bookingId,
-    refreshBooking,
+    loadBooking,
   ])
 
-  const publishLocation =
+  const syncCurrentWorkerLocation =
     useCallback(
       async (
-        latitude: number,
-        longitude: number,
+        currentBooking: WorkerBooking,
       ): Promise<void> => {
-        if (
-          publishingLocationRef.current
-        ) {
-          return
-        }
-
-        publishingLocationRef.current =
-          true
+        setLocationLoading(true)
+        setLocationError(null)
 
         try {
-          const result =
-            await recordWorkerBookingLocation(
-              bookingId,
-              latitude,
-              longitude,
+          const current =
+            await getCurrentWorkerLocation(
+              {
+                maximumAge: 15000,
+                timeout: 15000,
+              },
             )
 
           setWorkerLocation({
             latitude:
-              result.latitude,
+              current.latitude,
             longitude:
-              result.longitude,
+              current.longitude,
           })
 
-          setLocationError(
-            null,
-          )
-        } catch (
-          cause
-        ) {
+          /*
+           * Only publish a booking-scoped location once
+           * the operational lifecycle has started.
+           * The app-level WorkerPresenceRuntime remains
+           * the continuous tracking owner.
+           */
+          if (
+            currentBooking.status ===
+              'on_the_way' ||
+            currentBooking.status ===
+              'arrived' ||
+            currentBooking.status ===
+              'in_progress'
+          ) {
+            const latest =
+              await getLatestWorkerBookingLocation(
+                currentBooking.id,
+              )
+
+            if (
+              !hasRecentBookingLocation(
+                latest,
+                90,
+              )
+            ) {
+              const recorded =
+                await recordWorkerBookingLocation(
+                  currentBooking.id,
+                  current.latitude,
+                  current.longitude,
+                )
+
+              setWorkerLocation({
+                latitude:
+                  recorded.latitude,
+                longitude:
+                  recorded.longitude,
+              })
+            } else if (
+              latest
+            ) {
+              setWorkerLocation({
+                latitude:
+                  latest.latitude,
+                longitude:
+                  latest.longitude,
+              })
+            }
+          }
+        } catch (cause) {
           setLocationError(
             cause instanceof Error
               ? cause.message
-              : 'Your live location could not be updated.',
+              : 'Your current location is unavailable.',
           )
         } finally {
-          publishingLocationRef.current =
-            false
+          setLocationLoading(false)
         }
       },
-      [
-        bookingId,
-      ],
+      [],
     )
 
   useEffect(() => {
-    let mounted = true
-
-    async function loadInitialLocation() {
-      try {
-        setLocationLoading(
-          true,
-        )
-        setLocationError(
-          null,
-        )
-
-        const location =
-          await getCurrentWorkerLocation(
-            {
-              maximumAge: 15000,
-              timeout: 15000,
-            },
-          )
-
-        if (!mounted) {
-          return
-        }
-
-        setWorkerLocation({
-          latitude:
-            location.latitude,
-          longitude:
-            location.longitude,
-        })
-      } catch (cause) {
-        if (!mounted) {
-          return
-        }
-
-        setLocationError(
-          cause instanceof Error
-            ? cause.message
-            : 'Current worker location is unavailable.',
-        )
-      } finally {
-        if (mounted) {
-          setLocationLoading(
-            false,
-          )
-        }
-      }
-    }
-
-    void loadInitialLocation()
-
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  useEffect(() => {
-    const status =
-      booking?.status
-
-    const shouldTrack =
-      status ===
-        'on_the_way' ||
-      status ===
-        'arrived' ||
-      status ===
-        'in_progress'
-
-    if (!shouldTrack) {
-      locationSubscriptionRef.current?.remove()
-      locationSubscriptionRef.current =
-        null
-
+    if (!booking) {
       return
     }
 
-    let mounted = true
+    const syncKey =
+      `${booking.id}:${booking.status}`
 
-    async function startTracking() {
-      locationSubscriptionRef.current?.remove()
-      locationSubscriptionRef.current =
-        null
+    if (
+      initialSyncKeyRef.current ===
+      syncKey
+    ) {
+      return
+    }
 
-      try {
-        const subscription =
-          await watchWorkerLocation(
-            location => {
-              if (!mounted) {
-                return
-              }
+    initialSyncKeyRef.current =
+      syncKey
 
-              const nextLocation = {
-                latitude:
-                  location.latitude,
-                longitude:
-                  location.longitude,
-              }
+    void syncCurrentWorkerLocation(
+      booking,
+    )
+  }, [
+    booking,
+    syncCurrentWorkerLocation,
+  ])
 
+  useEffect(() => {
+    const liveStatus =
+      booking?.status ===
+        'on_the_way' ||
+      booking?.status ===
+        'arrived' ||
+      booking?.status ===
+        'in_progress'
+
+    if (
+      !booking ||
+      !liveStatus
+    ) {
+      return
+    }
+
+    let active = true
+
+    const channel =
+      supabase
+        .channel(
+          `worker-booking-location-${booking.id}-${Date.now()}`,
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table:
+              'worker_locations',
+            filter:
+              `booking_id=eq.${booking.id}`,
+          },
+          payload => {
+            if (!active) {
+              return
+            }
+
+            const record =
+              payload.new as RealtimeLocationRow
+
+            const nextLocation =
+              toMapLocation(
+                record.latitude,
+                record.longitude,
+              )
+
+            if (nextLocation) {
               setWorkerLocation(
                 nextLocation,
               )
-
-              void publishLocation(
-                location.latitude,
-                location.longitude,
+              setLocationError(
+                null,
               )
-            },
-            {
-              accuracy:
-                undefined,
-              timeInterval:
-                WORKER.location
-                  .activeBookingUpdateIntervalSeconds *
-                1000,
-            },
-          )
-
-        if (!mounted) {
-          subscription.remove()
-          return
-        }
-
-        locationSubscriptionRef.current =
-          subscription
-      } catch (cause) {
-        if (!mounted) {
-          return
-        }
-
-        setLocationError(
-          cause instanceof Error
-            ? cause.message
-            : 'Live worker location could not be started.',
+            }
+          },
         )
-      }
-    }
+        .subscribe()
 
-    void startTracking()
+    const fallbackInterval =
+      setInterval(
+        async () => {
+          try {
+            const latest =
+              await getLatestWorkerBookingLocation(
+                booking.id,
+              )
+
+            if (
+              !active ||
+              !latest ||
+              !hasRecentBookingLocation(
+                latest,
+                120,
+              )
+            ) {
+              return
+            }
+
+            setWorkerLocation({
+              latitude:
+                latest.latitude,
+              longitude:
+                latest.longitude,
+            })
+
+            setLocationError(
+              null,
+            )
+          } catch (cause) {
+            if (!active) {
+              return
+            }
+
+            setLocationError(
+              cause instanceof Error
+                ? cause.message
+                : 'Live location could not be refreshed.',
+            )
+          }
+        },
+        15000,
+      )
 
     return () => {
-      mounted = false
+      active = false
+      clearInterval(
+        fallbackInterval,
+      )
 
-      locationSubscriptionRef.current?.remove()
-      locationSubscriptionRef.current =
-        null
+      void supabase.removeChannel(
+        channel,
+      )
     }
   }, [
+    booking?.id,
     booking?.status,
-    publishLocation,
   ])
 
   const runAction =
@@ -683,10 +703,7 @@ export default function ActiveBookingScreen({
           return
         }
 
-        setActionLoading(
-          true,
-        )
-
+        setActionLoading(true)
         setError(null)
 
         try {
@@ -695,35 +712,28 @@ export default function ActiveBookingScreen({
             action,
           )
 
-          await refreshBooking(
-            true,
-          )
+          await loadBooking(true)
         } catch (cause) {
           setError(
             cause instanceof Error
               ? cause.message
-              : 'Unable to update the active booking.',
+              : 'Unable to update this booking.',
           )
         } finally {
-          setActionLoading(
-            false,
-          )
+          setActionLoading(false)
         }
       },
       [
         booking,
-        refreshBooking,
+        loadBooking,
       ],
     )
 
   const customerLocation =
     useMemo<WorkerBookingMapLocation | null>(
       () => {
-        if (!context) {
-          return null
-        }
-
         if (
+          !context ||
           context.latitude ===
             null ||
           context.longitude ===
@@ -739,7 +749,7 @@ export default function ActiveBookingScreen({
             context.longitude,
         }
 
-        return hasValidCoordinates(
+        return isValidMapLocation(
           location,
         )
           ? location
@@ -748,11 +758,19 @@ export default function ActiveBookingScreen({
       [context],
     )
 
-  async function handleNavigation() {
+  const liveTracking =
+    booking?.status ===
+      'on_the_way' ||
+    booking?.status ===
+      'arrived' ||
+    booking?.status ===
+      'in_progress'
+
+  async function handleNavigation(): Promise<void> {
     if (!customerLocation) {
       Alert.alert(
         'Location unavailable',
-        'The service location is not available for this booking.',
+        'The customer service location is not available.',
       )
       return
     }
@@ -771,6 +789,35 @@ export default function ActiveBookingScreen({
     }
   }
 
+  function confirmAction(
+    action: WorkerBookingAction,
+    title: string,
+    message: string,
+  ): void {
+    Alert.alert(
+      title,
+      message,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: title,
+          style:
+            action === 'cancel'
+              ? 'destructive'
+              : 'default',
+          onPress: () => {
+            void runAction(
+              action,
+            )
+          },
+        },
+      ],
+    )
+  }
+
   if (loading) {
     return (
       <ScreenContainer>
@@ -781,11 +828,11 @@ export default function ActiveBookingScreen({
           />
 
           <Text style={styles.loadingTitle}>
-            Loading active job
+            Loading job
           </Text>
 
           <Text style={styles.loadingText}>
-            Preparing your service location and live job status.
+            Preparing your customer location and live job status.
           </Text>
         </View>
       </ScreenContainer>
@@ -796,13 +843,13 @@ export default function ActiveBookingScreen({
     return (
       <ScreenContainer>
         <ErrorState
-          title="Active job unavailable"
+          title="Job unavailable"
           message={
             error ??
-            'This active booking is no longer available.'
+            'This job could not be loaded.'
           }
           onAction={() => {
-            void refreshBooking()
+            void loadBooking()
           }}
         />
       </ScreenContainer>
@@ -814,7 +861,21 @@ export default function ActiveBookingScreen({
       booking.status,
     )
   ) {
-    return null
+    return (
+      <ScreenContainer>
+        <View style={styles.loadingContainer}>
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={48}
+            color={UI.colors.success}
+          />
+
+          <Text style={styles.loadingTitle}>
+            Opening booking history
+          </Text>
+        </View>
+      </ScreenContainer>
+    )
   }
 
   const customerName =
@@ -825,7 +886,7 @@ export default function ActiveBookingScreen({
     context?.serviceName ??
     'Service details unavailable'
 
-  const serviceVariant =
+  const variantName =
     context?.variantName ??
     null
 
@@ -837,25 +898,17 @@ export default function ActiveBookingScreen({
     context?.addressLine ??
     'Service address unavailable'
 
-  const showLiveMap =
+  const showMap =
     Boolean(
       workerLocation &&
         customerLocation &&
-        hasValidCoordinates(
+        isValidMapLocation(
           workerLocation,
         ) &&
-        hasValidCoordinates(
+        isValidMapLocation(
           customerLocation,
         ),
     )
-
-  const journeyActive =
-    booking.status ===
-      'on_the_way' ||
-    booking.status ===
-      'arrived' ||
-    booking.status ===
-      'in_progress'
 
   return (
     <ScreenContainer>
@@ -865,11 +918,9 @@ export default function ActiveBookingScreen({
         }
         refreshControl={
           <RefreshControl
-            refreshing={
-              refreshing
-            }
+            refreshing={refreshing}
             onRefresh={() => {
-              void refreshBooking(
+              void loadBooking(
                 true,
               )
             }}
@@ -898,36 +949,32 @@ export default function ActiveBookingScreen({
               <Ionicons
                 name="arrow-back"
                 size={21}
-                color={UI.colors.primary}
+                color={
+                  UI.colors.primary
+                }
               />
             </Pressable>
           ) : (
             <View
               style={
-                styles.headerButtonPlaceholder
+                styles.headerPlaceholder
               }
             />
           )}
 
-          <View
-            style={styles.topBarCenter}
-          >
-            <Text
-              style={styles.topBarEyebrow}
-            >
+          <View style={styles.topBarCenter}>
+            <Text style={styles.topBarEyebrow}>
               TEMPSTAFF
             </Text>
 
-            <Text
-              style={styles.topBarTitle}
-            >
-              Active job
+            <Text style={styles.topBarTitle}>
+              Job details
             </Text>
           </View>
 
           <Pressable
             onPress={() => {
-              void refreshBooking(
+              void loadBooking(
                 true,
               )
             }}
@@ -936,7 +983,7 @@ export default function ActiveBookingScreen({
               actionLoading
             }
             accessibilityRole="button"
-            accessibilityLabel="Refresh active booking"
+            accessibilityLabel="Refresh job"
             hitSlop={8}
             style={({ pressed }) => [
               styles.headerButton,
@@ -978,46 +1025,30 @@ export default function ActiveBookingScreen({
             />
           </View>
 
-          <Text
-            style={styles.heroEyebrow}
-          >
+          <Text style={styles.heroEyebrow}>
             CURRENT ASSIGNMENT
           </Text>
 
-          <Text
-            style={styles.heroTitle}
-          >
+          <Text style={styles.heroTitle}>
             {serviceName}
           </Text>
 
-          <Text
-            style={styles.heroMeta}
-          >
-            {serviceVariant
-              ? `${serviceVariant} · `
+          <Text style={styles.heroMeta}>
+            {variantName
+              ? `${variantName} · `
               : ''}
             {formatBookingDateTime(
               booking.scheduledStart,
             )}
           </Text>
 
-          <View
-            style={styles.heroFooter}
-          >
+          <View style={styles.heroFooter}>
             <View>
-              <Text
-                style={
-                  styles.heroLabel
-                }
-              >
+              <Text style={styles.heroLabel}>
                 JOB VALUE
               </Text>
 
-              <Text
-                style={
-                  styles.heroAmount
-                }
-              >
+              <Text style={styles.heroAmount}>
                 {formatBookingAmount(
                   booking.totalAmount,
                   booking.currency,
@@ -1026,13 +1057,11 @@ export default function ActiveBookingScreen({
             </View>
 
             <View
-              style={styles.heroStatusCopy}
+              style={
+                styles.heroStatusCopy
+              }
             >
-              <Text
-                style={
-                  styles.heroLabel
-                }
-              >
+              <Text style={styles.heroLabel}>
                 BOOKING TYPE
               </Text>
 
@@ -1050,67 +1079,47 @@ export default function ActiveBookingScreen({
         </View>
 
         {error ? (
-          <View
-            style={styles.warningBox}
-          >
+          <View style={styles.warningBox}>
             <Ionicons
               name="alert-circle-outline"
               size={19}
               color={UI.colors.warning}
             />
 
-            <Text
-              style={styles.warningText}
-            >
+            <Text style={styles.warningText}>
               {error}
             </Text>
           </View>
         ) : null}
 
         {contextError ? (
-          <View
-            style={styles.infoBox}
-          >
+          <View style={styles.infoBox}>
             <Ionicons
               name="information-circle-outline"
               size={19}
               color={UI.colors.info}
             />
 
-            <Text
-              style={styles.infoText}
-            >
+            <Text style={styles.infoText}>
               Customer or service location details could not be loaded. Pull to refresh.
             </Text>
           </View>
         ) : null}
 
         <View style={styles.section}>
-          <Text
-            style={styles.sectionEyebrow}
-          >
+          <Text style={styles.sectionEyebrow}>
             SERVICE LOCATION
           </Text>
 
-          <Text
-            style={styles.sectionTitle}
-          >
-            {journeyActive
-              ? 'Navigate to the customer'
-              : 'Customer service location'}
+          <Text style={styles.sectionTitle}>
+            {liveTracking
+              ? 'Live route to customer'
+              : 'Route preview'}
           </Text>
 
-          <View
-            style={styles.locationCard}
-          >
-            <View
-              style={styles.locationHeader}
-            >
-              <View
-                style={
-                  styles.locationIcon
-                }
-              >
+          <View style={styles.locationCard}>
+            <View style={styles.locationHeader}>
+              <View style={styles.locationIcon}>
                 <Ionicons
                   name="location-outline"
                   size={22}
@@ -1120,35 +1129,19 @@ export default function ActiveBookingScreen({
                 />
               </View>
 
-              <View
-                style={
-                  styles.locationCopy
-                }
-              >
-                <Text
-                  style={
-                    styles.locationLabel
-                  }
-                >
+              <View style={styles.locationCopy}>
+                <Text style={styles.locationLabel}>
                   {addressLabel}
                 </Text>
 
-                <Text
-                  style={
-                    styles.locationAddress
-                  }
-                >
+                <Text style={styles.locationAddress}>
                   {addressLine}
                 </Text>
               </View>
             </View>
 
-            {showLiveMap ? (
-              <View
-                style={
-                  styles.mapWrapper
-                }
-              >
+            {showMap ? (
+              <View style={styles.mapWrapper}>
                 <WorkerLiveBookingMap
                   workerLocation={
                     workerLocation!
@@ -1168,8 +1161,10 @@ export default function ActiveBookingScreen({
               >
                 <Ionicons
                   name="map-outline"
-                  size={28}
-                  color={UI.colors.secondary}
+                  size={30}
+                  color={
+                    UI.colors.secondary
+                  }
                 />
 
                 <Text
@@ -1178,8 +1173,8 @@ export default function ActiveBookingScreen({
                   }
                 >
                   {locationLoading
-                    ? 'Getting your location...'
-                    : 'Live map not ready'}
+                    ? 'Getting your current location...'
+                    : 'Map is not ready'}
                 </Text>
 
                 <Text
@@ -1189,51 +1184,51 @@ export default function ActiveBookingScreen({
                 >
                   {locationError ??
                     (customerLocation
-                      ? 'Your current location is required to show the live route.'
+                      ? 'Your current location is required to show the route.'
                       : 'The customer service coordinates are unavailable.')}
                 </Text>
               </View>
             )}
 
-            {journeyActive ? (
-              <View
-                style={styles.navigationAction}
-              >
-                <AppButton
-                  title="Open navigation"
-                  onPress={() => {
-                    void handleNavigation()
-                  }}
-                  disabled={
-                    !customerLocation
-                  }
-                />
-              </View>
-            ) : null}
+            <View
+              style={
+                styles.navigationAction
+              }
+            >
+              <AppButton
+                title="Open navigation"
+                onPress={() => {
+                  void handleNavigation()
+                }}
+                disabled={
+                  !customerLocation
+                }
+              />
+            </View>
+
+            <Text
+              style={
+                styles.navigationHint
+              }
+            >
+              {liveTracking
+                ? 'Your position is updated while this job is on the way, arrived, or in progress.'
+                : 'This preview uses your current device position. Live customer-facing tracking begins when you start the journey.'}
+            </Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text
-            style={styles.sectionEyebrow}
-          >
+          <Text style={styles.sectionEyebrow}>
             CUSTOMER
           </Text>
 
-          <Text
-            style={styles.sectionTitle}
-          >
+          <Text style={styles.sectionTitle}>
             Who you're serving
           </Text>
 
-          <View
-            style={styles.customerCard}
-          >
-            <View
-              style={
-                styles.customerIcon
-              }
-            >
+          <View style={styles.customerCard}>
+            <View style={styles.customerIcon}>
               <Ionicons
                 name="person-outline"
                 size={21}
@@ -1243,25 +1238,13 @@ export default function ActiveBookingScreen({
               />
             </View>
 
-            <View
-              style={
-                styles.customerCopy
-              }
-            >
-              <Text
-                style={
-                  styles.customerName
-                }
-              >
+            <View style={styles.customerCopy}>
+              <Text style={styles.customerName}>
                 {customerName}
               </Text>
 
-              <Text
-                style={
-                  styles.customerSubtitle
-                }
-              >
-                Customer contact information is limited to what is required to complete this job.
+              <Text style={styles.customerSubtitle}>
+                Only booking information needed to complete the service is shown here.
               </Text>
             </View>
           </View>
@@ -1284,23 +1267,15 @@ export default function ActiveBookingScreen({
         ) : null}
 
         <View style={styles.section}>
-          <Text
-            style={styles.sectionEyebrow}
-          >
+          <Text style={styles.sectionEyebrow}>
             JOB PROGRESS
           </Text>
 
-          <Text
-            style={styles.sectionTitle}
-          >
-            Keep the booking moving
+          <Text style={styles.sectionTitle}>
+            Current workflow
           </Text>
 
-          <View
-            style={
-              styles.progressCard
-            }
-          >
+          <View style={styles.progressCard}>
             <ProgressRow
               icon="navigate-outline"
               label="Journey started"
@@ -1341,30 +1316,22 @@ export default function ActiveBookingScreen({
             <WorkerBookingOtpPanel
               booking={booking}
               onVerified={() => {
-                void refreshBooking(
-                  true,
-                )
+                void loadBooking(true)
               }}
             />
           </View>
         ) : null}
 
         <View style={styles.section}>
-          <Text
-            style={styles.sectionEyebrow}
-          >
+          <Text style={styles.sectionEyebrow}>
             SCHEDULE
           </Text>
 
-          <Text
-            style={styles.sectionTitle}
-          >
-            Today's job timing
+          <Text style={styles.sectionTitle}>
+            Today's service
           </Text>
 
-          <View
-            style={styles.infoCard}
-          >
+          <View style={styles.infoCard}>
             <InfoRow
               icon="calendar-outline"
               label="Start"
@@ -1397,21 +1364,15 @@ export default function ActiveBookingScreen({
 
         {booking.notes ? (
           <View style={styles.section}>
-            <Text
-              style={styles.sectionEyebrow}
-            >
+            <Text style={styles.sectionEyebrow}>
               CUSTOMER NOTES
             </Text>
 
-            <Text
-              style={styles.sectionTitle}
-            >
+            <Text style={styles.sectionTitle}>
               Important instructions
             </Text>
 
-            <View
-              style={styles.notesCard}
-            >
+            <View style={styles.notesCard}>
               <Ionicons
                 name="document-text-outline"
                 size={20}
@@ -1420,45 +1381,29 @@ export default function ActiveBookingScreen({
                 }
               />
 
-              <Text
-                style={styles.notesText}
-              >
+              <Text style={styles.notesText}>
                 {booking.notes}
               </Text>
             </View>
           </View>
         ) : null}
 
-        <View
-          style={styles.bottomActions}
-        >
+        <View style={styles.bottomActions}>
           {booking.status ===
           'assigned' ? (
             <Pressable
               onPress={() => {
-                Alert.alert(
-                  'Start journey?',
-                  'This will mark the booking as on the way and start live location updates.',
-                  [
-                    {
-                      text: 'Cancel',
-                      style:
-                        'cancel',
-                    },
-                    {
-                      text: 'Start journey',
-                      onPress: () => {
-                        void runAction(
-                          'on_the_way',
-                        )
-                      },
-                    },
-                  ],
+                confirmAction(
+                  'on_the_way',
+                  'Start journey',
+                  'Start the journey to the customer service location?',
                 )
               }}
               disabled={
                 actionLoading
               }
+              accessibilityRole="button"
+              accessibilityLabel="Start journey"
               style={({ pressed }) => [
                 styles.primaryAction,
                 pressed &&
@@ -1469,7 +1414,7 @@ export default function ActiveBookingScreen({
             >
               <Ionicons
                 name="navigate-outline"
-                size={20}
+                size={21}
                 color={
                   UI.colors.surface
                 }
@@ -1499,7 +1444,7 @@ export default function ActiveBookingScreen({
 
               <Ionicons
                 name="chevron-forward"
-                size={19}
+                size={20}
                 color={
                   UI.colors.surface
                 }
@@ -1511,29 +1456,17 @@ export default function ActiveBookingScreen({
           'on_the_way' ? (
             <Pressable
               onPress={() => {
-                Alert.alert(
-                  'Mark arrived?',
+                confirmAction(
+                  'arrived',
+                  'Mark arrived',
                   'Confirm that you have reached the customer service location.',
-                  [
-                    {
-                      text: 'Cancel',
-                      style:
-                        'cancel',
-                    },
-                    {
-                      text: 'Mark arrived',
-                      onPress: () => {
-                        void runAction(
-                          'arrived',
-                        )
-                      },
-                    },
-                  ],
                 )
               }}
               disabled={
                 actionLoading
               }
+              accessibilityRole="button"
+              accessibilityLabel="Mark arrived"
               style={({ pressed }) => [
                 styles.primaryAction,
                 pressed &&
@@ -1544,7 +1477,7 @@ export default function ActiveBookingScreen({
             >
               <Ionicons
                 name="location-outline"
-                size={20}
+                size={21}
                 color={
                   UI.colors.surface
                 }
@@ -1574,866 +1507,624 @@ export default function ActiveBookingScreen({
 
               <Ionicons
                 name="chevron-forward"
-                size={19}
+                size={20}
                 color={
                   UI.colors.surface
                 }
               />
             </Pressable>
           ) : null}
+
+          {(
+            booking.status ===
+              'assigned' ||
+            booking.status ===
+              'on_the_way' ||
+            booking.status ===
+              'arrived' ||
+            booking.status ===
+              'in_progress'
+          ) ? (
+            <Pressable
+              onPress={() => {
+                confirmAction(
+                  'cancel',
+                  'Cancel booking',
+                  'Are you sure you want to cancel this booking?',
+                )
+              }}
+              disabled={
+                actionLoading
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Cancel booking"
+              style={({ pressed }) => [
+                styles.cancelAction,
+                pressed &&
+                  styles.cancelActionPressed,
+                actionLoading &&
+                  styles.cancelActionDisabled,
+              ]}
+            >
+              <Ionicons
+                name="close-circle-outline"
+                size={19}
+                color={
+                  UI.colors.error
+                }
+              />
+
+              <Text style={styles.cancelText}>
+                Cancel booking
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {locationError &&
-        journeyActive ? (
+        liveTracking ? (
           <Text
-            style={styles.locationFooterError}
+            style={
+              styles.locationFooterError
+            }
           >
             Live location notice:{' '}
             {locationError}
           </Text>
         ) : null}
 
-        <Text
-          style={styles.footerText}
-        >
+        <Text style={styles.footerText}>
           TempStaff active job
         </Text>
 
-        <View
-          style={styles.bottomSpacing}
-        />
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </ScreenContainer>
   )
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  label: string
-  value: string
-}) {
-  return (
-    <View style={styles.infoRow}>
-      <View
-        style={styles.infoIcon}
-      >
-        <Ionicons
-          name={icon}
-          size={18}
-          color={
-            UI.colors.secondary
-          }
-        />
-      </View>
-
-      <View
-        style={styles.infoCopy}
-      >
-        <Text
-          style={styles.infoLabel}
-        >
-          {label}
-        </Text>
-
-        <Text
-          style={styles.infoValue}
-          numberOfLines={3}
-        >
-          {value}
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-function InfoDivider() {
-  return (
-    <View
-      style={styles.infoDivider}
-    />
-  )
-}
-
-const styles =
-  StyleSheet.create({
-    content: {
-      paddingHorizontal:
-        UI.spacing.lg,
-      paddingTop:
-        UI.spacing.md,
-      paddingBottom:
-        UI.spacing.xxxl,
-    },
-
-    topBar: {
-      minHeight: 44,
-      flexDirection:
-        'row',
-      alignItems:
-        'center',
-      justifyContent:
-        'space-between',
-    },
-
-    headerButton: {
-      width: 44,
-      height: 44,
-      borderRadius:
-        UI.radius.pill,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      backgroundColor:
-        UI.colors.surface,
-      borderWidth: 1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    headerButtonPlaceholder: {
-      width: 44,
-      height: 44,
-    },
-
-    headerButtonPressed: {
-      opacity: 0.7,
-    },
-
-    topBarCenter: {
-      alignItems:
-        'center',
-    },
-
-    topBarEyebrow: {
-      fontSize: 9,
-      fontWeight:
-        '800',
-      letterSpacing:
-        1,
-      color:
-        UI.colors.secondary,
-    },
-
-    topBarTitle: {
-      marginTop:
-        2,
-      fontSize:
-        UI.typography.bodyLarge,
-      fontWeight:
-        '900',
-      color:
-        UI.colors.text,
-    },
-
-    heroCard: {
-      marginTop:
-        UI.spacing.lg,
-      padding:
-        UI.spacing.xl,
-      borderRadius:
-        UI.radius.xl,
-      backgroundColor:
-        UI.colors.primary,
-    },
-
-    heroTop: {
-      flexDirection:
-        'row',
-      alignItems:
-        'center',
-      justifyContent:
-        'space-between',
-    },
-
-    customerAvatar: {
-      width: 56,
-      height: 56,
-      borderRadius:
-        UI.radius.lg,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      backgroundColor:
-        UI.colors.surface,
-    },
-
-    customerAvatarText: {
-      fontSize:
-        18,
-      fontWeight:
-        '900',
-      color:
-        UI.colors.primary,
-    },
-
-    heroEyebrow: {
-      marginTop:
-        UI.spacing.xl,
-      fontSize: 10,
-      fontWeight:
-        '800',
-      letterSpacing:
-        1.1,
-      color:
-        UI.colors.surface,
-      opacity:
-        0.7,
-    },
-
-    heroTitle: {
-      marginTop:
-        UI.spacing.sm,
-      fontSize:
-        26,
-      lineHeight:
-        32,
-      fontWeight:
-        '900',
-      color:
-        UI.colors.surface,
-    },
-
-    heroMeta: {
-      marginTop:
-        UI.spacing.sm,
-      fontSize:
-        UI.typography.body,
-      lineHeight:
-        20,
-      color:
-        UI.colors.surface,
-      opacity:
-        0.78,
-    },
-
-    heroFooter: {
-      marginTop:
-        UI.spacing.xl,
-      paddingTop:
-        UI.spacing.md,
-      borderTopWidth:
-        1,
-      borderTopColor:
-        'rgba(255,255,255,0.15)',
-      flexDirection:
-        'row',
-      alignItems:
-        'flex-end',
-      justifyContent:
-        'space-between',
-    },
-
-    heroLabel: {
-      fontSize:
-        9,
-      fontWeight:
-        '800',
-      letterSpacing:
-        0.8,
-      color:
-        UI.colors.surface,
-      opacity:
-        0.65,
-    },
-
-    heroAmount: {
-      marginTop:
-        3,
-      fontSize:
-        20,
-      fontWeight:
-        '900',
-      color:
-        UI.colors.surface,
-    },
-
-    heroStatusCopy: {
-      alignItems:
-        'flex-end',
-    },
-
-    heroStatusValue: {
-      marginTop:
-        3,
-      fontSize:
-        UI.typography.small,
-      fontWeight:
-        '800',
-      color:
-        UI.colors.surface,
-    },
-
-    warningBox: {
-      marginTop:
-        UI.spacing.lg,
-      padding:
-        UI.spacing.md,
-      borderRadius:
-        UI.radius.lg,
-      flexDirection:
-        'row',
-      alignItems:
-        'flex-start',
-      backgroundColor:
-        UI.colors.warningBackground,
-      borderWidth:
-        1,
-      borderColor:
-        '#FDE68A',
-    },
-
-    warningText: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.sm,
-      fontSize:
-        UI.typography.small,
-      lineHeight:
-        18,
-      color:
-        UI.colors.textSecondary,
-    },
-
-    infoBox: {
-      marginTop:
-        UI.spacing.lg,
-      padding:
-        UI.spacing.md,
-      borderRadius:
-        UI.radius.lg,
-      flexDirection:
-        'row',
-      alignItems:
-        'flex-start',
-      backgroundColor:
-        UI.colors.infoBackground,
-      borderWidth:
-        1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    infoText: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.sm,
-      fontSize:
-        UI.typography.small,
-      lineHeight:
-        18,
-      color:
-        UI.colors.textSecondary,
-    },
-
-    section: {
-      marginTop:
-        UI.spacing.xxl,
-    },
-
-    sectionEyebrow: {
-      fontSize:
-        10,
-      fontWeight:
-        '800',
-      letterSpacing:
-        1.05,
-      color:
-        UI.colors.secondary,
-    },
-
-    sectionTitle: {
-      marginTop:
-        UI.spacing.xs,
-      fontSize:
-        UI.typography.subtitle,
-      lineHeight:
-        24,
-      fontWeight:
-        '800',
-      color:
-        UI.colors.text,
-    },
-
-    locationCard: {
-      marginTop:
-        UI.spacing.md,
-      padding:
-        UI.spacing.lg,
-      borderRadius:
-        UI.radius.xl,
-      backgroundColor:
-        UI.colors.surface,
-      borderWidth:
-        1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    locationHeader: {
-      flexDirection:
-        'row',
-      alignItems:
-        'flex-start',
-    },
-
-    locationIcon: {
-      width: 44,
-      height: 44,
-      borderRadius:
-        UI.radius.lg,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      backgroundColor:
-        UI.colors.infoBackground,
-    },
-
-    locationCopy: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.md,
-    },
-
-    locationLabel: {
-      fontSize:
-        UI.typography.small,
-      fontWeight:
-        '800',
-      color:
-        UI.colors.secondary,
-    },
-
-    locationAddress: {
-      marginTop:
-        UI.spacing.xs,
-      fontSize:
-        UI.typography.body,
-      lineHeight:
-        21,
-      color:
-        UI.colors.text,
-    },
-
-    mapWrapper: {
-      marginTop:
-        UI.spacing.lg,
-    },
-
-    mapUnavailable: {
-      minHeight:
-        220,
-      marginTop:
-        UI.spacing.lg,
-      padding:
-        UI.spacing.xl,
-      borderRadius:
-        UI.radius.lg,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      backgroundColor:
-        UI.colors.background,
-      borderWidth:
-        1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    mapUnavailableTitle: {
-      marginTop:
-        UI.spacing.sm,
-      fontSize:
-        UI.typography.bodyLarge,
-      fontWeight:
-        '800',
-      color:
-        UI.colors.text,
-      textAlign:
-        'center',
-    },
-
-    mapUnavailableText: {
-      marginTop:
-        UI.spacing.xs,
-      fontSize:
-        UI.typography.small,
-      lineHeight:
-        18,
-      color:
-        UI.colors.textSecondary,
-      textAlign:
-        'center',
-    },
-
-    navigationAction: {
-      marginTop:
-        UI.spacing.md,
-    },
-
-    customerCard: {
-      marginTop:
-        UI.spacing.md,
-      padding:
-        UI.spacing.lg,
-      borderRadius:
-        UI.radius.xl,
-      flexDirection:
-        'row',
-      alignItems:
-        'flex-start',
-      backgroundColor:
-        UI.colors.surface,
-      borderWidth:
-        1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    customerIcon: {
-      width: 44,
-      height: 44,
-      borderRadius:
-        UI.radius.lg,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      backgroundColor:
-        UI.colors.infoBackground,
-    },
-
-    customerCopy: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.md,
-    },
-
-    customerName: {
-      fontSize:
-        UI.typography.bodyLarge,
-      fontWeight:
-        '800',
-      color:
-        UI.colors.text,
-    },
-
-    customerSubtitle: {
-      marginTop:
-        UI.spacing.xs,
-      fontSize:
-        UI.typography.small,
-      lineHeight:
-        18,
-      color:
-        UI.colors.textSecondary,
-    },
-
-    progressCard: {
-      marginTop:
-        UI.spacing.md,
-      paddingHorizontal:
-        UI.spacing.lg,
-      paddingVertical:
-        UI.spacing.sm,
-      borderRadius:
-        UI.radius.xl,
-      backgroundColor:
-        UI.colors.surface,
-      borderWidth:
-        1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    progressRow: {
-      flexDirection:
-        'row',
-      alignItems:
-        'center',
-      paddingVertical:
-        UI.spacing.md,
-    },
-
-    progressIcon: {
-      width: 40,
-      height: 40,
-      borderRadius:
-        UI.radius.pill,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      backgroundColor:
-        UI.colors.background,
-    },
-
-    progressIconCompleted: {
-      backgroundColor:
-        UI.colors.successBackground,
-    },
-
-    progressCopy: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.md,
-    },
-
-    progressLabel: {
-      fontSize:
-        UI.typography.small,
-      fontWeight:
-        '700',
-      color:
-        UI.colors.text,
-    },
-
-    progressValue: {
-      marginTop:
-        UI.spacing.xs,
-      fontSize:
-        UI.typography.caption,
-      color:
-        UI.colors.textMuted,
-    },
-
-    progressValueCompleted: {
-      color:
-        UI.colors.success,
-    },
-
-    infoCard: {
-      marginTop:
-        UI.spacing.md,
-      paddingHorizontal:
-        UI.spacing.lg,
-      paddingVertical:
-        UI.spacing.sm,
-      borderRadius:
-        UI.radius.xl,
-      backgroundColor:
-        UI.colors.surface,
-      borderWidth:
-        1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    infoRow: {
-      flexDirection:
-        'row',
-      alignItems:
-        'center',
-      paddingVertical:
-        UI.spacing.md,
-    },
-
-    infoIcon: {
-      width: 38,
-      height: 38,
-      borderRadius:
-        UI.radius.md,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      backgroundColor:
-        UI.colors.infoBackground,
-    },
-
-    infoCopy: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.md,
-    },
-
-    infoLabel: {
-      fontSize:
-        UI.typography.caption,
-      color:
-        UI.colors.textMuted,
-    },
-
-    infoValue: {
-      marginTop:
-        UI.spacing.xs,
-      fontSize:
-        UI.typography.small,
-      fontWeight:
-        '800',
-      color:
-        UI.colors.text,
-    },
-
-    infoDivider: {
-      height:
-        1,
-      backgroundColor:
-        UI.colors.border,
-    },
-
-    notesCard: {
-      marginTop:
-        UI.spacing.md,
-      padding:
-        UI.spacing.lg,
-      borderRadius:
-        UI.radius.xl,
-      flexDirection:
-        'row',
-      alignItems:
-        'flex-start',
-      backgroundColor:
-        UI.colors.surface,
-      borderWidth:
-        1,
-      borderColor:
-        UI.colors.border,
-    },
-
-    notesText: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.md,
-      fontSize:
-        UI.typography.body,
-      lineHeight:
-        21,
-      color:
-        UI.colors.text,
-    },
-
-    bottomActions: {
-      marginTop:
-        UI.spacing.xxl,
-    },
-
-    primaryAction: {
-      minHeight:
-        68,
-      padding:
-        UI.spacing.lg,
-      borderRadius:
-        UI.radius.xl,
-      flexDirection:
-        'row',
-      alignItems:
-        'center',
-      backgroundColor:
-        UI.colors.secondary,
-    },
-
-    primaryActionPressed: {
-      opacity:
-        0.8,
-    },
-
-    primaryActionDisabled: {
-      opacity:
-        0.5,
-    },
-
-    primaryActionCopy: {
-      flex: 1,
-      marginLeft:
-        UI.spacing.md,
-      marginRight:
-        UI.spacing.sm,
-    },
-
-    primaryActionTitle: {
-      fontSize:
-        UI.typography.bodyLarge,
-      fontWeight:
-        '900',
-      color:
-        UI.colors.surface,
-    },
-
-    primaryActionSubtitle: {
-      marginTop:
-        UI.spacing.xs,
-      fontSize:
-        UI.typography.small,
-      lineHeight:
-        18,
-      color:
-        UI.colors.surface,
-      opacity:
-        0.78,
-    },
-
-    locationFooterError: {
-      marginTop:
-        UI.spacing.md,
-      fontSize:
-        UI.typography.caption,
-      lineHeight:
-        17,
-      color:
-        UI.colors.warning,
-      textAlign:
-        'center',
-    },
-
-    footerText: {
-      marginTop:
-        UI.spacing.xl,
-      fontSize:
-        UI.typography.caption,
-      color:
-        UI.colors.textMuted,
-      textAlign:
-        'center',
-    },
-
-    bottomSpacing: {
-      height:
-        UI.spacing.xxl,
-    },
-
-    loadingContainer: {
-      flex: 1,
-      alignItems:
-        'center',
-      justifyContent:
-        'center',
-      paddingHorizontal:
-        UI.spacing.xxl,
-    },
-
-    loadingTitle: {
-      marginTop:
-        UI.spacing.lg,
-      fontSize:
-        UI.typography.subtitle,
-      fontWeight:
-        '800',
-      color:
-        UI.colors.text,
-      textAlign:
-        'center',
-    },
-
-    loadingText: {
-      marginTop:
-        UI.spacing.sm,
-      maxWidth:
-        300,
-      fontSize:
-        UI.typography.body,
-      lineHeight:
-        20,
-      color:
-        UI.colors.textSecondary,
-      textAlign:
-        'center',
-    },
-  })
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: UI.spacing.lg,
+    paddingTop: UI.spacing.md,
+    paddingBottom: UI.spacing.xxxl,
+  },
+
+  topBar: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: UI.colors.surface,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  headerPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+
+  headerButtonPressed: {
+    opacity: 0.7,
+  },
+
+  topBarCenter: {
+    alignItems: 'center',
+  },
+
+  topBarEyebrow: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: UI.colors.secondary,
+  },
+
+  topBarTitle: {
+    marginTop: 2,
+    fontSize: UI.typography.bodyLarge,
+    fontWeight: '900',
+    color: UI.colors.text,
+  },
+
+  heroCard: {
+    marginTop: UI.spacing.lg,
+    padding: UI.spacing.xl,
+    borderRadius: UI.radius.xl,
+    backgroundColor: UI.colors.primary,
+  },
+
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  customerAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: UI.colors.surface,
+  },
+
+  customerAvatarText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: UI.colors.primary,
+  },
+
+  heroEyebrow: {
+    marginTop: UI.spacing.xl,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+    color: UI.colors.surface,
+    opacity: 0.7,
+  },
+
+  heroTitle: {
+    marginTop: UI.spacing.sm,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '900',
+    color: UI.colors.surface,
+  },
+
+  heroMeta: {
+    marginTop: UI.spacing.sm,
+    fontSize: UI.typography.body,
+    lineHeight: 20,
+    color: UI.colors.surface,
+    opacity: 0.78,
+  },
+
+  heroFooter: {
+    marginTop: UI.spacing.xl,
+    paddingTop: UI.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.14)',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+
+  heroLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    color: UI.colors.surface,
+    opacity: 0.64,
+  },
+
+  heroAmount: {
+    marginTop: 3,
+    fontSize: 20,
+    fontWeight: '900',
+    color: UI.colors.surface,
+  },
+
+  heroStatusCopy: {
+    alignItems: 'flex-end',
+    maxWidth: '52%',
+  },
+
+  heroStatusValue: {
+    marginTop: 3,
+    fontSize: UI.typography.small,
+    fontWeight: '800',
+    color: UI.colors.surface,
+    textAlign: 'right',
+  },
+
+  warningBox: {
+    marginTop: UI.spacing.lg,
+    padding: UI.spacing.md,
+    borderRadius: UI.radius.lg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: UI.colors.warningBackground,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+
+  warningText: {
+    flex: 1,
+    marginLeft: UI.spacing.sm,
+    fontSize: UI.typography.small,
+    lineHeight: 18,
+    color: UI.colors.textSecondary,
+  },
+
+  infoBox: {
+    marginTop: UI.spacing.lg,
+    padding: UI.spacing.md,
+    borderRadius: UI.radius.lg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: UI.colors.infoBackground,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  infoText: {
+    flex: 1,
+    marginLeft: UI.spacing.sm,
+    fontSize: UI.typography.small,
+    lineHeight: 18,
+    color: UI.colors.textSecondary,
+  },
+
+  section: {
+    marginTop: UI.spacing.xxl,
+  },
+
+  sectionEyebrow: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.05,
+    color: UI.colors.secondary,
+  },
+
+  sectionTitle: {
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.subtitle,
+    lineHeight: 24,
+    fontWeight: '800',
+    color: UI.colors.text,
+  },
+
+  locationCard: {
+    marginTop: UI.spacing.md,
+    padding: UI.spacing.lg,
+    borderRadius: UI.radius.xl,
+    backgroundColor: UI.colors.surface,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+
+  locationIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: UI.colors.infoBackground,
+  },
+
+  locationCopy: {
+    flex: 1,
+    marginLeft: UI.spacing.md,
+  },
+
+  locationLabel: {
+    fontSize: UI.typography.small,
+    fontWeight: '800',
+    color: UI.colors.secondary,
+  },
+
+  locationAddress: {
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.body,
+    lineHeight: 21,
+    color: UI.colors.text,
+  },
+
+  mapWrapper: {
+    marginTop: UI.spacing.lg,
+  },
+
+  mapUnavailable: {
+    minHeight: 220,
+    marginTop: UI.spacing.lg,
+    padding: UI.spacing.xl,
+    borderRadius: UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: UI.colors.background,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  mapUnavailableTitle: {
+    marginTop: UI.spacing.sm,
+    fontSize: UI.typography.bodyLarge,
+    fontWeight: '800',
+    color: UI.colors.text,
+    textAlign: 'center',
+  },
+
+  mapUnavailableText: {
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
+    lineHeight: 18,
+    color: UI.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  navigationAction: {
+    marginTop: UI.spacing.md,
+  },
+
+  navigationHint: {
+    marginTop: UI.spacing.sm,
+    fontSize: UI.typography.caption,
+    lineHeight: 17,
+    color: UI.colors.textMuted,
+  },
+
+  customerCard: {
+    marginTop: UI.spacing.md,
+    padding: UI.spacing.lg,
+    borderRadius: UI.radius.xl,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: UI.colors.surface,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  customerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: UI.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: UI.colors.infoBackground,
+  },
+
+  customerCopy: {
+    flex: 1,
+    marginLeft: UI.spacing.md,
+  },
+
+  customerName: {
+    fontSize: UI.typography.bodyLarge,
+    fontWeight: '800',
+    color: UI.colors.text,
+  },
+
+  customerSubtitle: {
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
+    lineHeight: 18,
+    color: UI.colors.textSecondary,
+  },
+
+  progressCard: {
+    marginTop: UI.spacing.md,
+    paddingHorizontal: UI.spacing.lg,
+    paddingVertical: UI.spacing.sm,
+    borderRadius: UI.radius.xl,
+    backgroundColor: UI.colors.surface,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: UI.spacing.md,
+  },
+
+  progressIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: UI.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: UI.colors.background,
+  },
+
+  progressIconComplete: {
+    backgroundColor: UI.colors.successBackground,
+  },
+
+  progressCopy: {
+    flex: 1,
+    marginLeft: UI.spacing.md,
+  },
+
+  progressLabel: {
+    fontSize: UI.typography.small,
+    fontWeight: '700',
+    color: UI.colors.text,
+  },
+
+  progressValue: {
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.caption,
+    color: UI.colors.textMuted,
+  },
+
+  progressValueComplete: {
+    color: UI.colors.success,
+  },
+
+  infoCard: {
+    marginTop: UI.spacing.md,
+    paddingHorizontal: UI.spacing.lg,
+    paddingVertical: UI.spacing.sm,
+    borderRadius: UI.radius.xl,
+    backgroundColor: UI.colors.surface,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: UI.spacing.md,
+  },
+
+  infoIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: UI.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: UI.colors.infoBackground,
+  },
+
+  infoCopy: {
+    flex: 1,
+    marginLeft: UI.spacing.md,
+  },
+
+  infoLabel: {
+    fontSize: UI.typography.caption,
+    color: UI.colors.textMuted,
+  },
+
+  infoValue: {
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
+    fontWeight: '800',
+    color: UI.colors.text,
+  },
+
+  infoDivider: {
+    height: 1,
+    backgroundColor: UI.colors.border,
+  },
+
+  notesCard: {
+    marginTop: UI.spacing.md,
+    padding: UI.spacing.lg,
+    borderRadius: UI.radius.xl,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: UI.colors.background,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+  },
+
+  notesText: {
+    flex: 1,
+    marginLeft: UI.spacing.sm,
+    fontSize: UI.typography.body,
+    lineHeight: 21,
+    color: UI.colors.text,
+  },
+
+  bottomActions: {
+    marginTop: UI.spacing.xxl,
+  },
+
+  primaryAction: {
+    minHeight: 68,
+    padding: UI.spacing.lg,
+    borderRadius: UI.radius.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: UI.colors.secondary,
+  },
+
+  primaryActionPressed: {
+    opacity: 0.8,
+  },
+
+  primaryActionDisabled: {
+    opacity: 0.5,
+  },
+
+  primaryActionCopy: {
+    flex: 1,
+    marginLeft: UI.spacing.md,
+    marginRight: UI.spacing.sm,
+  },
+
+  primaryActionTitle: {
+    fontSize: UI.typography.bodyLarge,
+    fontWeight: '900',
+    color: UI.colors.surface,
+  },
+
+  primaryActionSubtitle: {
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
+    lineHeight: 18,
+    color: UI.colors.surface,
+    opacity: 0.78,
+  },
+
+  cancelAction: {
+    minHeight: 50,
+    marginTop: UI.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  cancelActionPressed: {
+    opacity: 0.65,
+  },
+
+  cancelActionDisabled: {
+    opacity: 0.45,
+  },
+
+  cancelText: {
+    marginLeft: UI.spacing.xs,
+    fontSize: UI.typography.small,
+    fontWeight: '800',
+    color: UI.colors.error,
+  },
+
+  locationFooterError: {
+    marginTop: UI.spacing.md,
+    fontSize: UI.typography.caption,
+    lineHeight: 17,
+    color: UI.colors.warning,
+    textAlign: 'center',
+  },
+
+  footerText: {
+    marginTop: UI.spacing.xl,
+    fontSize: UI.typography.caption,
+    color: UI.colors.textMuted,
+    textAlign: 'center',
+  },
+
+  bottomSpacing: {
+    height: UI.spacing.xxl,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: UI.spacing.xxl,
+  },
+
+  loadingTitle: {
+    marginTop: UI.spacing.lg,
+    fontSize: UI.typography.subtitle,
+    fontWeight: '800',
+    color: UI.colors.text,
+    textAlign: 'center',
+  },
+
+  loadingText: {
+    marginTop: UI.spacing.sm,
+    maxWidth: 300,
+    fontSize: UI.typography.body,
+    lineHeight: 20,
+    color: UI.colors.textSecondary,
+    textAlign: 'center',
+  },
+})
