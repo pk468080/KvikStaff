@@ -11,7 +11,9 @@ import {
 import {
   Ionicons,
 } from '@expo/vector-icons'
-
+import type {
+  WorkerNotificationType,
+} from '../../types/notifications'
 import {
   ScreenContainer,
 } from '../../components/layout/ScreenContainer'
@@ -46,7 +48,7 @@ type NotificationsScreenProps = {
 }
 
 function getNotificationIcon(
-  notificationType: string,
+  notificationType: WorkerNotificationType | null,
 ): keyof typeof Ionicons.glyphMap {
   switch (notificationType) {
     case 'booking_offer':

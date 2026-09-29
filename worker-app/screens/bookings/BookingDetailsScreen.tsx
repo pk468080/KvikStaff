@@ -1902,6 +1902,16 @@ const styles = StyleSheet.create({
     color:
       UI.colors.text,
   },
+  sectionSubtitle: {
+  marginTop:
+    UI.spacing.xs,
+  fontSize:
+    UI.typography.small,
+  lineHeight:
+    18,
+  color:
+    UI.colors.textSecondary,
+},
 
   actionCard: {
     flexDirection:
