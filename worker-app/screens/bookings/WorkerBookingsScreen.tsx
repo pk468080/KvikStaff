@@ -14,8 +14,8 @@ import {
 } from 'react-native'
 
 import {
-  AppButton,
-} from '../../components/ui/AppButton'
+  Ionicons,
+} from '@expo/vector-icons'
 
 import {
   ScreenContainer,
@@ -211,6 +211,49 @@ function sortBookings(
   )
 }
 
+function getJobIcon(
+  booking: WorkerBooking,
+): keyof typeof Ionicons.glyphMap {
+  if (
+    isActiveBookingStatus(
+      booking.status,
+    )
+  ) {
+    return 'briefcase'
+  }
+
+  switch (booking.status) {
+    case 'completed':
+      return 'checkmark-circle'
+
+    case 'cancelled':
+    case 'expired':
+    case 'payment_failed':
+      return 'close-circle'
+
+    default:
+      return 'calendar'
+  }
+}
+
+function getFilterDescription(
+  filter: BookingFilter,
+): string {
+  switch (filter) {
+    case 'active':
+      return 'Jobs you are currently working on'
+    case 'upcoming':
+      return 'Your scheduled assignments'
+    case 'completed':
+      return 'Jobs you have completed'
+    case 'cancelled':
+      return 'Cancelled or expired jobs'
+    case 'all':
+    default:
+      return 'All assignments linked to your account'
+  }
+}
+
 export default function WorkerBookingsScreen({
   onBookingPress,
   onBack,
@@ -322,7 +365,7 @@ export default function WorkerBookingsScreen({
               styles.loadingTitle
             }
           >
-            Loading your bookings
+            Loading your jobs
           </Text>
 
           <Text
@@ -330,7 +373,7 @@ export default function WorkerBookingsScreen({
               styles.loadingText
             }
           >
-            Fetching assigned, upcoming and completed jobs...
+            Fetching your latest worker assignments...
           </Text>
         </View>
       </ScreenContainer>
@@ -344,7 +387,7 @@ export default function WorkerBookingsScreen({
     return (
       <ScreenContainer>
         <ErrorState
-          title="Bookings unavailable"
+          title="Jobs unavailable"
           message={error}
           onAction={
             handleRefresh
@@ -366,6 +409,9 @@ export default function WorkerBookingsScreen({
             onRefresh={
               handleRefresh
             }
+            tintColor={
+              UI.colors.secondary
+            }
           />
         }
         showsVerticalScrollIndicator={
@@ -385,13 +431,13 @@ export default function WorkerBookingsScreen({
                 styles.eyebrow
               }
             >
-              WORKER BOOKINGS
+              YOUR WORK
             </Text>
 
             <Text
               style={styles.title}
             >
-              My bookings
+              My Jobs
             </Text>
 
             <Text
@@ -399,24 +445,32 @@ export default function WorkerBookingsScreen({
                 styles.subtitle
               }
             >
-              Review your assigned work, upcoming jobs and completed services.
+              Track assigned, scheduled and completed work in one place.
             </Text>
           </View>
 
           {onBack ? (
-            <View
-              style={
-                styles.headerButton
+            <Pressable
+              onPress={
+                onBack
               }
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.headerIconButton,
+                pressed &&
+                  styles.headerIconPressed,
+              ]}
             >
-              <AppButton
-                title="Back"
-                variant="secondary"
-                onPress={
-                  onBack
+              <Ionicons
+                name="arrow-back"
+                size={22}
+                color={
+                  UI.colors.primary
                 }
               />
-            </View>
+            </Pressable>
           ) : null}
         </View>
 
@@ -426,101 +480,161 @@ export default function WorkerBookingsScreen({
               styles.warningBox
             }
           >
-            <Text
+            <View
               style={
-                styles.warningTitle
+                styles.warningIcon
               }
             >
-              Booking update notice
-            </Text>
+              <Ionicons
+                name="alert-circle-outline"
+                size={17}
+                color={
+                  UI.colors.warning
+                }
+              />
+            </View>
 
-            <Text
+            <View
               style={
-                styles.warningText
+                styles.warningCopy
               }
             >
-              {error}
-            </Text>
+              <Text
+                style={
+                  styles.warningTitle
+                }
+              >
+                Jobs update notice
+              </Text>
+
+              <Text
+                style={
+                  styles.warningText
+                }
+              >
+                {error}
+              </Text>
+            </View>
           </View>
         ) : null}
 
         <View
-          style={styles.filterCard}
+          style={
+            styles.filterHeader
+          }
         >
-          <Text
+          <View
             style={
-              styles.filterTitle
+              styles.filterHeaderCopy
             }
           >
-            Booking views
-          </Text>
+            <Text
+              style={
+                styles.filterTitle
+              }
+            >
+              Job status
+            </Text>
+
+            <Text
+              style={
+                styles.filterSubtitle
+              }
+            >
+              {getFilterDescription(
+                filter,
+              )}
+            </Text>
+          </View>
 
           <View
             style={
-              styles.filterRow
+              styles.totalBadge
             }
           >
-            {FILTERS.map(
-              item => {
-                const selected =
-                  filter ===
-                  item.key
-
-                return (
-                  <View
-                    key={
-                      item.key
-                    }
-                    style={
-                      styles.filterButton
-                    }
-                  >
-                    <Pressable
-                      onPress={() => {
-                        setFilter(
-                          item.key,
-                        )
-                      }}
-                      style={({
-                        pressed,
-                      }) => [
-                        styles.filterPressable,
-                        selected &&
-                          styles.filterSelected,
-                        pressed &&
-                          styles.filterPressed,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.filterLabel,
-                          selected &&
-                            styles.filterLabelSelected,
-                        ]}
-                      >
-                        {item.label}
-                      </Text>
-
-                      <Text
-                        style={[
-                          styles.filterCount,
-                          selected &&
-                            styles.filterCountSelected,
-                        ]}
-                      >
-                        {
-                          counts[
-                            item.key
-                          ]
-                        }
-                      </Text>
-                    </Pressable>
-                  </View>
-                )
-              },
-            )}
+            <Text
+              style={
+                styles.totalBadgeText
+              }
+            >
+              {filteredBookings.length}
+            </Text>
           </View>
         </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            styles.filterRow
+          }
+        >
+          {FILTERS.map(
+            item => {
+              const selected =
+                filter ===
+                item.key
+
+              return (
+                <Pressable
+                  key={
+                    item.key
+                  }
+                  onPress={() => {
+                    setFilter(
+                      item.key,
+                    )
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    selected,
+                  }}
+                  style={({ pressed }) => [
+                    styles.filterChip,
+                    selected &&
+                      styles.filterChipSelected,
+                    pressed &&
+                      styles.filterChipPressed,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterLabel,
+                      selected &&
+                        styles.filterLabelSelected,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.filterCount,
+                      selected &&
+                        styles.filterCountSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.filterCountText,
+                        selected &&
+                          styles.filterCountTextSelected,
+                      ]}
+                    >
+                      {
+                        counts[
+                          item.key
+                        ]
+                      }
+                    </Text>
+                  </View>
+                </Pressable>
+              )
+            },
+          )}
+        </ScrollView>
 
         {filteredBookings.length ===
         0 ? (
@@ -529,12 +643,34 @@ export default function WorkerBookingsScreen({
               styles.emptyWrapper
             }
           >
+            <View
+              style={
+                styles.emptyIcon
+              }
+            >
+              <Ionicons
+                name={
+                  filter ===
+                  'completed'
+                    ? 'checkmark-done-outline'
+                    : filter ===
+                        'cancelled'
+                      ? 'close-outline'
+                      : 'briefcase-outline'
+                }
+                size={28}
+                color={
+                  UI.colors.secondary
+                }
+              />
+            </View>
+
             <EmptyState
               title={
                 filter ===
                 'all'
-                  ? 'No bookings yet'
-                  : `No ${filter} bookings`
+                  ? 'No jobs yet'
+                  : `No ${filter} jobs`
               }
               message={
                 filter ===
@@ -549,7 +685,7 @@ export default function WorkerBookingsScreen({
                       : filter ===
                           'cancelled'
                         ? 'Cancelled or expired bookings will appear here.'
-                        : 'Bookings assigned to your worker account will appear here.'
+                        : 'Jobs assigned to your worker account will appear here.'
               }
               actionLabel="Refresh"
               onAction={
@@ -568,6 +704,11 @@ export default function WorkerBookingsScreen({
                     booking,
                   )
 
+                const active =
+                  isActiveBookingStatus(
+                    booking.status,
+                  )
+
                 return (
                   <Pressable
                     key={
@@ -581,10 +722,12 @@ export default function WorkerBookingsScreen({
                         booking.id,
                       )
                     }}
-                    style={({
-                      pressed,
-                    }) => [
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open job ${booking.id}`}
+                    style={({ pressed }) => [
                       styles.bookingCard,
+                      active &&
+                        styles.bookingCardActive,
                       pressed &&
                         onBookingPress &&
                         styles.bookingPressed,
@@ -592,20 +735,50 @@ export default function WorkerBookingsScreen({
                   >
                     <View
                       style={
-                        styles.bookingHeader
+                        styles.bookingTop
                       }
                     >
                       <View
+                        style={[
+                          styles.jobIcon,
+                          active &&
+                            styles.jobIconActive,
+                          booking.status ===
+                            'completed' &&
+                            styles.jobIconCompleted,
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            getJobIcon(
+                              booking,
+                            )
+                          }
+                          size={20}
+                          color={
+                            active
+                              ? UI.colors.surface
+                              : booking.status ===
+                                  'completed'
+                                ? UI.colors.success
+                                : UI.colors.secondary
+                          }
+                        />
+                      </View>
+
+                      <View
                         style={
-                          styles.bookingCopy
+                          styles.bookingTopCopy
                         }
                       >
                         <Text
                           style={
-                            styles.bookingId
+                            styles.bookingEyebrow
                           }
                         >
-                          {booking.id}
+                          {active
+                            ? 'CURRENT JOB'
+                            : 'ASSIGNED JOB'}
                         </Text>
 
                         <Text
@@ -631,49 +804,53 @@ export default function WorkerBookingsScreen({
 
                     <View
                       style={
-                        styles.metaRow
+                        styles.scheduleRow
                       }
                     >
                       <View
                         style={
-                          styles.metaItem
+                          styles.scheduleItem
                         }
                       >
-                        <Text
-                          style={
-                            styles.metaLabel
+                        <Ionicons
+                          name="time-outline"
+                          size={17}
+                          color={
+                            UI.colors.textSecondary
                           }
-                        >
-                          Type
-                        </Text>
+                        />
 
                         <Text
                           style={
-                            styles.metaValue
+                            styles.scheduleValue
                           }
                         >
-                          {getBookingTypeLabel(
-                            booking.bookingType,
-                          )}
+                          {formatBookingDateTime(
+                            booking.scheduledStart,
+                          )
+                            .split(',')
+                            .slice(-1)
+                            .join(',')
+                            .trim()}
                         </Text>
                       </View>
 
                       <View
                         style={
-                          styles.metaItem
+                          styles.scheduleItem
                         }
                       >
-                        <Text
-                          style={
-                            styles.metaLabel
+                        <Ionicons
+                          name="hourglass-outline"
+                          size={16}
+                          color={
+                            UI.colors.textSecondary
                           }
-                        >
-                          Duration
-                        </Text>
+                        />
 
                         <Text
                           style={
-                            styles.metaValue
+                            styles.scheduleValue
                           }
                         >
                           {booking.durationValue}{' '}
@@ -686,6 +863,30 @@ export default function WorkerBookingsScreen({
                             : ''}
                         </Text>
                       </View>
+
+                      <View
+                        style={
+                          styles.scheduleItem
+                        }
+                      >
+                        <Ionicons
+                          name="layers-outline"
+                          size={16}
+                          color={
+                            UI.colors.textSecondary
+                          }
+                        />
+
+                        <Text
+                          style={
+                            styles.scheduleValue
+                          }
+                        >
+                          {getBookingTypeLabel(
+                            booking.bookingType,
+                          )}
+                        </Text>
+                      </View>
                     </View>
 
                     <View
@@ -693,6 +894,20 @@ export default function WorkerBookingsScreen({
                         styles.amountRow
                       }
                     >
+                      <View
+                        style={
+                          styles.amountIcon
+                        }
+                      >
+                        <Ionicons
+                          name="cash-outline"
+                          size={18}
+                          color={
+                            UI.colors.success
+                          }
+                        />
+                      </View>
+
                       <View
                         style={
                           styles.amountCopy
@@ -703,7 +918,7 @@ export default function WorkerBookingsScreen({
                             styles.amountLabel
                           }
                         >
-                          Booking amount
+                          Booking value
                         </Text>
 
                         <Text
@@ -718,15 +933,16 @@ export default function WorkerBookingsScreen({
                         </Text>
                       </View>
 
-                      {onBookingPress ? (
-                        <Text
-                          style={
-                            styles.openText
-                          }
-                        >
-                          View details
-                        </Text>
-                      ) : null}
+                      <Text
+                        style={
+                          styles.bookingId
+                        }
+                      >
+                        #{booking.id.slice(
+                          0,
+                          8,
+                        )}
+                      </Text>
                     </View>
 
                     {booking.notes ? (
@@ -735,21 +951,46 @@ export default function WorkerBookingsScreen({
                           styles.notesBox
                         }
                       >
-                        <Text
-                          style={
-                            styles.notesLabel
+                        <Ionicons
+                          name="document-text-outline"
+                          size={16}
+                          color={
+                            UI.colors.textMuted
                           }
-                        >
-                          Notes
-                        </Text>
+                        />
 
                         <Text
                           style={
                             styles.notesText
                           }
+                          numberOfLines={2}
                         >
                           {booking.notes}
                         </Text>
+                      </View>
+                    ) : null}
+
+                    {onBookingPress ? (
+                      <View
+                        style={
+                          styles.cardFooter
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.openText
+                          }
+                        >
+                          View job details
+                        </Text>
+
+                        <Ionicons
+                          name="chevron-forward"
+                          size={18}
+                          color={
+                            UI.colors.secondary
+                          }
+                        />
                       </View>
                     ) : null}
                   </Pressable>
@@ -759,13 +1000,11 @@ export default function WorkerBookingsScreen({
           </View>
         )}
 
-        <Text
+        <View
           style={
-            styles.footerText
+            styles.bottomSpacing
           }
-        >
-          Booking information is loaded from your authenticated TempStaff worker account.
-        </Text>
+        />
       </ScrollView>
     </ScreenContainer>
   )
@@ -774,9 +1013,9 @@ export default function WorkerBookingsScreen({
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal:
-      UI.spacing.xl,
+      UI.spacing.lg,
     paddingTop:
-      UI.spacing.xl,
+      UI.spacing.md,
     paddingBottom:
       UI.spacing.xxxl,
   },
@@ -785,19 +1024,15 @@ const styles = StyleSheet.create({
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
-    marginBottom:
-      UI.spacing.lg,
+      'center',
+    justifyContent:
+      'space-between',
   },
 
   headerCopy: {
     flex: 1,
     paddingRight:
       UI.spacing.md,
-  },
-
-  headerButton: {
-    width: 76,
   },
 
   eyebrow: {
@@ -810,36 +1045,80 @@ const styles = StyleSheet.create({
 
   title: {
     marginTop:
-      UI.spacing.sm,
+      UI.spacing.xs,
     fontSize:
-      UI.typography.title,
-    lineHeight: 30,
-    fontWeight: '800',
+      UI.typography.largeTitle,
+    lineHeight: 34,
+    fontWeight: '900',
     color:
       UI.colors.text,
   },
 
   subtitle: {
     marginTop:
-      UI.spacing.sm,
+      UI.spacing.xs,
     fontSize:
       UI.typography.body,
-    lineHeight: 21,
+    lineHeight: 20,
     color:
       UI.colors.textSecondary,
   },
 
+  headerIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  headerIconPressed: {
+    opacity: 0.7,
+  },
+
   warningBox: {
-    marginBottom:
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+    marginTop:
       UI.spacing.lg,
     padding:
       UI.spacing.md,
     borderRadius:
-      UI.radius.md,
+      UI.radius.lg,
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor:
+      '#FDE68A',
+  },
+
+  warningIcon: {
+    width: 32,
+    height: 32,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  warningCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
   },
 
   warningTitle: {
@@ -860,11 +1139,82 @@ const styles = StyleSheet.create({
       UI.colors.textSecondary,
   },
 
-  filterCard: {
-    padding:
-      UI.spacing.md,
+  filterHeader: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    justifyContent:
+      'space-between',
+    marginTop:
+      UI.spacing.xxl,
+    marginBottom:
+      UI.spacing.sm,
+  },
+
+  filterHeaderCopy: {
+    flex: 1,
+  },
+
+  filterTitle: {
+    fontSize:
+      UI.typography.bodyLarge,
+    fontWeight: '800',
+    color:
+      UI.colors.text,
+  },
+
+  filterSubtitle: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.caption,
+    color:
+      UI.colors.textMuted,
+  },
+
+  totalBadge: {
+    minWidth: 36,
+    height: 36,
+    paddingHorizontal:
+      UI.spacing.sm,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  totalBadgeText: {
+    fontSize:
+      UI.typography.small,
+    fontWeight: '800',
+    color:
+      UI.colors.secondary,
+  },
+
+  filterRow: {
+    paddingRight:
+      UI.spacing.lg,
+  },
+
+  filterChip: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    minHeight: 42,
+    marginRight:
+      UI.spacing.sm,
+    paddingLeft:
+      UI.spacing.md,
+    paddingRight:
+      UI.spacing.sm,
+    borderRadius:
+      UI.radius.pill,
     backgroundColor:
       UI.colors.surface,
     borderWidth: 1,
@@ -872,60 +1222,20 @@ const styles = StyleSheet.create({
       UI.colors.border,
   },
 
-  filterTitle: {
-    fontSize:
-      UI.typography.small,
-    fontWeight: '800',
-    color:
-      UI.colors.text,
-  },
-
-  filterRow: {
-    flexDirection:
-      'row',
-    marginTop:
-      UI.spacing.sm,
-    marginLeft:
-      -UI.spacing.xs,
-  },
-
-  filterButton: {
-    flex: 1,
-    marginLeft:
-      UI.spacing.xs,
-  },
-
-  filterPressable: {
-    minHeight: 64,
-    alignItems:
-      'center',
-    justifyContent:
-      'center',
-    paddingHorizontal:
-      UI.spacing.xs,
-    borderRadius:
-      UI.radius.md,
-    backgroundColor:
-      UI.colors.background,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
-
-  filterSelected: {
+  filterChipSelected: {
     backgroundColor:
       UI.colors.primary,
     borderColor:
       UI.colors.primary,
   },
 
-  filterPressed: {
+  filterChipPressed: {
     opacity: 0.78,
   },
 
   filterLabel: {
     fontSize:
-      UI.typography.caption,
+      UI.typography.small,
     fontWeight: '700',
     color:
       UI.colors.textSecondary,
@@ -937,16 +1247,36 @@ const styles = StyleSheet.create({
   },
 
   filterCount: {
-    marginTop:
+    minWidth: 24,
+    height: 24,
+    marginLeft:
+      UI.spacing.sm,
+    paddingHorizontal:
       UI.spacing.xs,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.background,
+  },
+
+  filterCountSelected: {
+    backgroundColor:
+      '#173B55',
+  },
+
+  filterCountText: {
     fontSize:
-      UI.typography.bodyLarge,
+      UI.typography.caption,
     fontWeight: '800',
     color:
       UI.colors.text,
   },
 
-  filterCountSelected: {
+  filterCountTextSelected: {
     color:
       UI.colors.surface,
   },
@@ -962,7 +1292,7 @@ const styles = StyleSheet.create({
     padding:
       UI.spacing.lg,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.surface,
     borderWidth: 1,
@@ -970,29 +1300,60 @@ const styles = StyleSheet.create({
       UI.colors.border,
   },
 
-  bookingPressed: {
-    opacity: 0.82,
+  bookingCardActive: {
+    borderColor:
+      UI.colors.secondary,
+    borderLeftWidth: 4,
   },
 
-  bookingHeader: {
+  bookingPressed: {
+    opacity: 0.84,
+  },
+
+  bookingTop: {
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
+      'center',
   },
 
-  bookingCopy: {
+  jobIcon: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.lg,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  jobIconActive: {
+    backgroundColor:
+      UI.colors.secondary,
+  },
+
+  jobIconCompleted: {
+    backgroundColor:
+      UI.colors.successBackground,
+  },
+
+  bookingTopCopy: {
     flex: 1,
-    paddingRight:
+    marginLeft:
       UI.spacing.md,
+    paddingRight:
+      UI.spacing.sm,
   },
 
-  bookingId: {
-    fontSize:
-      UI.typography.caption,
-    fontWeight: '700',
+  bookingEyebrow: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
     color:
-      UI.colors.textMuted,
+      UI.colors.secondary,
   },
 
   bookingDate: {
@@ -1006,9 +1367,11 @@ const styles = StyleSheet.create({
       UI.colors.text,
   },
 
-  metaRow: {
+  scheduleRow: {
     flexDirection:
       'row',
+    flexWrap:
+      'wrap',
     marginTop:
       UI.spacing.lg,
     paddingTop:
@@ -1018,26 +1381,25 @@ const styles = StyleSheet.create({
       UI.colors.border,
   },
 
-  metaItem: {
-    flex: 1,
-    paddingRight:
-      UI.spacing.md,
+  scheduleItem: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    marginRight:
+      UI.spacing.lg,
+    marginBottom:
+      UI.spacing.xs,
   },
 
-  metaLabel: {
-    fontSize:
-      UI.typography.caption,
-    color:
-      UI.colors.textMuted,
-  },
-
-  metaValue: {
-    marginTop: 2,
+  scheduleValue: {
+    marginLeft:
+      UI.spacing.xs,
     fontSize:
       UI.typography.small,
     fontWeight: '700',
     color:
-      UI.colors.text,
+      UI.colors.textSecondary,
   },
 
   amountRow: {
@@ -1045,8 +1407,6 @@ const styles = StyleSheet.create({
       'row',
     alignItems:
       'center',
-    justifyContent:
-      'space-between',
     marginTop:
       UI.spacing.md,
     paddingTop:
@@ -1056,8 +1416,23 @@ const styles = StyleSheet.create({
       UI.colors.border,
   },
 
+  amountIcon: {
+    width: 36,
+    height: 36,
+    borderRadius:
+      UI.radius.md,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.successBackground,
+  },
+
   amountCopy: {
     flex: 1,
+    marginLeft:
+      UI.spacing.sm,
   },
 
   amountLabel: {
@@ -1071,22 +1446,27 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize:
       UI.typography.bodyLarge,
-    fontWeight: '800',
+    fontWeight: '900',
     color:
       UI.colors.text,
   },
 
-  openText: {
+  bookingId: {
+    maxWidth: 90,
     marginLeft:
-      UI.spacing.md,
+      UI.spacing.sm,
     fontSize:
-      UI.typography.small,
-    fontWeight: '800',
+      UI.typography.caption,
+    fontWeight: '700',
     color:
-      UI.colors.secondary,
+      UI.colors.textMuted,
   },
 
   notesBox: {
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
     marginTop:
       UI.spacing.md,
     padding:
@@ -1097,17 +1477,10 @@ const styles = StyleSheet.create({
       UI.colors.background,
   },
 
-  notesLabel: {
-    fontSize:
-      UI.typography.caption,
-    fontWeight: '700',
-    color:
-      UI.colors.textMuted,
-  },
-
   notesText: {
-    marginTop:
-      UI.spacing.xs,
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
     fontSize:
       UI.typography.small,
     lineHeight: 18,
@@ -1115,21 +1488,72 @@ const styles = StyleSheet.create({
       UI.colors.textSecondary,
   },
 
+  cardFooter: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    justifyContent:
+      'flex-end',
+    marginTop:
+      UI.spacing.lg,
+    paddingTop:
+      UI.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor:
+      UI.colors.border,
+  },
+
+  openText: {
+    marginRight:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    fontWeight: '800',
+    color:
+      UI.colors.secondary,
+  },
+
   emptyWrapper: {
     minHeight: 360,
     marginTop:
       UI.spacing.lg,
+    padding:
+      UI.spacing.lg,
+    borderRadius:
+      UI.radius.xl,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.background,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
   },
 
-  footerText: {
-    marginTop:
-      UI.spacing.lg,
-    fontSize:
-      UI.typography.caption,
-    lineHeight: 16,
-    color:
-      UI.colors.textMuted,
-    textAlign: 'center',
+  emptyIcon: {
+    width: 58,
+    height: 58,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    marginBottom:
+      UI.spacing.sm,
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  bottomSpacing: {
+    height:
+      UI.spacing.xxl,
   },
 
   loadingContainer: {
@@ -1156,6 +1580,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop:
       UI.spacing.sm,
+    maxWidth: 300,
     fontSize:
       UI.typography.body,
     lineHeight: 20,
