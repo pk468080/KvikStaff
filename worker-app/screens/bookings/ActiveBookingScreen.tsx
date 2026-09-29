@@ -758,13 +758,51 @@ export default function ActiveBookingScreen({
       [context],
     )
 
-  const liveTracking =
+    const liveTracking =
     booking?.status ===
       'on_the_way' ||
     booking?.status ===
       'arrived' ||
     booking?.status ===
       'in_progress'
+
+  /*
+   * Scheduled bookings cannot begin the journey before
+   * their scheduled start time.
+   *
+   * The database remains authoritative, but the UI also
+   * prevents the worker from attempting an invalid action.
+   */
+  const scheduledJourneyBlocked =
+    Boolean(
+      booking &&
+        booking.bookingType ===
+          'scheduled' &&
+        booking.status ===
+          'assigned' &&
+        (() => {
+          const scheduledStart =
+            new Date(
+              booking.scheduledStart,
+            ).getTime()
+
+          return (
+            Number.isFinite(
+              scheduledStart,
+            ) &&
+            scheduledStart >
+              Date.now()
+          )
+        })(),
+    )
+
+  const scheduledJourneyStartLabel =
+    booking &&
+    scheduledJourneyBlocked
+      ? formatBookingDateTime(
+          booking.scheduledStart,
+        )
+      : null
 
   async function handleNavigation(): Promise<void> {
     if (!customerLocation) {
@@ -1388,68 +1426,126 @@ export default function ActiveBookingScreen({
           </View>
         ) : null}
 
-        <View style={styles.bottomActions}>
+                <View style={styles.bottomActions}>
           {booking.status ===
           'assigned' ? (
-            <Pressable
-              onPress={() => {
-                confirmAction(
-                  'on_the_way',
-                  'Start journey',
-                  'Start the journey to the customer service location?',
-                )
-              }}
-              disabled={
-                actionLoading
-              }
-              accessibilityRole="button"
-              accessibilityLabel="Start journey"
-              style={({ pressed }) => [
-                styles.primaryAction,
-                pressed &&
-                  styles.primaryActionPressed,
-                actionLoading &&
-                  styles.primaryActionDisabled,
-              ]}
-            >
-              <Ionicons
-                name="navigate-outline"
-                size={21}
-                color={
-                  UI.colors.surface
-                }
-              />
+            <>
+              <Pressable
+                onPress={() => {
+                  if (
+                    scheduledJourneyBlocked
+                  ) {
+                    return
+                  }
 
-              <View
-                style={
-                  styles.primaryActionCopy
+                  confirmAction(
+                    'on_the_way',
+                    'Start journey',
+                    'Start the journey to the customer service location?',
+                  )
+                }}
+                disabled={
+                  actionLoading ||
+                  scheduledJourneyBlocked
                 }
+                accessibilityRole="button"
+                accessibilityLabel={
+                  scheduledJourneyBlocked
+                    ? 'Start journey is not available yet'
+                    : 'Start journey'
+                }
+                accessibilityState={{
+                  disabled:
+                    actionLoading ||
+                    scheduledJourneyBlocked,
+                }}
+                style={({ pressed }) => [
+                  styles.primaryAction,
+                  pressed &&
+                    !scheduledJourneyBlocked &&
+                    styles.primaryActionPressed,
+                  (
+                    actionLoading ||
+                    scheduledJourneyBlocked
+                  ) &&
+                    styles.primaryActionDisabled,
+                ]}
               >
-                <Text
+                <Ionicons
+                  name={
+                    scheduledJourneyBlocked
+                      ? 'time-outline'
+                      : 'navigate-outline'
+                  }
+                  size={21}
+                  color={
+                    UI.colors.surface
+                  }
+                />
+
+                <View
                   style={
-                    styles.primaryActionTitle
+                    styles.primaryActionCopy
                   }
                 >
-                  Start journey
-                </Text>
+                  <Text
+                    style={
+                      styles.primaryActionTitle
+                    }
+                  >
+                    {scheduledJourneyBlocked
+                      ? 'Journey not started'
+                      : 'Start journey'}
+                  </Text>
 
-                <Text
+                  <Text
+                    style={
+                      styles.primaryActionSubtitle
+                    }
+                  >
+                    {scheduledJourneyBlocked
+                      ? `Available from ${scheduledJourneyStartLabel}`
+                      : 'Begin travelling to the customer'}
+                  </Text>
+                </View>
+
+                <Ionicons
+                  name={
+                    scheduledJourneyBlocked
+                      ? 'lock-closed-outline'
+                      : 'chevron-forward'
+                  }
+                  size={20}
+                  color={
+                    UI.colors.surface
+                  }
+                />
+              </Pressable>
+
+              {scheduledJourneyBlocked ? (
+                <View
                   style={
-                    styles.primaryActionSubtitle
+                    styles.scheduleNotice
                   }
                 >
-                  Begin travelling to the customer
-                </Text>
-              </View>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={18}
+                    color={
+                      UI.colors.secondary
+                    }
+                  />
 
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={
-                  UI.colors.surface
-                }
-              />
-            </Pressable>
+                  <Text
+                    style={
+                      styles.scheduleNoticeText
+                    }
+                  >
+                    This scheduled job cannot be started early. The journey action will become available at the scheduled start time.
+                  </Text>
+                </View>
+              ) : null}
+            </>
           ) : null}
 
           {booking.status ===
@@ -1467,6 +1563,10 @@ export default function ActiveBookingScreen({
               }
               accessibilityRole="button"
               accessibilityLabel="Mark arrived"
+              accessibilityState={{
+                disabled:
+                  actionLoading,
+              }}
               style={({ pressed }) => [
                 styles.primaryAction,
                 pressed &&
@@ -1515,50 +1615,27 @@ export default function ActiveBookingScreen({
             </Pressable>
           ) : null}
 
-          {(
-            booking.status ===
-              'assigned' ||
-            booking.status ===
-              'on_the_way' ||
-            booking.status ===
-              'arrived' ||
-            booking.status ===
-              'in_progress'
-          ) ? (
-            <Pressable
-              onPress={() => {
-                confirmAction(
-                  'cancel',
-                  'Cancel booking',
-                  'Are you sure you want to cancel this booking?',
-                )
-              }}
-              disabled={
-                actionLoading
+          <View
+            style={
+              styles.workerHelpNotice
+            }
+          >
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={18}
+              color={
+                UI.colors.secondary
               }
-              accessibilityRole="button"
-              accessibilityLabel="Cancel booking"
-              style={({ pressed }) => [
-                styles.cancelAction,
-                pressed &&
-                  styles.cancelActionPressed,
-                actionLoading &&
-                  styles.cancelActionDisabled,
-              ]}
-            >
-              <Ionicons
-                name="close-circle-outline"
-                size={19}
-                color={
-                  UI.colors.error
-                }
-              />
+            />
 
-              <Text style={styles.cancelText}>
-                Cancel booking
-              </Text>
-            </Pressable>
-          ) : null}
+            <Text
+              style={
+                styles.workerHelpText
+              }
+            >
+              Need help with this job? Use Worker Support from the app menu. Customer bookings cannot be cancelled directly by workers.
+            </Text>
+          </View>
         </View>
 
         {locationError &&
@@ -1588,6 +1665,67 @@ const styles = StyleSheet.create({
     paddingHorizontal: UI.spacing.lg,
     paddingTop: UI.spacing.md,
     paddingBottom: UI.spacing.xxxl,
+  },
+    scheduleNotice: {
+    marginTop:
+      UI.spacing.sm,
+    padding:
+      UI.spacing.md,
+    borderRadius:
+      UI.radius.lg,
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+    backgroundColor:
+      UI.colors.infoBackground,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  scheduleNoticeText: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
+    fontSize:
+      UI.typography.caption,
+    lineHeight:
+      17,
+    color:
+      UI.colors.textSecondary,
+  },
+
+  workerHelpNotice: {
+    marginTop:
+      UI.spacing.lg,
+    padding:
+      UI.spacing.md,
+    borderRadius:
+      UI.radius.lg,
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+    backgroundColor:
+      UI.colors.background,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  workerHelpText: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
+    fontSize:
+      UI.typography.caption,
+    lineHeight:
+      17,
+    color:
+      UI.colors.textMuted,
   },
 
   topBar: {
