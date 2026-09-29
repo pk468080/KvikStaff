@@ -10,7 +10,6 @@ import {
 } from './workerLocation.service'
 
 import {
-  sendWorkerPresenceHeartbeat,
   updateWorkerLocation,
 } from '../worker/workerPresence.service'
 
@@ -101,42 +100,18 @@ TaskManager.defineTask(
         latestLocation,
       )
 
-      console.log(
-        '[WorkerLocationTask] Received location:',
-        latitude,
-        longitude,
-      )
-
       /*
-       * Refresh worker presence when possible.
+       * A single background GPS event uses a single RPC.
        *
-       * IMPORTANT:
-       * Do NOT return when heartbeat succeeds.
+       * The database function:
+       * - records generic worker location
+       * - renews worker presence when the worker is available
+       * - copies the location into active booking rows
+       * - copies recurring active-booking location as needed
+       * - updates worker_profiles.current_location
        *
-       * An active booking also needs a booking-scoped
-       * worker_locations row. updateWorkerLocation(...)
-       * with null booking_id copies the location into
-       * active booking rows on the database side.
-       */
-      try {
-        await sendWorkerPresenceHeartbeat(
-          latitude,
-          longitude,
-        )
-      } catch (
-        heartbeatError
-      ) {
-        console.warn(
-          '[WorkerLocationTask] Presence heartbeat unavailable:',
-          heartbeatError,
-        )
-      }
-
-      /*
-       * Always publish the generic worker location.
-       *
-       * The database function is responsible for copying
-       * this position into active booking-scoped rows.
+       * This avoids the previous duplicate heartbeat +
+       * location-write sequence.
        */
       const result =
         await updateWorkerLocation(
@@ -145,12 +120,16 @@ TaskManager.defineTask(
           null,
         )
 
-      console.log(
-        '[WorkerLocationTask] Location published:',
-        result.latitude,
-        result.longitude,
-        result.recordedAt,
-      )
+      /*
+       * Do not log latitude/longitude in production.
+       * Location data is privacy-sensitive.
+       */
+      if (__DEV__) {
+        console.log(
+          '[WorkerLocationTask] Location published at:',
+          result.recordedAt,
+        )
+      }
     } catch (
       taskError
     ) {
@@ -220,10 +199,8 @@ export async function startWorkerBackgroundLocationTracking(
     1000
 
   /*
-   * If an old task is already running, stop it first.
-   *
-   * This is important because the previous task may have
-   * been started with the old 30-second configuration.
+   * Restart an already-running task so a changed interval
+   * takes effect immediately.
    */
   const alreadyStarted =
     await isWorkerBackgroundLocationTrackingStarted()
@@ -234,9 +211,11 @@ export async function startWorkerBackgroundLocationTracking(
     )
   }
 
-  console.log(
-    `[WorkerLocation] Starting background tracking every ${safeIntervalSeconds}s`,
-  )
+  if (__DEV__) {
+    console.log(
+      `[WorkerLocation] Starting background tracking every ${safeIntervalSeconds}s`,
+    )
+  }
 
   await Location.startLocationUpdatesAsync(
     WORKER_BACKGROUND_LOCATION_TASK,
@@ -261,7 +240,7 @@ export async function startWorkerBackgroundLocationTracking(
         Location.ActivityType.OtherNavigation,
 
       /*
-       * Do not batch the updates.
+       * Do not intentionally batch updates.
        */
       deferredUpdatesDistance:
         0,
