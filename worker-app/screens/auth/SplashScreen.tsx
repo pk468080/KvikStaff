@@ -4,8 +4,8 @@ import {
 } from 'react'
 
 import {
+  Image,
   StyleSheet,
-  Text,
   View,
 } from 'react-native'
 
@@ -25,6 +25,9 @@ type SplashScreenProps = {
   ) => void
 }
 
+const splashImage =
+    require('../../assets/splash/splash_worker.png')
+
 export default function SplashScreen({
   onFinished,
 }: SplashScreenProps) {
@@ -42,13 +45,18 @@ export default function SplashScreen({
     let mounted = true
 
     async function initialize() {
-      const fallbackAuthState: WorkerAuthState =
-        {
-          authenticated: false,
-          needsRegistration: true,
-          email: '',
-        }
+      const fallbackAuthState: WorkerAuthState = {
+        authenticated: false,
+        needsRegistration: true,
+        email: '',
+      }
 
+      /**
+       * Restore the existing worker auth state.
+       *
+       * If session restoration fails, preserve the
+       * existing safe fallback behavior.
+       */
       const authStatePromise =
         getWorkerAuthState().catch(
           error => {
@@ -61,6 +69,10 @@ export default function SplashScreen({
           },
         )
 
+      /**
+       * Keep the splash visible for at least the
+       * configured duration, exactly as before.
+       */
       const minimumSplashPromise =
         new Promise<void>(
           resolve => {
@@ -82,6 +94,14 @@ export default function SplashScreen({
         return
       }
 
+      /**
+       * Preserve the existing navigation contract.
+       *
+       * RootNavigator decides whether the worker goes to:
+       * Login
+       * WorkerRegistration / WorkerOnboarding
+       * Worker
+       */
       onFinishedRef.current(
         authState,
       )
@@ -96,13 +116,13 @@ export default function SplashScreen({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>
-        TempStaff
-      </Text>
-
-      <Text style={styles.subtitle}>
-        Worker
-      </Text>
+      <Image
+        source={splashImage}
+        style={styles.image}
+        resizeMode="cover"
+        accessible
+        accessibilityLabel="TempStaff Worker"
+      />
     </View>
   )
 }
@@ -111,39 +131,12 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
       backgroundColor:
         UI.colors.background,
     },
 
-    logo: {
-      fontSize: 34,
-
-      fontWeight:
-        '800',
-
-      letterSpacing:
-        0.5,
-
-      color:
-        UI.colors.primary,
-    },
-
-    subtitle: {
-      marginTop: 8,
-
-      fontSize: 16,
-
-      fontWeight:
-        '600',
-
-      color:
-        UI.colors.textSecondary,
+    image: {
+      width: '100%',
+      height: '100%',
     },
   })
