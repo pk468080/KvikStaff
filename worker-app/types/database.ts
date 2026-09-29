@@ -463,6 +463,12 @@ export type Database = {
     }
     Returns: Json
   }
+    mark_notification_read: {
+    Args: {
+      p_notification_id: string
+    }
+    Returns: Json
+  }
   worker_booking_action: {
     Args: {
       p_booking_id: string
