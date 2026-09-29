@@ -7,12 +7,17 @@ import {
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
+
+import {
+  Ionicons,
+} from '@expo/vector-icons'
 
 import {
   AppButton,
@@ -62,7 +67,7 @@ function formatDateTime(
   }
 
   return date.toLocaleString(
-    undefined,
+    'en-IN',
     {
       day: '2-digit',
       month: 'short',
@@ -98,22 +103,44 @@ function getOfferStatusLabel(
 ): string {
   switch (status) {
     case 'pending':
-      return 'Pending response'
+      return 'Awaiting your response'
 
     case 'accepted':
-      return 'Accepted'
+      return 'Booking accepted'
 
     case 'declined':
-      return 'Declined'
+      return 'Offer declined'
 
     case 'expired':
-      return 'Expired'
+      return 'Offer expired'
 
     case 'cancelled':
-      return 'Cancelled'
+      return 'Offer cancelled'
 
     default:
       return status
+  }
+}
+
+function getStatusIcon(
+  status: WorkerBookingOffer['status'],
+): keyof typeof Ionicons.glyphMap {
+  switch (status) {
+    case 'accepted':
+      return 'checkmark-circle'
+
+    case 'declined':
+      return 'close-circle'
+
+    case 'expired':
+      return 'time-outline'
+
+    case 'cancelled':
+      return 'ban-outline'
+
+    case 'pending':
+    default:
+      return 'briefcase-outline'
   }
 }
 
@@ -430,7 +457,7 @@ export default function BookingOfferScreen({
               styles.loadingTitle
             }
           >
-            Loading booking offer
+            Loading new job
           </Text>
 
           <Text
@@ -438,7 +465,7 @@ export default function BookingOfferScreen({
               styles.loadingText
             }
           >
-            Checking the latest offer assigned to this worker account.
+            Checking the latest assignment offer for your account.
           </Text>
         </View>
       </ScreenContainer>
@@ -508,6 +535,9 @@ export default function BookingOfferScreen({
                 true,
               )
             }}
+            tintColor={
+              UI.colors.secondary
+            }
           />
         }
         showsVerticalScrollIndicator={
@@ -515,53 +545,87 @@ export default function BookingOfferScreen({
         }
       >
         <View
-          style={styles.header}
+          style={
+            styles.topBar
+          }
         >
+          {onBack ? (
+            <Pressable
+              onPress={
+                onBack
+              }
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed &&
+                  styles.buttonPressed,
+              ]}
+            >
+              <Ionicons
+                name="arrow-back"
+                size={21}
+                color={
+                  UI.colors.primary
+                }
+              />
+            </Pressable>
+          ) : (
+            <View
+              style={
+                styles.backButtonPlaceholder
+              }
+            />
+          )}
+
           <View
             style={
-              styles.headerCopy
+              styles.topBarCenter
             }
           >
             <Text
               style={
-                styles.eyebrow
+                styles.topBarEyebrow
               }
             >
-              BOOKING OFFER
+              TEMPSTAFF
             </Text>
 
             <Text
               style={
-                styles.title
+                styles.topBarTitle
               }
             >
-              New work opportunity
-            </Text>
-
-            <Text
-              style={
-                styles.bookingId
-              }
-            >
-              Booking {bookingId}
+              New job
             </Text>
           </View>
 
-          {onBack ? (
-            <View
-              style={
-                styles.headerButton
+          <Pressable
+            onPress={() => {
+              void loadOffer(true)
+            }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh offer"
+            disabled={
+              refreshing ||
+              responding
+            }
+            style={({ pressed }) => [
+              styles.refreshButton,
+              pressed &&
+                styles.buttonPressed,
+            ]}
+          >
+            <Ionicons
+              name="refresh"
+              size={20}
+              color={
+                UI.colors.primary
               }
-            >
-              <AppButton
-                title="Back"
-                variant="secondary"
-                onPress={
-                  onBack
-                }
-              />
-            </View>
-          ) : null}
+            />
+          </Pressable>
         </View>
 
         {error ? (
@@ -570,62 +634,118 @@ export default function BookingOfferScreen({
               styles.warningBox
             }
           >
-            <Text
+            <View
               style={
-                styles.warningTitle
+                styles.warningIcon
               }
             >
-              Response notice
-            </Text>
+              <Ionicons
+                name="alert-circle-outline"
+                size={18}
+                color={
+                  UI.colors.warning
+                }
+              />
+            </View>
 
-            <Text
+            <View
               style={
-                styles.warningText
+                styles.warningCopy
               }
             >
-              {error}
-            </Text>
+              <Text
+                style={
+                  styles.warningTitle
+                }
+              >
+                Offer update notice
+              </Text>
+
+              <Text
+                style={
+                  styles.warningText
+                }
+              >
+                {error}
+              </Text>
+            </View>
           </View>
         ) : null}
 
         <View
           style={
-            styles.statusCard
+            styles.heroCard
           }
         >
           <View
             style={
-              styles.statusHeader
+              styles.heroIcon
             }
           >
-            <View
-              style={
-                styles.statusCopy
+            <Ionicons
+              name={
+                getStatusIcon(
+                  offer.status,
+                )
               }
-            >
-              <Text
-                style={
-                  styles.statusEyebrow
-                }
-              >
-                OFFER STATUS
-              </Text>
+              size={28}
+              color={
+                UI.colors.primary
+              }
+            />
+          </View>
 
-              <Text
-                style={
-                  styles.statusTitle
-                }
-              >
-                {getOfferStatusLabel(
+          <Text
+            style={
+              styles.heroEyebrow
+            }
+          >
+            WORK OPPORTUNITY
+          </Text>
+
+          <Text
+            style={
+              styles.heroTitle
+            }
+          >
+            {isPending
+              ? 'A new assignment is waiting'
+              : getOfferStatusLabel(
                   offer.status,
                 )}
-              </Text>
-            </View>
+          </Text>
 
-            {isPending ? (
+          <Text
+            style={
+              styles.heroSubtitle
+            }
+          >
+            Booking ID • {bookingId}
+          </Text>
+
+          {isPending ? (
+            <View
+              style={
+                styles.timerCard
+              }
+            >
               <View
                 style={
-                  styles.timerBadge
+                  styles.timerIcon
+                }
+              >
+                <Ionicons
+                  name="time-outline"
+                  size={19}
+                  color={
+                    UI.colors.secondary
+                  }
+                />
+              </View>
+
+              <View
+                style={
+                  styles.timerCopy
                 }
               >
                 <Text
@@ -633,7 +753,7 @@ export default function BookingOfferScreen({
                     styles.timerLabel
                   }
                 >
-                  EXPIRES IN
+                  RESPONSE TIME
                 </Text>
 
                 <Text
@@ -648,59 +768,107 @@ export default function BookingOfferScreen({
                       )}
                 </Text>
               </View>
-            ) : null}
-          </View>
 
-          {isExpired ? (
+              <View
+                style={
+                  isExpired
+                    ? styles.timerStatusExpired
+                    : styles.timerStatus
+                }
+              >
+                <Text
+                  style={
+                    isExpired
+                      ? styles.timerStatusTextExpired
+                      : styles.timerStatusText
+                  }
+                >
+                  {isExpired
+                    ? 'Expired'
+                    : 'Respond soon'}
+                </Text>
+              </View>
+            </View>
+          ) : (
             <View
               style={
-                styles.expiredBox
+                styles.finalStatus
               }
             >
-              <Text
-                style={
-                  styles.expiredTitle
+              <Ionicons
+                name={
+                  getStatusIcon(
+                    offer.status,
+                  )
                 }
-              >
-                This offer has expired
-              </Text>
+                size={20}
+                color={
+                  offer.status ===
+                  'accepted'
+                    ? UI.colors.success
+                    : offer.status ===
+                        'declined' ||
+                      offer.status ===
+                        'expired' ||
+                      offer.status ===
+                        'cancelled'
+                      ? UI.colors.error
+                      : UI.colors.secondary
+                }
+              />
 
               <Text
                 style={
-                  styles.expiredText
+                  styles.finalStatusText
                 }
               >
-                The response window has closed. Refresh to check whether a newer offer is available.
+                {getOfferStatusLabel(
+                  offer.status,
+                )}
               </Text>
             </View>
-          ) : null}
+          )}
         </View>
 
         <View
-          style={styles.section}
+          style={
+            styles.section
+          }
         >
+          <Text
+            style={
+              styles.sectionEyebrow
+            }
+          >
+            OFFER INFORMATION
+          </Text>
+
           <Text
             style={
               styles.sectionTitle
             }
           >
-            Offer details
+            Assignment details
           </Text>
 
           <View
-            style={styles.card}
+            style={
+              styles.infoCard
+            }
           >
             <InfoRow
-              label="Booking ID"
+              icon="briefcase-outline"
+              label="Booking"
               value={
-                offer.bookingId
+                bookingId
               }
             />
 
             <InfoDivider />
 
             <InfoRow
-              label="Offered at"
+              icon="paper-plane-outline"
+              label="Offered"
               value={formatDateTime(
                 offer.offeredAt,
               )}
@@ -709,7 +877,8 @@ export default function BookingOfferScreen({
             <InfoDivider />
 
             <InfoRow
-              label="Expires at"
+              icon="time-outline"
+              label="Offer expires"
               value={formatDateTime(
                 offer.expiresAt,
               )}
@@ -720,7 +889,8 @@ export default function BookingOfferScreen({
                 <InfoDivider />
 
                 <InfoRow
-                  label="Responded at"
+                  icon="checkmark-done-outline"
+                  label="Responded"
                   value={formatDateTime(
                     offer.respondedAt,
                   )}
@@ -733,35 +903,43 @@ export default function BookingOfferScreen({
         {isPending && !isExpired ? (
           <View
             style={
-              styles.actionSection
+              styles.decisionSection
             }
           >
+            <Text
+              style={
+                styles.sectionEyebrow
+              }
+            >
+              YOUR RESPONSE
+            </Text>
+
             <Text
               style={
                 styles.sectionTitle
               }
             >
-              Respond to offer
+              Do you want this job?
             </Text>
 
             <Text
               style={
-                styles.actionDescription
+                styles.decisionDescription
               }
             >
-              Accepting assigns the booking to your worker account. Declining releases the offer.
+              Accepting assigns this booking to your worker account. Declining releases the offer.
             </Text>
 
             <View
               style={
-                styles.primaryAction
+                styles.acceptButton
               }
             >
               <AppButton
                 title={
                   responding
                     ? 'Accepting...'
-                    : 'Accept booking'
+                    : 'Accept job'
                 }
                 disabled={
                   responding
@@ -774,14 +952,14 @@ export default function BookingOfferScreen({
 
             <View
               style={
-                styles.secondaryAction
+                styles.declineButton
               }
             >
               <AppButton
                 title={
                   responding
                     ? 'Please wait...'
-                    : 'Decline booking'
+                    : 'Decline'
                 }
                 variant="secondary"
                 disabled={
@@ -799,115 +977,96 @@ export default function BookingOfferScreen({
         'accepted' ? (
           <View
             style={
-              styles.successCard
+              styles.resultCardSuccess
             }
           >
-            <Text
+            <View
               style={
-                styles.successTitle
+                styles.resultIconSuccess
               }
             >
-              Booking accepted
-            </Text>
-
-            <Text
-              style={
-                styles.successText
-              }
-            >
-              This booking has been accepted by your worker account.
-            </Text>
+              <Ionicons
+                name="checkmark"
+                size={22}
+                color={
+                  UI.colors.success
+                }
+              />
+            </View>
 
             <View
               style={
-                styles.successAction
+                styles.resultCopy
               }
             >
-              <AppButton
-                title="Open booking"
-                onPress={() => {
-                  onAccepted?.(
-                    offer.bookingId,
-                  )
-                }}
-              />
+              <Text
+                style={
+                  styles.resultTitleSuccess
+                }
+              >
+                Booking accepted
+              </Text>
+
+              <Text
+                style={
+                  styles.resultText
+                }
+              >
+                This job is now assigned to your worker account.
+              </Text>
             </View>
+
+            <Pressable
+              onPress={() => {
+                onAccepted?.(
+                  offer.bookingId,
+                )
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Open accepted booking"
+              style={({ pressed }) => [
+                styles.resultArrowButton,
+                pressed &&
+                  styles.buttonPressed,
+              ]}
+            >
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={
+                  UI.colors.secondary
+                }
+              />
+            </Pressable>
           </View>
         ) : null}
 
         {offer.status ===
         'declined' ? (
-          <View
-            style={
-              styles.infoCard
-            }
-          >
-            <Text
-              style={
-                styles.infoTitle
-              }
-            >
-              Offer declined
-            </Text>
-
-            <Text
-              style={
-                styles.infoText
-              }
-            >
-              You declined this booking offer. It cannot be accepted again.
-            </Text>
-          </View>
+          <ResultCard
+            icon="close-circle-outline"
+            title="Offer declined"
+            message="You declined this booking offer. It cannot be accepted again."
+          />
         ) : null}
 
         {offer.status ===
         'cancelled' ? (
-          <View
-            style={
-              styles.infoCard
-            }
-          >
-            <Text
-              style={
-                styles.infoTitle
-              }
-            >
-              Offer cancelled
-            </Text>
-
-            <Text
-              style={
-                styles.infoText
-              }
-            >
-              This booking offer was cancelled before you responded.
-            </Text>
-          </View>
+          <ResultCard
+            icon="ban-outline"
+            title="Offer cancelled"
+            message="This booking offer was cancelled before you responded."
+          />
         ) : null}
 
         {offer.status ===
-        'expired' ? (
-          <View
-            style={
-              styles.infoCard
-            }
-          >
-            <Text
-              style={
-                styles.infoTitle
-              }
-            >
-              Offer expired
-            </Text>
-
-            <Text
-              style={
-                styles.infoText
-              }
-            >
-              The response window for this offer has closed.
-            </Text>
-          </View>
+        'expired' ||
+        isExpired ? (
+          <ResultCard
+            icon="time-outline"
+            title="Offer expired"
+            message="The response window for this offer has closed."
+          />
         ) : null}
 
         <Text
@@ -915,17 +1074,25 @@ export default function BookingOfferScreen({
             styles.footerText
           }
         >
-          Offer information is loaded for the authenticated worker account only.
+          Offer information is loaded for the authenticated TempStaff worker account.
         </Text>
+
+        <View
+          style={
+            styles.bottomSpacing
+          }
+        />
       </ScrollView>
     </ScreenContainer>
   )
 }
 
 function InfoRow({
+  icon,
   label,
   value,
 }: {
+  icon: keyof typeof Ionicons.glyphMap
   label: string
   value: string
 }) {
@@ -935,22 +1102,42 @@ function InfoRow({
         styles.infoRow
       }
     >
-      <Text
+      <View
         style={
-          styles.infoLabel
+          styles.infoIcon
         }
       >
-        {label}
-      </Text>
+        <Ionicons
+          name={icon}
+          size={18}
+          color={
+            UI.colors.secondary
+          }
+        />
+      </View>
 
-      <Text
-        numberOfLines={3}
+      <View
         style={
-          styles.infoValue
+          styles.infoCopy
         }
       >
-        {value}
-      </Text>
+        <Text
+          style={
+            styles.infoLabel
+          }
+        >
+          {label}
+        </Text>
+
+        <Text
+          numberOfLines={3}
+          style={
+            styles.infoValue
+          }
+        >
+          {value}
+        </Text>
+      </View>
     </View>
   )
 }
@@ -965,70 +1152,155 @@ function InfoDivider() {
   )
 }
 
+function ResultCard({
+  icon,
+  title,
+  message,
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  title: string
+  message: string
+}) {
+  return (
+    <View
+      style={
+        styles.resultCard
+      }
+    >
+      <View
+        style={
+          styles.resultIcon
+        }
+      >
+        <Ionicons
+          name={icon}
+          size={22}
+          color={
+            UI.colors.secondary
+          }
+        />
+      </View>
+
+      <View
+        style={
+          styles.resultCopy
+        }
+      >
+        <Text
+          style={
+            styles.resultTitle
+          }
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={
+            styles.resultText
+          }
+        >
+          {message}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal:
-      UI.spacing.xl,
+      UI.spacing.lg,
     paddingTop:
-      UI.spacing.xl,
+      UI.spacing.md,
     paddingBottom:
       UI.spacing.xxxl,
   },
 
-  header: {
+  topBar: {
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
-    marginBottom:
-      UI.spacing.lg,
+      'center',
+    justifyContent:
+      'space-between',
+    minHeight: 44,
   },
 
-  headerCopy: {
-    flex: 1,
-    paddingRight:
-      UI.spacing.md,
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
   },
 
-  headerButton: {
-    width: 76,
+  backButtonPlaceholder: {
+    width: 44,
+    height: 44,
   },
 
-  eyebrow: {
-    fontSize: 10,
+  topBarCenter: {
+    alignItems:
+      'center',
+  },
+
+  topBarEyebrow: {
+    fontSize: 9,
     fontWeight: '800',
-    letterSpacing: 1.1,
+    letterSpacing: 1,
     color:
       UI.colors.secondary,
   },
 
-  title: {
-    marginTop:
-      UI.spacing.sm,
+  topBarTitle: {
+    marginTop: 2,
     fontSize:
-      UI.typography.title,
-    lineHeight: 30,
-    fontWeight: '800',
+      UI.typography.bodyLarge,
+    fontWeight:
+      '900',
     color:
       UI.colors.text,
   },
 
-  bookingId: {
-    marginTop:
-      UI.spacing.xs,
-    fontSize:
-      UI.typography.caption,
-    color:
-      UI.colors.textMuted,
+  refreshButton: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  buttonPressed: {
+    opacity: 0.7,
   },
 
   warningBox: {
-    marginBottom:
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+    marginTop:
       UI.spacing.lg,
     padding:
       UI.spacing.md,
     borderRadius:
-      UI.radius.md,
+      UI.radius.lg,
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
@@ -1036,10 +1308,30 @@ const styles = StyleSheet.create({
       '#FDE68A',
   },
 
+  warningIcon: {
+    width: 32,
+    height: 32,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  warningCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
+  },
+
   warningTitle: {
     fontSize:
       UI.typography.small,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
       UI.colors.warning,
   },
@@ -1054,7 +1346,9 @@ const styles = StyleSheet.create({
       UI.colors.textSecondary,
   },
 
-  statusCard: {
+  heroCard: {
+    marginTop:
+      UI.spacing.lg,
     padding:
       UI.spacing.xl,
     borderRadius:
@@ -1063,57 +1357,91 @@ const styles = StyleSheet.create({
       UI.colors.primary,
   },
 
-  statusHeader: {
-    flexDirection:
-      'row',
+  heroIcon: {
+    width: 58,
+    height: 58,
+    borderRadius:
+      UI.radius.lg,
     alignItems:
-      'flex-start',
+      'center',
     justifyContent:
-      'space-between',
+      'center',
+    backgroundColor:
+      UI.colors.surface,
   },
 
-  statusCopy: {
-    flex: 1,
-    paddingRight:
-      UI.spacing.md,
-  },
-
-  statusEyebrow: {
+  heroEyebrow: {
+    marginTop:
+      UI.spacing.lg,
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontWeight:
+      '800',
+    letterSpacing: 1.1,
     color:
       UI.colors.surface,
     opacity: 0.72,
   },
 
-  statusTitle: {
+  heroTitle: {
     marginTop:
       UI.spacing.sm,
-    fontSize:
-      UI.typography.subtitle,
-    lineHeight: 24,
-    fontWeight: '800',
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight:
+      '900',
     color:
       UI.colors.surface,
   },
 
-  timerBadge: {
-    minWidth: 88,
-    padding:
+  heroSubtitle: {
+    marginTop:
       UI.spacing.sm,
-    borderRadius:
-      UI.radius.md,
-    backgroundColor:
+    fontSize:
+      UI.typography.small,
+    color:
       UI.colors.surface,
+    opacity: 0.76,
+  },
+
+  timerCard: {
+    flexDirection:
+      'row',
     alignItems:
       'center',
+    marginTop:
+      UI.spacing.xl,
+    padding:
+      UI.spacing.md,
+    borderRadius:
+      UI.radius.lg,
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  timerIcon: {
+    width: 38,
+    height: 38,
+    borderRadius:
+      UI.radius.md,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  timerCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
   },
 
   timerLabel: {
     fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontWeight:
+      '800',
+    letterSpacing: 0.9,
     color:
       UI.colors.textMuted,
   },
@@ -1121,63 +1449,115 @@ const styles = StyleSheet.create({
   timerValue: {
     marginTop:
       UI.spacing.xs,
-    fontSize:
-      UI.typography.bodyLarge,
-    fontWeight: '900',
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight:
+      '900',
     color:
       UI.colors.text,
   },
 
-  expiredBox: {
-    marginTop:
-      UI.spacing.lg,
-    padding:
-      UI.spacing.md,
+  timerStatus: {
+    paddingHorizontal:
+      UI.spacing.sm,
+    paddingVertical:
+      UI.spacing.xs,
     borderRadius:
-      UI.radius.md,
+      UI.radius.pill,
     backgroundColor:
-      UI.colors.surface,
+      UI.colors.successBackground,
   },
 
-  expiredTitle: {
+  timerStatusExpired: {
+    paddingHorizontal:
+      UI.spacing.sm,
+    paddingVertical:
+      UI.spacing.xs,
+    borderRadius:
+      UI.radius.pill,
+    backgroundColor:
+      UI.colors.errorBackground,
+  },
+
+  timerStatusText: {
     fontSize:
-      UI.typography.small,
-    fontWeight: '800',
+      UI.typography.caption,
+    fontWeight:
+      '800',
+    color:
+      UI.colors.success,
+  },
+
+  timerStatusTextExpired: {
+    fontSize:
+      UI.typography.caption,
+    fontWeight:
+      '800',
     color:
       UI.colors.error,
   },
 
-  expiredText: {
+  finalStatus: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
     marginTop:
-      UI.spacing.xs,
+      UI.spacing.xl,
+    paddingTop:
+      UI.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor:
+      'rgba(255,255,255,0.14)',
+  },
+
+  finalStatusText: {
+    marginLeft:
+      UI.spacing.sm,
     fontSize:
-      UI.typography.small,
-    lineHeight: 18,
+      UI.typography.body,
+    fontWeight:
+      '800',
     color:
-      UI.colors.textSecondary,
+      UI.colors.surface,
   },
 
   section: {
     marginTop:
-      UI.spacing.xl,
+      UI.spacing.xxl,
+  },
+
+  sectionEyebrow: {
+    fontSize: 10,
+    fontWeight:
+      '800',
+    letterSpacing:
+      1.05,
+    color:
+      UI.colors.secondary,
   },
 
   sectionTitle: {
+    marginTop:
+      UI.spacing.xs,
     fontSize:
       UI.typography.subtitle,
     lineHeight: 23,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
   },
 
-  card: {
+  infoCard: {
     marginTop:
       UI.spacing.md,
-    padding:
+    paddingHorizontal:
       UI.spacing.lg,
+    paddingVertical:
+      UI.spacing.sm,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.surface,
     borderWidth: 1,
@@ -1189,44 +1569,60 @@ const styles = StyleSheet.create({
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
+      'center',
+    paddingVertical:
+      UI.spacing.md,
+  },
+
+  infoIcon: {
+    width: 38,
+    height: 38,
+    borderRadius:
+      UI.radius.md,
+    alignItems:
+      'center',
     justifyContent:
-      'space-between',
-    gap: UI.spacing.md,
+      'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  infoCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
   },
 
   infoLabel: {
-    flex: 1,
     fontSize:
-      UI.typography.small,
+      UI.typography.caption,
     color:
-      UI.colors.textSecondary,
+      UI.colors.textMuted,
   },
 
   infoValue: {
-    flex: 1,
+    marginTop:
+      UI.spacing.xs,
     fontSize:
       UI.typography.small,
-    fontWeight: '700',
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
-    textAlign: 'right',
   },
 
   infoDivider: {
     height: 1,
-    marginVertical:
-      UI.spacing.md,
     backgroundColor:
       UI.colors.border,
   },
 
-  actionSection: {
+  decisionSection: {
     marginTop:
-      UI.spacing.xl,
+      UI.spacing.xxl,
   },
 
-  actionDescription: {
+  decisionDescription: {
     marginTop:
       UI.spacing.xs,
     fontSize:
@@ -1236,23 +1632,27 @@ const styles = StyleSheet.create({
       UI.colors.textSecondary,
   },
 
-  primaryAction: {
+  acceptButton: {
     marginTop:
       UI.spacing.lg,
   },
 
-  secondaryAction: {
+  declineButton: {
     marginTop:
       UI.spacing.sm,
   },
 
-  successCard: {
+  resultCardSuccess: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
     marginTop:
-      UI.spacing.xl,
+      UI.spacing.xxl,
     padding:
       UI.spacing.lg,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.successBackground,
     borderWidth: 1,
@@ -1260,52 +1660,77 @@ const styles = StyleSheet.create({
       UI.colors.success,
   },
 
-  successTitle: {
-    fontSize:
-      UI.typography.bodyLarge,
-    fontWeight: '800',
-    color:
-      UI.colors.success,
-  },
-
-  successText: {
+  resultCard: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
     marginTop:
-      UI.spacing.xs,
-    fontSize:
-      UI.typography.small,
-    lineHeight: 18,
-    color:
-      UI.colors.textSecondary,
-  },
-
-  successAction: {
-    marginTop:
-      UI.spacing.md,
-  },
-
-  infoCard: {
-    marginTop:
-      UI.spacing.xl,
+      UI.spacing.xxl,
     padding:
       UI.spacing.lg,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.infoBackground,
     borderWidth: 1,
     borderColor:
-      UI.colors.info,
+      UI.colors.border,
   },
 
-  infoTitle: {
+  resultIconSuccess: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  resultIcon: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  resultCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+    marginRight:
+      UI.spacing.sm,
+  },
+
+  resultTitleSuccess: {
     fontSize:
       UI.typography.bodyLarge,
-    fontWeight: '800',
+    fontWeight:
+      '900',
+    color:
+      UI.colors.success,
+  },
+
+  resultTitle: {
+    fontSize:
+      UI.typography.bodyLarge,
+    fontWeight:
+      '900',
     color:
       UI.colors.text,
   },
 
-  infoText: {
+  resultText: {
     marginTop:
       UI.spacing.xs,
     fontSize:
@@ -1313,6 +1738,19 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color:
       UI.colors.textSecondary,
+  },
+
+  resultArrowButton: {
+    width: 38,
+    height: 38,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
   },
 
   footerText: {
@@ -1323,7 +1761,13 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color:
       UI.colors.textMuted,
-    textAlign: 'center',
+    textAlign:
+      'center',
+  },
+
+  bottomSpacing: {
+    height:
+      UI.spacing.xxl,
   },
 
   loadingContainer: {
@@ -1341,20 +1785,24 @@ const styles = StyleSheet.create({
       UI.spacing.lg,
     fontSize:
       UI.typography.subtitle,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
-    textAlign: 'center',
+    textAlign:
+      'center',
   },
 
   loadingText: {
     marginTop:
       UI.spacing.sm,
+    maxWidth: 300,
     fontSize:
       UI.typography.body,
     lineHeight: 20,
     color:
       UI.colors.textSecondary,
-    textAlign: 'center',
+    textAlign:
+      'center',
   },
 })
