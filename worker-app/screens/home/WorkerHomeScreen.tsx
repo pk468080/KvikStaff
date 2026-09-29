@@ -1,9 +1,10 @@
 import {
   useCallback,
 } from 'react'
-
+import { Ionicons } from '@expo/vector-icons'
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -43,6 +44,17 @@ import {
   useWorkerProfile,
 } from '../../hooks/useWorkerProfile'
 
+import {
+  getBookingStatusLabel,
+  getBookingTypeLabel,
+  isActiveBookingStatus,
+} from '../../lib/workerBookingUtils'
+
+import type {
+  BookingStatus,
+  WorkerBooking,
+} from '../../types/booking'
+
 type WorkerHomeScreenProps = {
   onBookings?: () => void
   onSchedule?: () => void
@@ -50,71 +62,74 @@ type WorkerHomeScreenProps = {
   onProfile?: () => void
 }
 
-function formatStatus(
-  status: string,
-): string {
-  switch (status) {
-    case 'available':
-      return 'Available'
-
-    case 'busy':
-      return 'Busy'
-
-    case 'suspended':
-      return 'Suspended'
-
-    case 'offline':
-    default:
-      return 'Offline'
-  }
-}
-
-function getStatusVariant(
-  status: string,
-):
-  | 'default'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info' {
-  switch (status) {
-    case 'available':
-      return 'success'
-
-    case 'busy':
-      return 'warning'
-
-    case 'suspended':
-      return 'error'
-
-    default:
-      return 'default'
-  }
-}
-
-function formatDateTime(
+function formatDate(
   value: string,
 ): string {
   const date = new Date(value)
 
-  if (Number.isNaN(date.getTime())) {
-    return value
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return '—'
   }
 
-  return date.toLocaleString(
+  return date.toLocaleDateString(
     'en-IN',
     {
+      weekday: 'short',
       day: '2-digit',
       month: 'short',
+    },
+  )
+}
+
+function formatTime(
+  value: string,
+): string {
+  const date = new Date(value)
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return '—'
+  }
+
+  return date.toLocaleTimeString(
+    'en-IN',
+    {
       hour: '2-digit',
       minute: '2-digit',
     },
   )
 }
 
+function formatTimeRange(
+  start: string,
+  end: string,
+): string {
+  const startTime =
+    formatTime(start)
+
+  const endTime =
+    formatTime(end)
+
+  if (
+    startTime === '—' ||
+    endTime === '—'
+  ) {
+    return 'Schedule unavailable'
+  }
+
+  return `${startTime} – ${endTime}`
+}
+
 function formatAmount(
-  amount: number,
-  currency: string | null,
+  amount: number | null | undefined,
+  currency: string | null | undefined,
 ): string {
   const numericAmount =
     Number(amount)
@@ -124,7 +139,7 @@ function formatAmount(
       numericAmount,
     )
   ) {
-    return '0.00'
+    return '—'
   }
 
   if (!currency) {
@@ -137,50 +152,290 @@ function formatAmount(
       {
         style: 'currency',
         currency,
-        maximumFractionDigits: 2,
+        maximumFractionDigits: 0,
       },
-    ).format(numericAmount)
+    ).format(
+      numericAmount,
+    )
   } catch {
     return `${currency} ${numericAmount.toFixed(2)}`
   }
 }
 
-function getBookingLabel(
-  status: string,
-): string {
+function getStatusVariant(
+  status: BookingStatus,
+):
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info' {
   switch (status) {
     case 'assigned':
-      return 'Assigned'
+    case 'paid':
+      return 'info'
 
     case 'on_the_way':
-      return 'On the way'
-
     case 'arrived':
-      return 'Arrived'
-
     case 'in_progress':
-      return 'In progress'
+      return 'warning'
 
     case 'completed':
-      return 'Completed'
+      return 'success'
 
     case 'cancelled':
-      return 'Cancelled'
-
-    case 'paid':
-      return 'Paid'
-
-    case 'searching_worker':
-      return 'Searching'
+    case 'expired':
+    case 'payment_failed':
+      return 'error'
 
     default:
-      return status
-        .replace(/_/g, ' ')
-        .replace(
-          /^./,
-          value => value.toUpperCase(),
-        )
+      return 'default'
   }
+}
+
+function getFriendlyStatus(
+  status: BookingStatus,
+): string {
+  return getBookingStatusLabel(
+    status,
+  )
+}
+
+function getBookingMeta(
+  booking: WorkerBooking,
+): string {
+  const duration =
+    `${booking.durationValue} ${booking.durationUnit}`
+
+  const type =
+    getBookingTypeLabel(
+      booking.bookingType,
+    )
+
+  return `${duration} · ${type}`
+}
+
+function getInitials(
+  fullName: string,
+): string {
+  const parts =
+    fullName
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+
+  if (
+    parts.length === 0
+  ) {
+    return 'T'
+  }
+
+  if (
+    parts.length === 1
+  ) {
+    return parts[0]
+      .slice(0, 1)
+      .toUpperCase()
+  }
+
+  return (
+    parts[0].slice(0, 1) +
+    parts[
+      parts.length - 1
+    ].slice(0, 1)
+  ).toUpperCase()
+}
+
+function JobCard({
+  booking,
+  active = false,
+  onPress,
+}: {
+  booking: WorkerBooking
+  active?: boolean
+  onPress?: () => void
+}) {
+  const content = (
+    <View
+      style={[
+        styles.jobCard,
+        active &&
+          styles.jobCardActive,
+      ]}
+    >
+      <View
+        style={
+          styles.jobTopRow
+        }
+      >
+        <View
+          style={
+            styles.jobDateBlock
+          }
+        >
+          <Text
+            style={
+              styles.jobDate
+            }
+          >
+            {formatDate(
+              booking.scheduledStart,
+            )}
+          </Text>
+
+          <Text
+            style={
+              styles.jobTime
+            }
+          >
+            {formatTimeRange(
+              booking.scheduledStart,
+              booking.scheduledEnd,
+            )}
+          </Text>
+        </View>
+
+        <StatusBadge
+          label={
+            getFriendlyStatus(
+              booking.status,
+            )
+          }
+          variant={
+            getStatusVariant(
+              booking.status,
+            )
+          }
+        />
+      </View>
+
+      <View
+        style={
+          styles.jobMain
+        }
+      >
+        <View
+          style={
+            styles.jobIcon
+          }
+        >
+          <Text
+            style={
+              styles.jobIconText
+            }
+          >
+            ✓
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.jobCopy
+          }
+        >
+          <Text
+            style={
+              styles.jobTitle
+            }
+          >
+            Assigned job
+          </Text>
+
+          <Text
+            style={
+              styles.jobMeta
+            }
+          >
+            {getBookingMeta(
+              booking,
+            )}
+          </Text>
+        </View>
+      </View>
+
+      <View
+        style={
+          styles.jobBottomRow
+        }
+      >
+        <View
+          style={
+            styles.jobAmountBlock
+          }
+        >
+          <Text
+            style={
+              styles.jobAmount
+            }
+          >
+            {formatAmount(
+              booking.totalAmount,
+              booking.currency,
+            )}
+          </Text>
+
+          <Text
+            style={
+              styles.jobAmountLabel
+            }
+          >
+            Booking value
+          </Text>
+        </View>
+
+        {booking.notes ? (
+          <Text
+            style={
+              styles.jobNotes
+            }
+            numberOfLines={2}
+          >
+            {booking.notes}
+          </Text>
+        ) : null}
+      </View>
+
+      <View
+        style={
+          styles.jobActionRow
+        }
+      >
+        <Text
+          style={
+            styles.jobActionText
+          }
+        >
+          View job
+        </Text>
+
+        <Text
+          style={
+            styles.jobActionArrow
+          }
+        >
+          →
+        </Text>
+      </View>
+    </View>
+  )
+
+  if (!onPress) {
+    return content
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Open job details"
+      style={({ pressed }) => [
+        pressed &&
+          styles.pressed,
+      ]}
+    >
+      {content}
+    </Pressable>
+  )
 }
 
 export default function WorkerHomeScreen({
@@ -260,7 +515,8 @@ export default function WorkerHomeScreen({
         await goOnline()
       }
     } catch {
-      // Presence hook exposes the error.
+      // The presence hook owns the
+      // actual error state.
     }
   }
 
@@ -273,19 +529,32 @@ export default function WorkerHomeScreen({
   ) {
     return (
       <ScreenContainer>
-        <View style={styles.loadingContainer}>
+        <View
+          style={
+            styles.loadingContainer
+          }
+        >
           <ActivityIndicator
             size="large"
-            color={UI.colors.secondary}
+            color={
+              UI.colors.secondary
+            }
           />
 
-          <Text style={styles.loadingTitle}>
-            Loading your worker dashboard
+          <Text
+            style={
+              styles.loadingTitle
+            }
+          >
+            Getting everything ready
           </Text>
 
-          <Text style={styles.loadingText}>
-            Fetching your profile, presence, bookings and
-            earnings...
+          <Text
+            style={
+              styles.loadingText
+            }
+          >
+            Loading your work status, jobs and earnings.
           </Text>
         </View>
       </ScreenContainer>
@@ -301,7 +570,7 @@ export default function WorkerHomeScreen({
     return (
       <ScreenContainer>
         <ErrorState
-          title="Dashboard unavailable"
+          title="Home unavailable"
           message={error}
           onAction={() => {
             void refreshAll()
@@ -315,20 +584,51 @@ export default function WorkerHomeScreen({
     worker?.fullName?.trim() ||
     'Worker'
 
+  const initials =
+    getInitials(
+      displayName,
+    )
+
   const workerStatus =
     presence?.status ??
     worker?.workerStatus ??
     'offline'
 
-  const upcoming =
-    upcomingBookings.length > 0
-      ? upcomingBookings[0]
-      : null
-
   const activeBooking =
     activeBookings.length > 0
       ? activeBookings[0]
       : null
+
+  const nextBooking =
+    upcomingBookings.find(
+      booking =>
+        booking.id !==
+        activeBooking?.id,
+    ) ?? null
+
+  const presenceStatusText =
+    isOnline
+      ? 'Ready to receive new jobs'
+      : workerStatus ===
+          'suspended'
+        ? 'Your worker account is currently unavailable'
+        : 'You are not receiving new jobs'
+
+  const presenceTitle =
+    isOnline
+      ? "You're online"
+      : workerStatus ===
+          'suspended'
+        ? 'Account unavailable'
+        : "You're offline"
+
+  const presenceDescription =
+    isOnline
+      ? 'Your availability is active and your location can be used for new assignments.'
+      : workerStatus ===
+          'suspended'
+        ? 'Please contact TempStaff support for assistance.'
+        : 'Go online when you are ready to receive work opportunities.'
 
   return (
     <ScreenContainer>
@@ -345,103 +645,226 @@ export default function WorkerHomeScreen({
             onRefresh={() => {
               void refreshAll()
             }}
+            tintColor={
+              UI.colors.secondary
+            }
           />
         }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-        <View style={styles.header}>
-          <View style={styles.headerCopy}>
-            <Text style={styles.eyebrow}>
-              TEMPSTAFF WORKER
-            </Text>
-
-            <Text style={styles.title}>
-              Welcome, {displayName}
-            </Text>
-
-            <Text style={styles.subtitle}>
-              Manage your work status and stay ready for
-              your next assignment.
-            </Text>
-          </View>
-
-          {onProfile ? (
-            <View style={styles.headerButton}>
-              <AppButton
-                title="Profile"
-                variant="secondary"
-                onPress={onProfile}
-                disabled={presenceUpdating}
-              />
+        {/* Header */}
+        <View
+          style={
+            styles.header
+          }
+        >
+          <View
+            style={
+              styles.headerLeft
+            }
+          >
+            <View
+              style={
+                styles.avatar
+              }
+            >
+              <Text
+                style={
+                  styles.avatarText
+                }
+              >
+                {initials}
+              </Text>
             </View>
-          ) : null}
-        </View>
 
-        {error ? (
-          <View style={styles.warningBox}>
-            <Text style={styles.warningTitle}>
-              Dashboard update notice
-            </Text>
-
-            <Text style={styles.warningText}>
-              {error}
-            </Text>
-          </View>
-        ) : null}
-
-        <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <View style={styles.statusCopy}>
-              <Text style={styles.sectionLabel}>
-                Current worker status
+            <View
+              style={
+                styles.greetingBlock
+              }
+            >
+              <Text
+                style={
+                  styles.greetingEyebrow
+                }
+              >
+                TEMPSTAFF
               </Text>
 
-              <View style={styles.statusRow}>
-                <StatusBadge
-                  label={
-                    formatStatus(
-                      workerStatus,
-                    )
-                  }
-                  variant={
-                    getStatusVariant(
-                      workerStatus,
-                    )
-                  }
-                />
-
-                {isOnline ? (
-                  <Text style={styles.onlineText}>
-                    Ready to receive work
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-
-            <View style={styles.statusIndicator}>
-              <View
-                style={[
-                  styles.statusDot,
-                  isOnline &&
-                    styles.statusDotOnline,
-                ]}
-              />
+              <Text
+                style={
+                  styles.greeting
+                }
+                numberOfLines={1}
+              >
+                Hello, {displayName}
+              </Text>
             </View>
           </View>
 
-          <Text style={styles.statusDescription}>
-            {isOnline
-              ? 'Your worker presence is active. Keep your location and availability accurate while working.'
-              : 'You are currently offline and will not be shown as available for new work.'}
+          <View
+            style={
+              styles.headerActions
+            }
+          >
+            {onNotifications ? (
+              <Pressable
+                onPress={
+                  onNotifications
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Open notifications"
+                style={({ pressed }) => [
+                  styles.iconButton,
+                  pressed &&
+                    styles.iconButtonPressed,
+                ]}
+              >
+                <Ionicons
+                  name="notifications-outline"
+                  size={24}
+                  color={UI.colors.text}
+                />
+              </Pressable>
+            ) : null}
+
+            {onProfile ? (
+              <Pressable
+                onPress={
+                  onProfile
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Open profile"
+                style={({ pressed }) => [
+                  styles.profileButton,
+                  pressed &&
+                    styles.iconButtonPressed,
+                ]}
+              >
+                <Text
+                  style={
+                    styles.profileButtonText
+                  }
+                >
+                  →
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Greeting */}
+        <View
+          style={
+            styles.intro
+          }
+        >
+          <Text
+            style={
+              styles.introTitle
+            }
+          >
+            Ready when you are.
           </Text>
 
-          <View style={styles.statusButton}>
+          <Text
+            style={
+              styles.introSubtitle
+            }
+          >
+            Keep your availability on and stay close to your next job.
+          </Text>
+        </View>
+
+        {/* Availability */}
+        <View
+          style={
+            styles.availabilityCard
+          }
+        >
+          <View
+            style={
+              styles.availabilityTop
+            }
+          >
+            <View>
+              <View
+                style={
+                  styles.statusEyebrowRow
+                }
+              >
+                <View
+                  style={[
+                    styles.statusDot,
+                    isOnline &&
+                      styles.statusDotOnline,
+                  ]}
+                />
+
+                <Text
+                  style={
+                    styles.statusEyebrow
+                  }
+                >
+                  AVAILABILITY
+                </Text>
+              </View>
+
+              <Text
+                style={
+                  styles.availabilityTitle
+                }
+              >
+                {presenceTitle}
+              </Text>
+            </View>
+
+            {isOnline ? (
+              <StatusBadge
+                label="Active"
+                variant="success"
+              />
+            ) : null}
+          </View>
+
+          <Text
+            style={
+              styles.availabilityText
+            }
+          >
+            {presenceDescription}
+          </Text>
+
+          <View
+            style={
+              styles.availabilityMeta
+            }
+          >
+            <Text
+              style={
+                styles.availabilityMetaText
+              }
+            >
+              {presenceStatusText}
+            </Text>
+          </View>
+
+          <View
+            style={
+              styles.availabilityAction
+            }
+          >
             <AppButton
               title={
                 presenceUpdating
                   ? 'Updating...'
                   : isOnline
                     ? 'Go offline'
-                    : 'Go online'
+                    : workerStatus ===
+                        'suspended'
+                      ? 'Unavailable'
+                      : 'Go online'
               }
               variant={
                 isOnline
@@ -452,61 +875,191 @@ export default function WorkerHomeScreen({
                 void handleTogglePresence()
               }}
               disabled={
-                presenceUpdating
+                presenceUpdating ||
+                workerStatus ===
+                  'suspended'
               }
             />
           </View>
         </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {activeBookings.length}
-            </Text>
+        {/* Current job */}
+        <View
+          style={
+            styles.section
+          }
+        >
+          <View
+            style={
+              styles.sectionHeader
+            }
+          >
+            <View>
+              <Text
+                style={
+                  styles.sectionEyebrow
+                }
+              >
+                {activeBooking
+                  ? 'CURRENT JOB'
+                  : 'NEXT JOB'}
+              </Text>
 
-            <Text style={styles.statLabel}>
-              Active jobs
-            </Text>
+              <Text
+                style={
+                  styles.sectionTitle
+                }
+              >
+                {activeBooking
+                  ? 'You have work in progress'
+                  : nextBooking
+                    ? 'Your next assignment'
+                    : 'Nothing scheduled yet'}
+              </Text>
+            </View>
+
+            {onBookings &&
+            (activeBooking ||
+              nextBooking) ? (
+              <Pressable
+                onPress={
+                  onBookings
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Open all jobs"
+              >
+                <Text
+                  style={
+                    styles.sectionLink
+                  }
+                >
+                  View all
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {upcomingBookings.length}
-            </Text>
+          {activeBooking ? (
+            <JobCard
+              booking={
+                activeBooking
+              }
+              active
+              onPress={
+                onBookings
+              }
+            />
+          ) : nextBooking ? (
+            <JobCard
+              booking={
+                nextBooking
+              }
+              onPress={
+                onBookings
+              }
+            />
+          ) : (
+            <View
+              style={
+                styles.emptyJobCard
+              }
+            >
+              <View
+                style={
+                  styles.emptyJobIcon
+                }
+              >
+                <Text
+                  style={
+                    styles.emptyJobIconText
+                  }
+                >
+                  +
+                </Text>
+              </View>
 
-            <Text style={styles.statLabel}>
-              Upcoming jobs
-            </Text>
-          </View>
+              <Text
+                style={
+                  styles.emptyJobTitle
+                }
+              >
+                No upcoming jobs
+              </Text>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {worker?.totalCompletedJobs ??
-                0}
-            </Text>
+              <Text
+                style={
+                  styles.emptyJobText
+                }
+              >
+                Stay available and we'll notify you when a new assignment is ready.
+              </Text>
 
-            <Text style={styles.statLabel}>
-              Completed
-            </Text>
-          </View>
+              {onBookings ? (
+                <View
+                  style={
+                    styles.emptyJobAction
+                  }
+                >
+                  <AppButton
+                    title="View jobs"
+                    variant="secondary"
+                    onPress={
+                      onBookings
+                    }
+                  />
+                </View>
+              ) : null}
+            </View>
+          )}
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>
-              Earnings
-            </Text>
+        {/* Earnings */}
+        <View
+          style={
+            styles.earningsCard
+          }
+        >
+          <View
+            style={
+              styles.earningsHeader
+            }
+          >
+            <View>
+              <Text
+                style={
+                  styles.sectionEyebrow
+                }
+              >
+                EARNINGS
+              </Text>
+
+              <Text
+                style={
+                  styles.earningsTitle
+                }
+              >
+                Your earnings
+              </Text>
+            </View>
 
             {onBookings ? (
-              <Text style={styles.cardHint}>
-                Updated from worker earnings
+              <Text
+                style={
+                  styles.earningsArrow
+                }
+              >
+                →
               </Text>
             ) : null}
           </View>
 
           {earningsLoading &&
           !summary ? (
-            <View style={styles.inlineLoading}>
+            <View
+              style={
+                styles.earningsLoading
+              }
+            >
               <ActivityIndicator
                 size="small"
                 color={
@@ -514,497 +1067,890 @@ export default function WorkerHomeScreen({
                 }
               />
 
-              <Text style={styles.inlineLoadingText}>
-                Loading earnings...
+              <Text
+                style={
+                  styles.earningsLoadingText
+                }
+              >
+                Updating earnings...
               </Text>
             </View>
           ) : (
-            <View style={styles.earningsRow}>
-              <View style={styles.earningItem}>
-                <Text style={styles.earningValue}>
-                  {formatAmount(
-                    summary?.totalNetAmount ??
-                      0,
-                    null,
-                  )}
-                </Text>
-
-                <Text style={styles.earningLabel}>
-                  Net earnings
-                </Text>
-              </View>
-
-              <View style={styles.earningDivider} />
-
-              <View style={styles.earningItem}>
-                <Text style={styles.earningValue}>
-                  {summary?.earningCount ??
-                    0}
-                </Text>
-
-                <Text style={styles.earningLabel}>
-                  Earnings entries
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {activeBooking ? (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                Active booking
-              </Text>
-
-              <StatusBadge
-                label={
-                  getBookingLabel(
-                    activeBooking.status,
-                  )
-                }
-                variant="info"
-              />
-            </View>
-
-            <Text style={styles.bookingDate}>
-              {formatDateTime(
-                activeBooking.scheduledStart,
-              )}
-            </Text>
-
-            <Text style={styles.bookingDuration}>
-              {activeBooking.durationValue}{' '}
-              {activeBooking.durationUnit}
-            </Text>
-
-            <View style={styles.bookingButton}>
-              {onBookings ? (
-                <AppButton
-                  title="Open bookings"
-                  variant="secondary"
-                  onPress={onBookings}
-                  disabled={
-                    presenceUpdating
-                  }
-                />
-              ) : null}
-            </View>
-          </View>
-        ) : null}
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>
-              Next scheduled job
-            </Text>
-
-            {upcoming ? (
-              <StatusBadge
-                label={
-                  getBookingLabel(
-                    upcoming.status,
-                  )
-                }
-                variant="default"
-              />
-            ) : null}
-          </View>
-
-          {upcoming ? (
             <>
-              <Text style={styles.bookingDate}>
-                {formatDateTime(
-                  upcoming.scheduledStart,
+              <Text
+                style={
+                  styles.earningsAmount
+                }
+              >
+                {formatAmount(
+                  summary?.totalNetAmount ??
+                    0,
+                  'INR',
                 )}
               </Text>
 
-              <Text style={styles.bookingDuration}>
-                {upcoming.durationValue}{' '}
-                {upcoming.durationUnit}
+              <Text
+                style={
+                  styles.earningsCaption
+                }
+              >
+                Net earnings from your available earning records
               </Text>
 
-              {upcoming.notes ? (
-                <Text style={styles.bookingNotes}>
-                  {upcoming.notes}
-                </Text>
-              ) : null}
+              <View
+                style={
+                  styles.earningsFooter
+                }
+              >
+                <View>
+                  <Text
+                    style={
+                      styles.earningsCount
+                    }
+                  >
+                    {summary?.earningCount ??
+                      0}
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.earningsCountLabel
+                    }
+                  >
+                    earning records
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    styles.earningsFooterAction
+                  }
+                >
+                  <Text
+                    style={
+                      styles.earningsFooterActionText
+                    }
+                  >
+                    View earnings →
+                  </Text>
+                </View>
+              </View>
             </>
-          ) : (
-            <Text style={styles.emptyText}>
-              No upcoming scheduled jobs are currently
-              available.
-            </Text>
           )}
-
-          <View style={styles.actionStack}>
-            {onBookings ? (
-              <AppButton
-                title="View bookings"
-                variant="secondary"
-                onPress={onBookings}
-              />
-            ) : null}
-
-            {onSchedule ? (
-              <AppButton
-                title="Manage schedule"
-                variant="secondary"
-                onPress={onSchedule}
-              />
-            ) : null}
-          </View>
         </View>
 
-        <View style={styles.quickActions}>
-          <Text style={styles.cardTitle}>
-            Quick actions
-          </Text>
+        {/* Additional upcoming job */}
+        {activeBooking &&
+        nextBooking ? (
+          <View
+            style={
+              styles.upNextSection
+            }
+          >
+            <View
+              style={
+                styles.sectionHeader
+              }
+            >
+              <View>
+                <Text
+                  style={
+                    styles.sectionEyebrow
+                  }
+                >
+                  UP NEXT
+                </Text>
 
-          <View style={styles.quickAction}>
-            {onBookings ? (
-              <AppButton
-                title="My bookings"
-                onPress={onBookings}
-              />
-            ) : null}
+                <Text
+                  style={
+                    styles.sectionTitle
+                  }
+                >
+                  After your current job
+                </Text>
+              </View>
+            </View>
+
+            <JobCard
+              booking={
+                nextBooking
+              }
+              onPress={
+                onBookings
+              }
+            />
           </View>
+        ) : null}
 
-          {onSchedule ? (
-            <View style={styles.quickAction}>
-              <AppButton
-                title="Availability"
-                variant="secondary"
-                onPress={onSchedule}
-              />
-            </View>
-          ) : null}
+        {/* Error notice */}
+        {error &&
+        (worker ||
+          presence ||
+          activeBookings.length >
+            0) ? (
+          <View
+            style={
+              styles.inlineError
+            }
+          >
+            <Text
+              style={
+                styles.inlineErrorTitle
+              }
+            >
+              Some information could not be updated
+            </Text>
 
-          {onNotifications ? (
-            <View style={styles.quickAction}>
-              <AppButton
-                title="Notifications"
-                variant="secondary"
-                onPress={onNotifications}
-              />
-            </View>
-          ) : null}
-        </View>
+            <Text
+              style={
+                styles.inlineErrorText
+              }
+            >
+              {error}
+            </Text>
+          </View>
+        ) : null}
 
-        <Text style={styles.footerText}>
-          TempStaff worker dashboard
-        </Text>
+        <View
+          style={
+            styles.bottomSpacing
+          }
+        />
       </ScrollView>
     </ScreenContainer>
   )
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: UI.spacing.xl,
-    paddingTop: UI.spacing.xl,
-    paddingBottom: UI.spacing.xxxl,
-  },
+const styles =
+  StyleSheet.create({
+    content: {
+      paddingHorizontal:
+        UI.spacing.lg,
+      paddingTop:
+        UI.spacing.md,
+      paddingBottom:
+        UI.spacing.xxxl,
+    },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: UI.spacing.lg,
-  },
+    header: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      justifyContent:
+        'space-between',
+    },
 
-  headerCopy: {
-    flex: 1,
-    paddingRight: UI.spacing.md,
-  },
+    headerLeft: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      flex: 1,
+    },
 
-  headerButton: {
-    width: 88,
-  },
+    headerActions: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+    },
 
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    color: UI.colors.secondary,
-  },
+    avatar: {
+      width: 42,
+      height: 42,
+      borderRadius:
+        UI.radius.pill,
+      alignItems:
+        'center',
+      justifyContent:
+        'center',
+      backgroundColor:
+        UI.colors.primary,
+    },
 
-  title: {
-    marginTop: UI.spacing.sm,
-    fontSize: UI.typography.title,
-    lineHeight: 30,
-    fontWeight: '800',
-    color: UI.colors.text,
-  },
+    avatarText: {
+      color:
+        UI.colors.surface,
+      fontSize: 14,
+      fontWeight: '800',
+    },
 
-  subtitle: {
-    marginTop: UI.spacing.sm,
-    fontSize: UI.typography.body,
-    lineHeight: 21,
-    color: UI.colors.textSecondary,
-  },
+    greetingBlock: {
+      marginLeft:
+        UI.spacing.md,
+      flex: 1,
+    },
 
-  warningBox: {
-    marginBottom: UI.spacing.lg,
-    padding: UI.spacing.md,
-    borderRadius: UI.radius.md,
-    backgroundColor:
-      UI.colors.warningBackground,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
+    greetingEyebrow: {
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 1,
+      color:
+        UI.colors.secondary,
+    },
 
-  warningTitle: {
-    fontSize: UI.typography.small,
-    fontWeight: '800',
-    color: UI.colors.warning,
-  },
+    greeting: {
+      marginTop: 2,
+      fontSize: 17,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
 
-  warningText: {
-    marginTop: UI.spacing.xs,
-    fontSize: UI.typography.small,
-    lineHeight: 18,
-    color: UI.colors.textSecondary,
-  },
+    iconButton: {
+      width: 42,
+      height: 42,
+      marginLeft:
+        UI.spacing.sm,
+      borderRadius:
+        UI.radius.pill,
+      alignItems:
+        'center',
+      justifyContent:
+        'center',
+      backgroundColor:
+        UI.colors.background,
+      borderWidth: 1,
+      borderColor:
+        UI.colors.border,
+    },
 
-  statusCard: {
-    padding: UI.spacing.lg,
-    borderRadius: UI.radius.xl,
-    backgroundColor: UI.colors.primary,
-  },
+    profileButton: {
+      width: 42,
+      height: 42,
+      marginLeft:
+        UI.spacing.sm,
+      borderRadius:
+        UI.radius.pill,
+      alignItems:
+        'center',
+      justifyContent:
+        'center',
+      backgroundColor:
+        UI.colors.primary,
+    },
 
-  statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+    profileButtonText: {
+      fontSize: 20,
+      fontWeight: '700',
+      color:
+        UI.colors.surface,
+    },
 
-  statusCopy: {
-    flex: 1,
-  },
+    iconButtonPressed: {
+      opacity: 0.7,
+    },
 
-  sectionLabel: {
-    fontSize: UI.typography.small,
-    fontWeight: '700',
-    color: '#D7E4EF',
-  },
+    pressed: {
+      opacity: 0.85,
+    },
 
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: UI.spacing.sm,
-    flexWrap: 'wrap',
-  },
+    intro: {
+      marginTop:
+        UI.spacing.xl,
+      marginBottom:
+        UI.spacing.lg,
+    },
 
-  onlineText: {
-    marginLeft: UI.spacing.sm,
-    fontSize: UI.typography.small,
-    color: '#D7E4EF',
-  },
+    introTitle: {
+      fontSize:
+        UI.typography.largeTitle,
+      lineHeight: 34,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
 
-  statusIndicator: {
-    width: 36,
-    height: 36,
-    borderRadius: UI.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#173B55',
-  },
+    introSubtitle: {
+      marginTop:
+        UI.spacing.sm,
+      maxWidth: 330,
+      fontSize:
+        UI.typography.body,
+      lineHeight: 20,
+      color:
+        UI.colors.textSecondary,
+    },
 
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: UI.radius.pill,
-    backgroundColor: '#94A3B8',
-  },
+    availabilityCard: {
+      padding:
+        UI.spacing.lg,
+      borderRadius:
+        UI.radius.xl,
+      backgroundColor:
+        UI.colors.primary,
+    },
 
-  statusDotOnline: {
-    backgroundColor: UI.colors.success,
-  },
+    availabilityTop: {
+      flexDirection:
+        'row',
+      alignItems:
+        'flex-start',
+      justifyContent:
+        'space-between',
+    },
 
-  statusDescription: {
-    marginTop: UI.spacing.md,
-    fontSize: UI.typography.small,
-    lineHeight: 18,
-    color: '#D7E4EF',
-  },
+    statusEyebrowRow: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+    },
 
-  statusButton: {
-    marginTop: UI.spacing.lg,
-  },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius:
+        UI.radius.pill,
+      backgroundColor:
+        '#94A3B8',
+    },
 
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: UI.spacing.lg,
-    marginLeft: -UI.spacing.sm,
-  },
+    statusDotOnline: {
+      backgroundColor:
+        '#4ADE80',
+    },
 
-  statCard: {
-    flex: 1,
-    marginLeft: UI.spacing.sm,
-    padding: UI.spacing.md,
-    borderRadius: UI.radius.md,
-    backgroundColor: UI.colors.surface,
-    borderWidth: 1,
-    borderColor: UI.colors.border,
-  },
+    statusEyebrow: {
+      marginLeft:
+        UI.spacing.xs,
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 1,
+      color:
+        '#D7E4EF',
+    },
 
-  statValue: {
-    fontSize: UI.typography.subtitle,
-    fontWeight: '800',
-    color: UI.colors.text,
-  },
+    availabilityTitle: {
+      marginTop:
+        UI.spacing.xs,
+      fontSize: 24,
+      lineHeight: 30,
+      fontWeight: '800',
+      color:
+        UI.colors.surface,
+    },
 
-  statLabel: {
-    marginTop: UI.spacing.xs,
-    fontSize: UI.typography.caption,
-    lineHeight: 16,
-    color: UI.colors.textSecondary,
-  },
+    availabilityText: {
+      marginTop:
+        UI.spacing.md,
+      fontSize:
+        UI.typography.body,
+      lineHeight: 20,
+      color:
+        '#D7E4EF',
+    },
 
-  card: {
-    marginTop: UI.spacing.lg,
-    padding: UI.spacing.lg,
-    borderRadius: UI.radius.lg,
-    backgroundColor: UI.colors.surface,
-    borderWidth: 1,
-    borderColor: UI.colors.border,
-  },
+    availabilityMeta: {
+      marginTop:
+        UI.spacing.md,
+      paddingVertical:
+        UI.spacing.sm,
+      paddingHorizontal:
+        UI.spacing.md,
+      borderRadius:
+        UI.radius.md,
+      backgroundColor:
+        '#173B55',
+    },
 
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+    availabilityMetaText: {
+      fontSize:
+        UI.typography.small,
+      fontWeight: '600',
+      color:
+        UI.colors.surface,
+    },
 
-  cardTitle: {
-    flex: 1,
-    fontSize: UI.typography.bodyLarge,
-    fontWeight: '800',
-    color: UI.colors.text,
-  },
+    availabilityAction: {
+      marginTop:
+        UI.spacing.lg,
+    },
 
-  cardHint: {
-    maxWidth: '50%',
-    fontSize: UI.typography.caption,
-    color: UI.colors.textMuted,
-    textAlign: 'right',
-  },
+    section: {
+      marginTop:
+        UI.spacing.xxl,
+    },
 
-  inlineLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: UI.spacing.lg,
-  },
+    sectionHeader: {
+      flexDirection:
+        'row',
+      alignItems:
+        'flex-end',
+      justifyContent:
+        'space-between',
+      marginBottom:
+        UI.spacing.md,
+    },
 
-  inlineLoadingText: {
-    marginLeft: UI.spacing.sm,
-    fontSize: UI.typography.small,
-    color: UI.colors.textSecondary,
-  },
+    sectionEyebrow: {
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 1.05,
+      color:
+        UI.colors.secondary,
+    },
 
-  earningsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: UI.spacing.lg,
-  },
+    sectionTitle: {
+      marginTop:
+        UI.spacing.xs,
+      fontSize:
+        UI.typography.subtitle,
+      lineHeight: 24,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
 
-  earningItem: {
-    flex: 1,
-  },
+    sectionLink: {
+      marginLeft:
+        UI.spacing.md,
+      fontSize:
+        UI.typography.small,
+      fontWeight: '700',
+      color:
+        UI.colors.secondary,
+    },
 
-  earningValue: {
-    fontSize: UI.typography.subtitle,
-    fontWeight: '800',
-    color: UI.colors.text,
-  },
+    jobCard: {
+      padding:
+        UI.spacing.lg,
+      borderRadius:
+        UI.radius.xl,
+      backgroundColor:
+        UI.colors.surface,
+      borderWidth: 1,
+      borderColor:
+        UI.colors.border,
+    },
 
-  earningLabel: {
-    marginTop: UI.spacing.xs,
-    fontSize: UI.typography.caption,
-    color: UI.colors.textSecondary,
-  },
+    jobCardActive: {
+      borderColor:
+        UI.colors.secondary,
+    },
 
-  earningDivider: {
-    width: 1,
-    height: 40,
-    marginHorizontal: UI.spacing.lg,
-    backgroundColor: UI.colors.border,
-  },
+    jobTopRow: {
+      flexDirection:
+        'row',
+      alignItems:
+        'flex-start',
+      justifyContent:
+        'space-between',
+    },
 
-  bookingDate: {
-    marginTop: UI.spacing.md,
-    fontSize: UI.typography.bodyLarge,
-    fontWeight: '700',
-    color: UI.colors.text,
-  },
+    jobDateBlock: {
+      flex: 1,
+      paddingRight:
+        UI.spacing.md,
+    },
 
-  bookingDuration: {
-    marginTop: UI.spacing.xs,
-    fontSize: UI.typography.small,
-    color: UI.colors.textSecondary,
-  },
+    jobDate: {
+      fontSize:
+        UI.typography.bodyLarge,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
 
-  bookingNotes: {
-    marginTop: UI.spacing.md,
-    fontSize: UI.typography.small,
-    lineHeight: 18,
-    color: UI.colors.textSecondary,
-  },
+    jobTime: {
+      marginTop:
+        UI.spacing.xs,
+      fontSize:
+        UI.typography.small,
+      color:
+        UI.colors.textSecondary,
+    },
 
-  bookingButton: {
-    marginTop: UI.spacing.lg,
-  },
+    jobMain: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      marginTop:
+        UI.spacing.lg,
+    },
 
-  emptyText: {
-    marginTop: UI.spacing.md,
-    fontSize: UI.typography.body,
-    lineHeight: 20,
-    color: UI.colors.textMuted,
-  },
+    jobIcon: {
+      width: 46,
+      height: 46,
+      borderRadius:
+        UI.radius.lg,
+      alignItems:
+        'center',
+      justifyContent:
+        'center',
+      backgroundColor:
+        UI.colors.infoBackground,
+    },
 
-  actionStack: {
-    marginTop: UI.spacing.lg,
-  },
+    jobIconText: {
+      fontSize: 20,
+      fontWeight: '800',
+      color:
+        UI.colors.info,
+    },
 
-  quickActions: {
-    marginTop: UI.spacing.lg,
-    padding: UI.spacing.lg,
-    borderRadius: UI.radius.lg,
-    backgroundColor: UI.colors.background,
-    borderWidth: 1,
-    borderColor: UI.colors.border,
-  },
+    jobCopy: {
+      flex: 1,
+      marginLeft:
+        UI.spacing.md,
+    },
 
-  quickAction: {
-    marginTop: UI.spacing.sm,
-  },
+    jobTitle: {
+      fontSize:
+        UI.typography.bodyLarge,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
 
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: UI.spacing.xxl,
-  },
+    jobMeta: {
+      marginTop:
+        UI.spacing.xs,
+      fontSize:
+        UI.typography.small,
+      color:
+        UI.colors.textSecondary,
+    },
 
-  loadingTitle: {
-    marginTop: UI.spacing.lg,
-    fontSize: UI.typography.subtitle,
-    fontWeight: '800',
-    color: UI.colors.text,
-    textAlign: 'center',
-  },
+    jobBottomRow: {
+      flexDirection:
+        'row',
+      alignItems:
+        'flex-end',
+      marginTop:
+        UI.spacing.lg,
+      paddingTop:
+        UI.spacing.md,
+      borderTopWidth: 1,
+      borderTopColor:
+        UI.colors.border,
+    },
 
-  loadingText: {
-    marginTop: UI.spacing.sm,
-    fontSize: UI.typography.body,
-    lineHeight: 20,
-    color: UI.colors.textSecondary,
-    textAlign: 'center',
-  },
+    jobAmountBlock: {
+      minWidth: 120,
+    },
 
-  footerText: {
-    marginTop: UI.spacing.lg,
-    fontSize: UI.typography.caption,
-    color: UI.colors.textMuted,
-    textAlign: 'center',
-  },
-})
+    jobAmount: {
+      fontSize:
+        UI.typography.subtitle,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
+
+    jobAmountLabel: {
+      marginTop: 2,
+      fontSize:
+        UI.typography.caption,
+      color:
+        UI.colors.textMuted,
+    },
+
+    jobNotes: {
+      flex: 1,
+      marginLeft:
+        UI.spacing.md,
+      fontSize:
+        UI.typography.caption,
+      lineHeight: 17,
+      color:
+        UI.colors.textSecondary,
+      textAlign:
+        'right',
+    },
+
+    jobActionRow: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      justifyContent:
+        'flex-end',
+      marginTop:
+        UI.spacing.lg,
+    },
+
+    jobActionText: {
+      fontSize:
+        UI.typography.small,
+      fontWeight: '800',
+      color:
+        UI.colors.secondary,
+    },
+
+    jobActionArrow: {
+      marginLeft:
+        UI.spacing.xs,
+      fontSize: 17,
+      fontWeight: '800',
+      color:
+        UI.colors.secondary,
+    },
+
+    emptyJobCard: {
+      alignItems:
+        'center',
+      padding:
+        UI.spacing.xxl,
+      borderRadius:
+        UI.radius.xl,
+      backgroundColor:
+        UI.colors.background,
+      borderWidth: 1,
+      borderColor:
+        UI.colors.border,
+    },
+
+    emptyJobIcon: {
+      width: 54,
+      height: 54,
+      borderRadius:
+        UI.radius.pill,
+      alignItems:
+        'center',
+      justifyContent:
+        'center',
+      backgroundColor:
+        UI.colors.surface,
+      borderWidth: 1,
+      borderColor:
+        UI.colors.border,
+    },
+
+    emptyJobIconText: {
+      fontSize: 28,
+      fontWeight: '400',
+      color:
+        UI.colors.secondary,
+    },
+
+    emptyJobTitle: {
+      marginTop:
+        UI.spacing.md,
+      fontSize:
+        UI.typography.bodyLarge,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
+
+    emptyJobText: {
+      marginTop:
+        UI.spacing.xs,
+      maxWidth: 300,
+      fontSize:
+        UI.typography.small,
+      lineHeight: 18,
+      textAlign: 'center',
+      color:
+        UI.colors.textSecondary,
+    },
+
+    emptyJobAction: {
+      marginTop:
+        UI.spacing.lg,
+      width: '100%',
+    },
+
+    earningsCard: {
+      marginTop:
+        UI.spacing.xxl,
+      padding:
+        UI.spacing.lg,
+      borderRadius:
+        UI.radius.xl,
+      backgroundColor:
+        UI.colors.surface,
+      borderWidth: 1,
+      borderColor:
+        UI.colors.border,
+    },
+
+    earningsHeader: {
+      flexDirection:
+        'row',
+      alignItems:
+        'flex-start',
+      justifyContent:
+        'space-between',
+    },
+
+    earningsTitle: {
+      marginTop:
+        UI.spacing.xs,
+      fontSize:
+        UI.typography.subtitle,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
+
+    earningsArrow: {
+      fontSize: 20,
+      fontWeight: '700',
+      color:
+        UI.colors.secondary,
+    },
+
+    earningsAmount: {
+      marginTop:
+        UI.spacing.xl,
+      fontSize: 32,
+      lineHeight: 38,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
+
+    earningsCaption: {
+      marginTop:
+        UI.spacing.xs,
+      fontSize:
+        UI.typography.small,
+      lineHeight: 18,
+      color:
+        UI.colors.textSecondary,
+    },
+
+    earningsFooter: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      justifyContent:
+        'space-between',
+      marginTop:
+        UI.spacing.lg,
+      paddingTop:
+        UI.spacing.md,
+      borderTopWidth: 1,
+      borderTopColor:
+        UI.colors.border,
+    },
+
+    earningsCount: {
+      fontSize:
+        UI.typography.bodyLarge,
+      fontWeight: '800',
+      color:
+        UI.colors.text,
+    },
+
+    earningsCountLabel: {
+      marginTop: 2,
+      fontSize:
+        UI.typography.caption,
+      color:
+        UI.colors.textSecondary,
+    },
+
+    earningsFooterAction: {
+      paddingVertical:
+        UI.spacing.sm,
+    },
+
+    earningsFooterActionText: {
+      fontSize:
+        UI.typography.small,
+      fontWeight: '800',
+      color:
+        UI.colors.secondary,
+    },
+
+    earningsLoading: {
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      marginTop:
+        UI.spacing.xl,
+    },
+
+    earningsLoadingText: {
+      marginLeft:
+        UI.spacing.sm,
+      fontSize:
+        UI.typography.small,
+      color:
+        UI.colors.textSecondary,
+    },
+
+    upNextSection: {
+      marginTop:
+        UI.spacing.xxl,
+    },
+
+    inlineError: {
+      marginTop:
+        UI.spacing.xl,
+      padding:
+        UI.spacing.md,
+      borderRadius:
+        UI.radius.lg,
+      backgroundColor:
+        UI.colors.warningBackground,
+      borderWidth: 1,
+      borderColor:
+        '#FDE68A',
+    },
+
+    inlineErrorTitle: {
+      fontSize:
+        UI.typography.small,
+      fontWeight: '800',
+      color:
+        UI.colors.warning,
+    },
+
+    inlineErrorText: {
+      marginTop:
+        UI.spacing.xs,
+      fontSize:
+        UI.typography.small,
+      lineHeight: 18,
+      color:
+        UI.colors.textSecondary,
+    },
+
+    loadingContainer: {
+      flex: 1,
+      alignItems:
+        'center',
+      justifyContent:
+        'center',
+      paddingHorizontal:
+        UI.spacing.xxl,
+    },
+
+    loadingTitle: {
+      marginTop:
+        UI.spacing.lg,
+      fontSize:
+        UI.typography.subtitle,
+      fontWeight:
+        '800',
+      color:
+        UI.colors.text,
+      textAlign:
+        'center',
+    },
+
+    loadingText: {
+      marginTop:
+        UI.spacing.sm,
+      maxWidth: 300,
+      fontSize:
+        UI.typography.body,
+      lineHeight: 20,
+      color:
+        UI.colors.textSecondary,
+      textAlign:
+        'center',
+    },
+
+    bottomSpacing: {
+      height: UI.spacing.xxl,
+    },
+  })
