@@ -937,25 +937,6 @@ export default function BookingOccurrenceScreen({
     [customerLocation],
   )
 
-  const confirmCancel = useCallback(() => {
-    Alert.alert(
-      'Cancel occurrence',
-      'Are you sure you want to cancel this occurrence?',
-      [
-        {
-          text: 'Keep',
-          style: 'cancel',
-        },
-        {
-          text: 'Cancel occurrence',
-          style: 'destructive',
-          onPress: () => {
-            void runAction('cancel')
-          },
-        },
-      ],
-    )
-  }, [runAction])
 
   if (loading) {
     return (
@@ -1013,11 +994,6 @@ export default function BookingOccurrenceScreen({
   const endOtpRequired =
     isEndOtpRequired(occurrence)
 
-  const canCancel =
-    occurrence.status === 'assigned' ||
-    occurrence.status === 'on_the_way' ||
-    occurrence.status === 'arrived' ||
-    occurrence.status === 'in_progress'
 
   const customerName =
     context?.customerName ??
@@ -1652,27 +1628,7 @@ export default function BookingOccurrenceScreen({
           </View>
         </View>
 
-        {canCancel ? (
-          <Pressable
-            onPress={confirmCancel}
-            disabled={actionLoading || otpLoading}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel occurrence"
-            style={({ pressed }) => [
-              styles.cancelButton,
-              pressed && styles.cancelPressed,
-            ]}
-          >
-            <Ionicons
-              name="close-circle-outline"
-              size={19}
-              color={UI.colors.error}
-            />
-            <Text style={styles.cancelText}>
-              Cancel occurrence
-            </Text>
-          </Pressable>
-        ) : null}
+      
 
         <Text style={styles.footerText}>
           TempStaff worker occurrence
@@ -2347,24 +2303,7 @@ const styles = StyleSheet.create({
     color: UI.colors.success,
   },
 
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: UI.spacing.xl,
-    paddingVertical: UI.spacing.md,
-  },
-
-  cancelPressed: {
-    opacity: 0.65,
-  },
-
-  cancelText: {
-    marginLeft: UI.spacing.xs,
-    fontSize: UI.typography.small,
-    fontWeight: '800',
-    color: UI.colors.error,
-  },
+ 
 
   footerText: {
     marginTop: UI.spacing.xl,
