@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -8,8 +9,8 @@ import {
 } from 'react-native'
 
 import {
-  AppButton,
-} from '../../components/ui/AppButton'
+  Ionicons,
+} from '@expo/vector-icons'
 
 import {
   ScreenContainer,
@@ -34,10 +35,6 @@ import {
   getRelativeNotificationTime,
 } from '../../lib/notificationUtils'
 
-import type {
-  WorkerNotificationType,
-} from '../../types/notifications'
-
 type NotificationsScreenProps = {
   onBack?: () => void
   onBookingPress?: (
@@ -46,6 +43,60 @@ type NotificationsScreenProps = {
   onBookingOfferPress?: (
     bookingId: string,
   ) => void
+}
+
+function getNotificationIcon(
+  notificationType: string,
+): keyof typeof Ionicons.glyphMap {
+  switch (notificationType) {
+    case 'booking_offer':
+      return 'briefcase-outline'
+
+    case 'booking_assigned':
+    case 'booking_confirmed':
+      return 'checkmark-circle-outline'
+
+    case 'booking_cancelled':
+    case 'booking_expired':
+      return 'close-circle-outline'
+
+    case 'booking_reminder':
+      return 'alarm-outline'
+
+    case 'payment':
+    case 'earning':
+      return 'wallet-outline'
+
+    case 'account':
+    case 'profile':
+      return 'person-outline'
+
+    default:
+      return 'notifications-outline'
+  }
+}
+
+function getNotificationIconStyle(
+  isRead: boolean,
+): {
+  backgroundColor: string
+  color: string
+} {
+  if (!isRead) {
+    return {
+      backgroundColor:
+        UI.colors.infoBackground,
+      color:
+        UI.colors.secondary,
+    }
+  }
+
+  return {
+    backgroundColor:
+      UI.colors.background,
+    color:
+      UI.colors.textMuted,
+  }
 }
 
 export default function NotificationsScreen({
@@ -77,6 +128,20 @@ export default function NotificationsScreen({
             styles.loadingContainer
           }
         >
+          <View
+            style={
+              styles.loadingIcon
+            }
+          >
+            <Ionicons
+              name="notifications-outline"
+              size={28}
+              color={
+                UI.colors.secondary
+              }
+            />
+          </View>
+
           <ActivityIndicator
             size="large"
             color={
@@ -97,7 +162,7 @@ export default function NotificationsScreen({
               styles.loadingText
             }
           >
-            Fetching your latest worker notifications...
+            Fetching your latest TempStaff updates...
           </Text>
         </View>
       </ScreenContainer>
@@ -136,6 +201,9 @@ export default function NotificationsScreen({
             onRefresh={
               handleRefresh
             }
+            tintColor={
+              UI.colors.secondary
+            }
           />
         }
         showsVerticalScrollIndicator={
@@ -143,52 +211,208 @@ export default function NotificationsScreen({
         }
       >
         <View
-          style={styles.header}
+          style={
+            styles.topBar
+          }
         >
+          {onBack ? (
+            <Pressable
+              onPress={
+                onBack
+              }
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={({ pressed }) => [
+                styles.headerButton,
+                pressed &&
+                  styles.headerButtonPressed,
+              ]}
+            >
+              <Ionicons
+                name="arrow-back"
+                size={21}
+                color={
+                  UI.colors.primary
+                }
+              />
+            </Pressable>
+          ) : (
+            <View
+              style={
+                styles.headerButtonPlaceholder
+              }
+            />
+          )}
+
           <View
             style={
-              styles.headerCopy
+              styles.topBarCenter
             }
           >
             <Text
               style={
-                styles.eyebrow
+                styles.topBarEyebrow
               }
             >
-              WORKER NOTIFICATIONS
+              TEMPSTAFF
             </Text>
 
             <Text
-              style={styles.title}
+              style={
+                styles.topBarTitle
+              }
             >
               Notifications
             </Text>
-
-            <Text
-              style={
-                styles.subtitle
-              }
-            >
-              Stay up to date with booking offers, job updates,
-              reminders and account activity.
-            </Text>
           </View>
 
-          {onBack ? (
+          <Pressable
+            onPress={
+              handleRefresh
+            }
+            disabled={
+              loading ||
+              updating
+            }
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh notifications"
+            style={({ pressed }) => [
+              styles.headerButton,
+              pressed &&
+                styles.headerButtonPressed,
+            ]}
+          >
+            <Ionicons
+              name="refresh"
+              size={20}
+              color={
+                UI.colors.primary
+              }
+            />
+          </Pressable>
+        </View>
+
+        <View
+          style={
+            styles.heroCard
+          }
+        >
+          <View
+            style={
+              styles.heroTop
+            }
+          >
             <View
               style={
-                styles.headerButton
+                styles.heroIcon
               }
             >
-              <AppButton
-                title="Back"
-                variant="secondary"
-                onPress={
-                  onBack
+              <Ionicons
+                name="notifications"
+                size={25}
+                color={
+                  UI.colors.primary
                 }
               />
             </View>
-          ) : null}
+
+            <StatusBadge
+              label={
+                unreadCount > 0
+                  ? `${unreadCount} unread`
+                  : 'All caught up'
+              }
+              variant={
+                unreadCount > 0
+                  ? 'warning'
+                  : 'success'
+              }
+            />
+          </View>
+
+          <Text
+            style={
+              styles.heroEyebrow
+            }
+          >
+            NOTIFICATION CENTER
+          </Text>
+
+          <Text
+            style={
+              styles.heroTitle
+            }
+          >
+            Stay up to date
+          </Text>
+
+          <Text
+            style={
+              styles.heroSubtitle
+            }
+          >
+            New work opportunities, booking updates and account activity will appear here.
+          </Text>
+
+          <View
+            style={
+              styles.heroMeta
+            }
+          >
+            <View
+              style={
+                styles.heroMetaItem
+              }
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={16}
+                color={
+                  UI.colors.surface
+                }
+              />
+
+              <Text
+                style={
+                  styles.heroMetaText
+                }
+              >
+                {notifications.length}{' '}
+                total
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.heroMetaDivider
+              }
+            />
+
+            <View
+              style={
+                styles.heroMetaItem
+              }
+            >
+              <Ionicons
+                name="ellipse"
+                size={10}
+                color={
+                  UI.colors.accent
+                }
+              />
+
+              <Text
+                style={
+                  styles.heroMetaText
+                }
+              >
+                {unreadCount}{' '}
+                unread
+              </Text>
+            </View>
+          </View>
         </View>
 
         {error ? (
@@ -197,73 +421,65 @@ export default function NotificationsScreen({
               styles.warningBox
             }
           >
-            <Text
+            <View
               style={
-                styles.warningTitle
+                styles.warningIcon
               }
             >
-              Notification update notice
-            </Text>
+              <Ionicons
+                name="alert-circle-outline"
+                size={18}
+                color={
+                  UI.colors.warning
+                }
+              />
+            </View>
 
-            <Text
+            <View
               style={
-                styles.warningText
+                styles.warningCopy
               }
             >
-              {error}
-            </Text>
+              <Text
+                style={
+                  styles.warningTitle
+                }
+              >
+                Notification update notice
+              </Text>
+
+              <Text
+                style={
+                  styles.warningText
+                }
+              >
+                {error}
+              </Text>
+            </View>
           </View>
         ) : null}
 
-        <View
-          style={
-            styles.summaryCard
-          }
-        >
-          <View
-            style={
-              styles.summaryCopy
-            }
-          >
-            <Text
-              style={
-                styles.summaryTitle
-              }
-            >
-              Notification center
-            </Text>
-
-            <Text
-              style={
-                styles.summaryText
-              }
-            >
-              {notifications.length === 0
-                ? 'No notifications have been received yet.'
-                : `${notifications.length} notification${
-                    notifications.length === 1
-                      ? ''
-                      : 's'
-                  } loaded`}
-            </Text>
-          </View>
-
-          <StatusBadge
-            label={`${unreadCount} unread`}
-            variant={
-              unreadCount > 0
-                ? 'warning'
-                : 'default'
-            }
-          />
-        </View>
-
-        {notifications.length === 0 ? (
+        {notifications.length ===
+        0 ? (
           <View
             style={
               styles.emptyWrapper
             }
           >
+            <View
+              style={
+                styles.emptyIcon
+              }
+            >
+              <Ionicons
+                name="notifications-off-outline"
+                size={30}
+                color={
+                  UI.colors.secondary
+                }
+              />
+            </View>
+
             <EmptyState
               title="No notifications yet"
               message="New booking offers and worker account updates will appear here."
@@ -276,161 +492,275 @@ export default function NotificationsScreen({
         ) : (
           <View
             style={
-              styles.list
+              styles.listSection
             }
           >
-            {notifications.map(
-              notification => {
-                const typeLabel =
-                  getNotificationTypeLabel(
-                    notification.notificationType,
-                  )
+            <View
+              style={
+                styles.listHeader
+              }
+            >
+              <View>
+                <Text
+                  style={
+                    styles.sectionEyebrow
+                  }
+                >
+                  RECENT ACTIVITY
+                </Text>
 
-                const isBookingOffer =
-                  notification.notificationType ===
-                  'booking_offer'
+                <Text
+                  style={
+                    styles.sectionTitle
+                  }
+                >
+                  Your notifications
+                </Text>
+              </View>
 
-                const canOpenBooking =
-                  Boolean(
-                    notification.bookingId &&
-                      onBookingPress,
-                  )
+              <View
+                style={
+                  styles.listCount
+                }
+              >
+                <Text
+                  style={
+                    styles.listCountText
+                  }
+                >
+                  {notifications.length}
+                </Text>
+              </View>
+            </View>
 
-                const canOpenOffer =
-                  Boolean(
-                    notification.bookingId &&
-                      isBookingOffer &&
-                      onBookingOfferPress,
-                  )
+            <View
+              style={
+                styles.list
+              }
+            >
+              {notifications.map(
+                notification => {
+                  const typeLabel =
+                    getNotificationTypeLabel(
+                      notification.notificationType,
+                    )
 
-                return (
-                  <View
-                    key={
-                      notification.id
-                    }
-                    style={[
-                      styles.notificationCard,
-                      !notification.isRead &&
-                        styles.notificationCardUnread,
-                    ]}
-                  >
-                    <View
-                      style={
-                        styles.notificationHeader
+                  const isBookingOffer =
+                    notification.notificationType ===
+                    'booking_offer'
+
+                  const canOpenBooking =
+                    Boolean(
+                      notification.bookingId &&
+                        onBookingPress,
+                    )
+
+                  const canOpenOffer =
+                    Boolean(
+                      notification.bookingId &&
+                        isBookingOffer &&
+                        onBookingOfferPress,
+                    )
+
+                  const iconStyle =
+                    getNotificationIconStyle(
+                      notification.isRead,
+                    )
+
+                  return (
+                    <Pressable
+                      key={
+                        notification.id
                       }
+                      disabled={
+                        !canOpenBooking &&
+                        !canOpenOffer
+                      }
+                      onPress={() => {
+                        if (
+                          canOpenOffer &&
+                          notification.bookingId
+                        ) {
+                          onBookingOfferPress?.(
+                            notification.bookingId,
+                          )
+                          return
+                        }
+
+                        if (
+                          canOpenBooking &&
+                          notification.bookingId
+                        ) {
+                          onBookingPress?.(
+                            notification.bookingId,
+                          )
+                        }
+                      }}
+                      accessibilityRole={
+                        canOpenBooking ||
+                        canOpenOffer
+                          ? 'button'
+                          : undefined
+                      }
+                      accessibilityLabel={
+                        notification.title
+                      }
+                      style={({ pressed }) => [
+                        styles.notificationCard,
+                        !notification.isRead &&
+                          styles.notificationCardUnread,
+                        pressed &&
+                          (canOpenBooking ||
+                            canOpenOffer) &&
+                          styles.notificationPressed,
+                      ]}
                     >
                       <View
                         style={
-                          styles.typeBadge
+                          styles.notificationTop
                         }
                       >
-                        <Text
-                          style={
-                            styles.typeText
-                          }
+                        <View
+                          style={[
+                            styles.notificationIcon,
+                            {
+                              backgroundColor:
+                                iconStyle.backgroundColor,
+                            },
+                          ]}
                         >
-                          {typeLabel}
-                        </Text>
-                      </View>
+                          <Ionicons
+                            name={getNotificationIcon(
+                              notification.notificationType,
+                            )}
+                            size={21}
+                            color={
+                              iconStyle.color
+                            }
+                          />
+                        </View>
 
-                      <Text
-                        style={
-                          styles.timeText
-                        }
-                      >
-                        {getRelativeNotificationTime(
-                          notification.createdAt,
-                        )}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={
-                        styles.titleRow
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.notificationTitle
-                        }
-                      >
-                        {notification.title}
-                      </Text>
-
-                      {!notification.isRead ? (
                         <View
                           style={
-                            styles.unreadDot
+                            styles.notificationMain
                           }
-                        />
+                        >
+                          <View
+                            style={
+                              styles.notificationMeta
+                            }
+                          >
+                            <Text
+                              style={
+                                notification.isRead
+                                  ? styles.typeText
+                                  : styles.typeTextUnread
+                              }
+                            >
+                              {typeLabel}
+                            </Text>
+
+                            <Text
+                              style={
+                                styles.timeText
+                              }
+                            >
+                              {getRelativeNotificationTime(
+                                notification.createdAt,
+                              )}
+                            </Text>
+                          </View>
+
+                          <View
+                            style={
+                              styles.titleRow
+                            }
+                          >
+                            <Text
+                              style={
+                                styles.notificationTitle
+                              }
+                            >
+                              {notification.title}
+                            </Text>
+
+                            {!notification.isRead ? (
+                              <View
+                                style={
+                                  styles.unreadDot
+                                }
+                              />
+                            ) : null}
+                          </View>
+                        </View>
+                      </View>
+
+                      <Text
+                        style={
+                          styles.notificationMessage
+                        }
+                      >
+                        {notification.message}
+                      </Text>
+
+                      {canOpenOffer ? (
+                        <View
+                          style={
+                            styles.cardAction
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.cardActionText
+                            }
+                          >
+                            Open job offer
+                          </Text>
+
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color={
+                              UI.colors.secondary
+                            }
+                          />
+                        </View>
+                      ) : canOpenBooking ? (
+                        <View
+                          style={
+                            styles.cardAction
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.cardActionText
+                            }
+                          >
+                            Open booking
+                          </Text>
+
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color={
+                              UI.colors.secondary
+                            }
+                          />
+                        </View>
                       ) : null}
-                    </View>
-
-                    <Text
-                      style={
-                        styles.notificationMessage
-                      }
-                    >
-                      {notification.message}
-                    </Text>
-
-                    {canOpenOffer ? (
-                      <View
-                        style={
-                          styles.bookingAction
-                        }
-                      >
-                        <AppButton
-                          title="Open booking offer"
-                          variant="secondary"
-                          onPress={() => {
-                            if (
-                              notification.bookingId &&
-                              onBookingOfferPress
-                            ) {
-                              onBookingOfferPress(
-                                notification.bookingId,
-                              )
-                            }
-                          }}
-                        />
-                      </View>
-                    ) : canOpenBooking ? (
-                      <View
-                        style={
-                          styles.bookingAction
-                        }
-                      >
-                        <AppButton
-                          title="Open booking"
-                          variant="secondary"
-                          onPress={() => {
-                            if (
-                              notification.bookingId &&
-                              onBookingPress
-                            ) {
-                              onBookingPress(
-                                notification.bookingId,
-                              )
-                            }
-                          }}
-                        />
-                      </View>
-                    ) : null}
-                  </View>
-                )
-              },
-            )}
+                    </Pressable>
+                  )
+                },
+              )}
+            </View>
           </View>
         )}
 
-        <Text
+        <View
           style={
-            styles.footerText
+            styles.bottomSpacing
           }
-        >
-          Notifications are loaded from your TempStaff worker account.
-        </Text>
+        />
       </ScrollView>
     </ScreenContainer>
   )
@@ -439,78 +769,230 @@ export default function NotificationsScreen({
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal:
-      UI.spacing.xl,
+      UI.spacing.lg,
     paddingTop:
-      UI.spacing.xl,
+      UI.spacing.md,
     paddingBottom:
       UI.spacing.xxxl,
   },
 
-  header: {
+  topBar: {
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
-    marginBottom:
-      UI.spacing.lg,
-  },
-
-  headerCopy: {
-    flex: 1,
-    paddingRight:
-      UI.spacing.md,
+      'center',
+    justifyContent:
+      'space-between',
+    minHeight: 44,
   },
 
   headerButton: {
-    width: 76,
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
   },
 
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.1,
+  headerButtonPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+
+  headerButtonPressed: {
+    opacity: 0.7,
+  },
+
+  topBarCenter: {
+    alignItems:
+      'center',
+  },
+
+  topBarEyebrow: {
+    fontSize: 9,
+    fontWeight:
+      '800',
+    letterSpacing:
+      1,
     color:
       UI.colors.secondary,
   },
 
-  title: {
-    marginTop:
-      UI.spacing.sm,
+  topBarTitle: {
+    marginTop: 2,
     fontSize:
-      UI.typography.title,
-    lineHeight: 30,
-    fontWeight: '800',
+      UI.typography.bodyLarge,
+    fontWeight:
+      '900',
     color:
       UI.colors.text,
   },
 
-  subtitle: {
+  heroCard: {
+    marginTop:
+      UI.spacing.lg,
+    padding:
+      UI.spacing.xl,
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.primary,
+  },
+
+  heroTop: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    justifyContent:
+      'space-between',
+  },
+
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius:
+      UI.radius.lg,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  heroEyebrow: {
+    marginTop:
+      UI.spacing.lg,
+    fontSize: 10,
+    fontWeight:
+      '800',
+    letterSpacing:
+      1.1,
+    color:
+      UI.colors.surface,
+    opacity:
+      0.72,
+  },
+
+  heroTitle: {
+    marginTop:
+      UI.spacing.sm,
+    fontSize: 26,
+    lineHeight:
+      32,
+    fontWeight:
+      '900',
+    color:
+      UI.colors.surface,
+  },
+
+  heroSubtitle: {
     marginTop:
       UI.spacing.sm,
     fontSize:
-      UI.typography.body,
-    lineHeight: 21,
+      UI.typography.small,
+    lineHeight:
+      18,
     color:
-      UI.colors.textSecondary,
+      UI.colors.surface,
+    opacity:
+      0.76,
+  },
+
+  heroMeta: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    marginTop:
+      UI.spacing.xl,
+    paddingTop:
+      UI.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor:
+      'rgba(255,255,255,0.14)',
+  },
+
+  heroMetaItem: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+  },
+
+  heroMetaText: {
+    marginLeft:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    fontWeight:
+      '700',
+    color:
+      UI.colors.surface,
+    opacity:
+      0.82,
+  },
+
+  heroMetaDivider: {
+    width: 1,
+    height: 18,
+    marginHorizontal:
+      UI.spacing.md,
+    backgroundColor:
+      'rgba(255,255,255,0.18)',
   },
 
   warningBox: {
-    marginBottom:
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+    marginTop:
       UI.spacing.lg,
     padding:
       UI.spacing.md,
     borderRadius:
-      UI.radius.md,
+      UI.radius.lg,
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor:
+      '#FDE68A',
+  },
+
+  warningIcon: {
+    width: 32,
+    height: 32,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  warningCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
   },
 
   warningTitle: {
     fontSize:
       UI.typography.small,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
       UI.colors.warning,
   },
@@ -520,64 +1002,85 @@ const styles = StyleSheet.create({
       UI.spacing.xs,
     fontSize:
       UI.typography.small,
-    lineHeight: 18,
+    lineHeight:
+      18,
     color:
       UI.colors.textSecondary,
   },
 
-  summaryCard: {
+  listSection: {
+    marginTop:
+      UI.spacing.xxl,
+  },
+
+  listHeader: {
     flexDirection:
       'row',
     alignItems:
       'center',
     justifyContent:
       'space-between',
-    padding:
-      UI.spacing.lg,
-    borderRadius:
-      UI.radius.lg,
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
-
-  summaryCopy: {
-    flex: 1,
-    paddingRight:
+    marginBottom:
       UI.spacing.md,
   },
 
-  summaryTitle: {
+  sectionEyebrow: {
+    fontSize: 10,
+    fontWeight:
+      '800',
+    letterSpacing:
+      1.05,
+    color:
+      UI.colors.secondary,
+  },
+
+  sectionTitle: {
+    marginTop:
+      UI.spacing.xs,
     fontSize:
-      UI.typography.bodyLarge,
-    fontWeight: '800',
+      UI.typography.subtitle,
+    lineHeight:
+      23,
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
   },
 
-  summaryText: {
-    marginTop:
-      UI.spacing.xs,
+  listCount: {
+    minWidth: 36,
+    height: 36,
+    paddingHorizontal:
+      UI.spacing.sm,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  listCountText: {
     fontSize:
       UI.typography.small,
+    fontWeight:
+      '800',
     color:
-      UI.colors.textSecondary,
+      UI.colors.secondary,
   },
 
   list: {
-    marginTop:
-      UI.spacing.lg,
+    gap:
+      UI.spacing.sm,
   },
 
   notificationCard: {
-    marginBottom:
-      UI.spacing.md,
     padding:
       UI.spacing.lg,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.surface,
     borderWidth: 1,
@@ -592,7 +1095,36 @@ const styles = StyleSheet.create({
       '#F8FFFE',
   },
 
-  notificationHeader: {
+  notificationPressed: {
+    opacity:
+      0.78,
+  },
+
+  notificationTop: {
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+  },
+
+  notificationIcon: {
+    width: 46,
+    height: 46,
+    borderRadius:
+      UI.radius.lg,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+  },
+
+  notificationMain: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+  },
+
+  notificationMeta: {
     flexDirection:
       'row',
     alignItems:
@@ -601,23 +1133,22 @@ const styles = StyleSheet.create({
       'space-between',
   },
 
-  typeBadge: {
-    paddingHorizontal:
-      UI.spacing.sm,
-    paddingVertical:
-      UI.spacing.xs,
-    borderRadius:
-      UI.radius.pill,
-    backgroundColor:
-      UI.colors.infoBackground,
-  },
-
   typeText: {
     fontSize:
       UI.typography.caption,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
-      UI.colors.info,
+      UI.colors.textMuted,
+  },
+
+  typeTextUnread: {
+    fontSize:
+      UI.typography.caption,
+    fontWeight:
+      '800',
+    color:
+      UI.colors.secondary,
   },
 
   timeText: {
@@ -635,15 +1166,17 @@ const styles = StyleSheet.create({
     alignItems:
       'flex-start',
     marginTop:
-      UI.spacing.md,
+      UI.spacing.xs,
   },
 
   notificationTitle: {
     flex: 1,
     fontSize:
       UI.typography.bodyLarge,
-    lineHeight: 21,
-    fontWeight: '800',
+    lineHeight:
+      21,
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
   },
@@ -651,45 +1184,88 @@ const styles = StyleSheet.create({
   unreadDot: {
     width: 8,
     height: 8,
-    marginTop: 5,
+    marginTop: 6,
     marginLeft:
       UI.spacing.sm,
     borderRadius:
       UI.radius.pill,
     backgroundColor:
-      UI.colors.secondary,
+      UI.colors.accent,
   },
 
   notificationMessage: {
     marginTop:
-      UI.spacing.sm,
+      UI.spacing.md,
     fontSize:
       UI.typography.body,
-    lineHeight: 21,
+    lineHeight:
+      20,
     color:
       UI.colors.textSecondary,
   },
 
-  bookingAction: {
+  cardAction: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    justifyContent:
+      'flex-end',
     marginTop:
       UI.spacing.md,
+    paddingTop:
+      UI.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor:
+      UI.colors.border,
+  },
+
+  cardActionText: {
+    marginRight:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    fontWeight:
+      '800',
+    color:
+      UI.colors.secondary,
   },
 
   emptyWrapper: {
     minHeight: 360,
     marginTop:
+      UI.spacing.xxl,
+    padding:
       UI.spacing.lg,
+    borderRadius:
+      UI.radius.xl,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.background,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
   },
 
-  footerText: {
-    marginTop:
-      UI.spacing.lg,
-    fontSize:
-      UI.typography.caption,
-    lineHeight: 16,
-    color:
-      UI.colors.textMuted,
-    textAlign: 'center',
+  emptyIcon: {
+    width: 60,
+    height: 60,
+    marginBottom:
+      UI.spacing.sm,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
   },
 
   loadingContainer: {
@@ -702,25 +1278,50 @@ const styles = StyleSheet.create({
       UI.spacing.xxl,
   },
 
+  loadingIcon: {
+    width: 58,
+    height: 58,
+    marginBottom:
+      UI.spacing.lg,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
   loadingTitle: {
     marginTop:
       UI.spacing.lg,
     fontSize:
       UI.typography.subtitle,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
-    textAlign: 'center',
+    textAlign:
+      'center',
   },
 
   loadingText: {
     marginTop:
       UI.spacing.sm,
+    maxWidth: 300,
     fontSize:
       UI.typography.body,
-    lineHeight: 20,
+    lineHeight:
+      20,
     color:
       UI.colors.textSecondary,
-    textAlign: 'center',
+    textAlign:
+      'center',
+  },
+
+  bottomSpacing: {
+    height:
+      UI.spacing.xxl,
   },
 })
