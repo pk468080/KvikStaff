@@ -1,7 +1,7 @@
 import {
   useEffect,
 } from 'react'
-
+import ActiveBookingScreen from '../screens/bookings/ActiveBookingScreen'
 import {
   StyleSheet,
 } from 'react-native'
@@ -202,17 +202,17 @@ function WorkerTabs() {
       {({ navigation }) => (
         <WorkerBookingsScreen
           onBookingPress={(
-            bookingId,
-          ) => {
-            navigation
-              .getParent()
-              ?.navigate(
-                'BookingDetails',
-                {
-                  bookingId,
-                },
-              )
-          }}
+  bookingId,
+) => {
+  navigation
+    .getParent()
+    ?.navigate(
+      'BookingDetails',
+      {
+        bookingId,
+      },
+    )
+}}
         />
       )}
     </Tab.Screen>
@@ -337,17 +337,39 @@ export default function WorkerNavigator() {
               navigation.goBack()
             }}
             onAccepted={bookingId => {
-              navigation.replace(
-                'BookingDetails',
-                {
-                  bookingId,
-                },
-              )
-            }}
+  navigation.replace(
+    'ActiveBooking',
+    {
+      bookingId,
+    },
+  )
+}}
           />
         )}
       </Stack.Screen>
 
+<Stack.Screen
+  name="ActiveBooking"
+>
+  {({ navigation, route }) => (
+    <ActiveBookingScreen
+      bookingId={
+        route.params.bookingId
+      }
+      onBack={() => {
+        navigation.goBack()
+      }}
+      onFinished={bookingId => {
+        navigation.replace(
+          'BookingDetails',
+          {
+            bookingId,
+          },
+        )
+      }}
+    />
+  )}
+</Stack.Screen>
       <Stack.Screen
         name="BookingDetails"
       >
