@@ -20,6 +20,7 @@ import {
 import {
   startWorkerBackgroundLocationTracking,
   stopWorkerBackgroundLocationTracking,
+  isWorkerBackgroundLocationTrackingStarted,
 } from '../../services/location/workerBackgroundLocation.service'
 
 import {
@@ -37,10 +38,18 @@ import {
 const PRESENCE_POLL_INTERVAL_MS =
   15_000
 
-const HEARTBEAT_INTERVAL_MS =
+const FOREGROUND_FALLBACK_INTERVAL_MS =
   WORKER.presence
     .heartbeatIntervalSeconds *
   1000
+
+const ACTIVE_FOREGROUND_FALLBACK_INTERVAL_MS =
+  WORKER.location
+    .activeBookingUpdateIntervalSeconds *
+  1000
+
+const BACKGROUND_RETRY_DELAY_MS =
+  5 * 60 * 1000
 
 const LIVE_TRACKING_STATUSES = [
   'on_the_way',
@@ -66,7 +75,8 @@ export default function WorkerPresenceRuntime() {
     const workerId =
       session.user.id
 
-    stoppedRef.current = false
+    stoppedRef.current =
+      false
 
     let backgroundTrackingAttempted =
       false
@@ -74,11 +84,16 @@ export default function WorkerPresenceRuntime() {
     let backgroundTrackingIntervalSeconds:
       number | null = null
 
-    let lastHeartbeatAt = 0
+    let backgroundUnavailableUntil =
+      0
 
-    let inFlight = false
+    let lastLocationPublishAt =
+      0
 
-    async function stopBackgroundTracking() {
+    let inFlight =
+      false
+
+    async function stopBackgroundTracking(): Promise<void> {
       try {
         await stopWorkerBackgroundLocationTracking()
       } catch (cause) {
@@ -97,7 +112,7 @@ export default function WorkerPresenceRuntime() {
 
     async function hasActiveTrackingBooking(): Promise<boolean> {
       /*
-       * Parent bookings.
+       * Normal parent bookings.
        */
       const activeBookings =
         await getActiveWorkerBookings()
@@ -112,13 +127,15 @@ export default function WorkerPresenceRuntime() {
             ),
         )
 
-      if (hasLiveParentBooking) {
+      if (
+        hasLiveParentBooking
+      ) {
         return true
       }
 
       /*
-       * Recurring bookings use occurrence-level
-       * lifecycle states.
+       * Recurring bookings use
+       * occurrence-level lifecycle states.
        */
       const {
         data,
@@ -152,7 +169,7 @@ export default function WorkerPresenceRuntime() {
 
     async function ensureBackgroundTracking(
       activeTrackingBooking: boolean,
-    ) {
+    ): Promise<boolean> {
       const desiredInterval =
         activeTrackingBooking
           ? WORKER.location
@@ -160,18 +177,53 @@ export default function WorkerPresenceRuntime() {
           : WORKER.location
               .defaultUpdateIntervalSeconds
 
+      /*
+       * Avoid repeatedly requesting background
+       * permission after a denial/failure.
+       */
+      if (
+        Date.now() <
+        backgroundUnavailableUntil
+      ) {
+        return false
+      }
+
       if (
         backgroundTrackingAttempted &&
         backgroundTrackingIntervalSeconds ===
           desiredInterval
       ) {
-        return
+        try {
+          const started =
+            await isWorkerBackgroundLocationTrackingStarted()
+
+          if (started) {
+            return true
+          }
+        } catch {
+          /*
+           * Fall through and attempt to
+           * restore the background task.
+           */
+        }
+
+        backgroundTrackingAttempted =
+          false
+
+        backgroundTrackingIntervalSeconds =
+          null
       }
 
       if (
         backgroundTrackingAttempted
       ) {
-        await stopWorkerBackgroundLocationTracking()
+        try {
+          await stopWorkerBackgroundLocationTracking()
+        } catch {
+          /*
+           * Continue with a fresh start attempt.
+           */
+        }
 
         backgroundTrackingAttempted =
           false
@@ -185,14 +237,28 @@ export default function WorkerPresenceRuntime() {
           desiredInterval,
         )
 
+        const started =
+          await isWorkerBackgroundLocationTrackingStarted()
+
+        if (!started) {
+          throw new Error(
+            'Background location tracking did not start.',
+          )
+        }
+
         backgroundTrackingAttempted =
           true
 
         backgroundTrackingIntervalSeconds =
           desiredInterval
+
+        backgroundUnavailableUntil =
+          0
+
+        return true
       } catch (cause) {
         console.warn(
-          'Worker background location tracking is unavailable:',
+          'Worker background location tracking is unavailable. Using foreground fallback:',
           cause,
         )
 
@@ -201,10 +267,95 @@ export default function WorkerPresenceRuntime() {
 
         backgroundTrackingIntervalSeconds =
           null
+
+        backgroundUnavailableUntil =
+          Date.now() +
+          BACKGROUND_RETRY_DELAY_MS
+
+        return false
       }
     }
 
-    async function runCycle() {
+    async function publishForegroundFallback(
+      workerIsAvailable: boolean,
+      activeTrackingBooking: boolean,
+    ): Promise<void> {
+      const now =
+        Date.now()
+
+      const minimumInterval =
+        activeTrackingBooking
+          ? ACTIVE_FOREGROUND_FALLBACK_INTERVAL_MS
+          : FOREGROUND_FALLBACK_INTERVAL_MS
+
+      if (
+        now -
+          lastLocationPublishAt <
+        minimumInterval
+      ) {
+        return
+      }
+
+      const location =
+        await getCurrentWorkerLocation(
+          {
+            maximumAge:
+              5_000,
+
+            timeout:
+              10_000,
+          },
+        )
+
+      if (
+        stoppedRef.current
+      ) {
+        return
+      }
+
+      /*
+       * Available worker:
+       * renew presence and publish generic
+       * worker location.
+       */
+      if (
+        workerIsAvailable &&
+        !activeTrackingBooking
+      ) {
+        await sendWorkerPresenceHeartbeat(
+          location.latitude,
+          location.longitude,
+        )
+
+        lastLocationPublishAt =
+          Date.now()
+
+        return
+      }
+
+      /*
+       * Active booking:
+       * publish one generic location.
+       *
+       * The server-side function copies it
+       * into the currently active parent/recurring
+       * booking locations.
+       */
+      if (
+        activeTrackingBooking
+      ) {
+        await updateWorkerLocation(
+          location.latitude,
+          location.longitude,
+          null,
+        )
+
+        lastLocationPublishAt =
+          Date.now()
+      }
+    }
+
+    async function runCycle(): Promise<void> {
       if (
         stoppedRef.current ||
         inFlight
@@ -212,13 +363,16 @@ export default function WorkerPresenceRuntime() {
         return
       }
 
-      inFlight = true
+      inFlight =
+        true
 
       try {
         const presence =
           await getWorkerPresence()
 
-        if (stoppedRef.current) {
+        if (
+          stoppedRef.current
+        ) {
           return
         }
 
@@ -229,7 +383,9 @@ export default function WorkerPresenceRuntime() {
         const activeTrackingBooking =
           await hasActiveTrackingBooking()
 
-        if (stoppedRef.current) {
+        if (
+          stoppedRef.current
+        ) {
           return
         }
 
@@ -249,89 +405,46 @@ export default function WorkerPresenceRuntime() {
           return
         }
 
-        await ensureBackgroundTracking(
-          activeTrackingBooking,
-        )
+        const backgroundTrackingActive =
+          await ensureBackgroundTracking(
+            activeTrackingBooking,
+          )
 
-        if (stoppedRef.current) {
+        if (
+          stoppedRef.current
+        ) {
           return
         }
-
-        const now =
-          Date.now()
 
         /*
-         * Background location is the primary
-         * high-frequency source.
+         * Background tracking is the primary
+         * GPS publisher.
          *
-         * This foreground update remains as
-         * a fallback/initial update.
+         * Do not publish another foreground
+         * GPS update while it is running.
          */
         if (
-          activeTrackingBooking
-        ) {
-          if (
-            now -
-              lastHeartbeatAt <
-            WORKER.location
-              .activeBookingUpdateIntervalSeconds *
-              1000
-          ) {
-            return
-          }
-        } else if (
-          now -
-            lastHeartbeatAt <
-          HEARTBEAT_INTERVAL_MS
+          backgroundTrackingActive
         ) {
           return
         }
 
-        const location =
-          await getCurrentWorkerLocation(
-            {
-              accuracy:
-                activeTrackingBooking
-                  ? undefined
-                  : undefined,
-
-              maximumAge: 5_000,
-
-              timeout: 10_000,
-            },
-          )
-
-        if (stoppedRef.current) {
-          return
-        }
-
-        if (
-          workerIsAvailable &&
-          !activeTrackingBooking
-        ) {
-          await sendWorkerPresenceHeartbeat(
-            location.latitude,
-            location.longitude,
-          )
-        } else if (
-          activeTrackingBooking
-        ) {
-          await updateWorkerLocation(
-            location.latitude,
-            location.longitude,
-            null,
-          )
-        }
-
-        lastHeartbeatAt =
-          Date.now()
+        /*
+         * Background tracking is unavailable,
+         * so use the foreground fallback.
+         */
+        await publishForegroundFallback(
+          workerIsAvailable,
+          activeTrackingBooking,
+        )
       } catch (cause) {
         console.warn(
           'Worker presence runtime update failed:',
           cause,
         )
       } finally {
-        inFlight = false
+        inFlight =
+          false
       }
     }
 
@@ -346,7 +459,8 @@ export default function WorkerPresenceRuntime() {
       )
 
     return () => {
-      stoppedRef.current = true
+      stoppedRef.current =
+        true
 
       clearInterval(
         intervalId,
