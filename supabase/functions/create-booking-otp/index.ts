@@ -32,10 +32,8 @@ function getString(
 }
 
 /*
- * Use the Web Crypto API instead of Math.random().
- *
- * OTPs are authentication credentials and should be generated
- * from a cryptographically secure random source.
+ * Generate a cryptographically secure
+ * six-digit OTP.
  */
 function generateOtp(): string {
   const random =
@@ -148,8 +146,7 @@ Deno.serve(
       }
 
       /*
-       * Use the caller's Authorization header to resolve the
-       * authenticated customer identity.
+       * Resolve the authenticated caller.
        */
       const userClient =
         createClient(
@@ -238,8 +235,8 @@ Deno.serve(
         otpTypeValue as OtpType
 
       /*
-       * Service-role client is used only after the caller has
-       * been authenticated.
+       * Service-role client is used only
+       * after authenticating the caller.
        */
       const supabase =
         createClient(
@@ -247,6 +244,10 @@ Deno.serve(
           serviceRoleKey,
         )
 
+      /*
+       * Customer can only generate an OTP
+       * for their own booking.
+       */
       const {
         data: booking,
         error:
@@ -292,9 +293,8 @@ Deno.serve(
       }
 
       /*
-       * Recurring bookings must bind the OTP to one specific
-       * occurrence. This prevents an OTP generated for one shift
-       * from being usable for another shift in the series.
+       * Recurring bookings must bind the OTP
+       * to the exact occurrence.
        */
       if (
         booking.fulfillment_type ===
@@ -376,11 +376,12 @@ Deno.serve(
         }
 
         /*
-         * Start OTP is only meaningful after the worker arrives.
-         * End OTP is only meaningful while the service is in progress.
+         * Start OTP:
+         * worker must have arrived.
          */
         if (
-          otpType === 'start' &&
+          otpType ===
+            'start' &&
           occurrence.status !==
             'arrived'
         ) {
@@ -393,6 +394,10 @@ Deno.serve(
           )
         }
 
+        /*
+         * End OTP:
+         * service must be in progress.
+         */
         if (
           otpType === 'end' &&
           occurrence.status !==
@@ -411,7 +416,8 @@ Deno.serve(
          * Non-recurring booking lifecycle.
          */
         if (
-          otpType === 'start' &&
+          otpType ===
+            'start' &&
           booking.status !==
             'arrived'
         ) {
@@ -439,8 +445,8 @@ Deno.serve(
         }
 
         /*
-         * A non-recurring OTP must never be associated with an
-         * arbitrary occurrence.
+         * Occurrence IDs are invalid for
+         * non-recurring bookings.
          */
         if (
           occurrenceId
@@ -472,8 +478,8 @@ Deno.serve(
         ).toISOString()
 
       /*
-       * Only one pending OTP for this exact lifecycle target
-       * should remain valid.
+       * Only one pending OTP remains valid
+       * for this exact booking lifecycle target.
        */
       let expireQuery =
         supabase
@@ -552,47 +558,28 @@ Deno.serve(
         throw insertError
       }
 
-      const isDevelopment =
-        Deno.env.get(
-          'ENVIRONMENT',
-        ) ===
-        'development'
-
       /*
-       * Development testing only.
-       * Production responses must never contain the OTP.
+       * The customer is authenticated and owns
+       * the booking, so return the OTP directly
+       * to the customer app.
+       *
+       * The OTP is never logged.
        */
-      if (
-        isDevelopment
-      ) {
-        console.log(
-          '[create-booking-otp] Generated development OTP metadata:',
-          {
-            bookingId,
-            occurrenceId:
-              occurrenceId ??
-              null,
-            otpType,
-            expiresAt,
-          },
-        )
-      }
-
       return jsonResponse(
         {
           success:
             true,
+
           message:
-            'OTP generated successfully. Check your email or SMS.',
+            'OTP generated successfully. Give this code to your worker.',
+
+          otp,
+
           expiresAt,
+
           occurrence_id:
             occurrenceId ??
             null,
-          ...(isDevelopment
-            ? {
-                otp,
-              }
-            : {}),
         },
         200,
       )
