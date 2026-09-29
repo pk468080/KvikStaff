@@ -5,7 +5,9 @@ import {
 import {
   StyleSheet,
 } from 'react-native'
-
+import {
+  Ionicons,
+} from '@expo/vector-icons'
 import {
   useNavigation,
 } from '@react-navigation/native'
@@ -104,123 +106,211 @@ function WorkerTabs() {
   ])
 
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle:
-          styles.tabBar,
-        tabBarLabelStyle:
-          styles.tabBarLabel,
-        tabBarActiveTintColor:
-          UI.colors.secondary,
-        tabBarInactiveTintColor:
-          UI.colors.textMuted,
+  <Tab.Navigator
+    screenOptions={{
+      headerShown: false,
+
+      tabBarStyle:
+        styles.tabBar,
+
+      tabBarLabelStyle:
+        styles.tabBarLabel,
+
+      tabBarActiveTintColor:
+        UI.colors.secondary,
+
+      tabBarInactiveTintColor:
+        UI.colors.textMuted,
+
+      tabBarHideOnKeyboard: true,
+
+    
+    }}
+  >
+    <Tab.Screen
+      name="Home"
+      options={{
+        tabBarLabel: 'Home',
+        tabBarIcon: ({
+          color,
+          size,
+          focused,
+        }) => (
+          <Ionicons
+            name={
+              focused
+                ? 'home'
+                : 'home-outline'
+            }
+            size={size}
+            color={color}
+          />
+        ),
       }}
     >
-      <Tab.Screen name="Home">
-        {({ navigation }) => (
-          <WorkerHomeScreen
-            onBookings={() => {
-              navigation.navigate(
-                'Bookings',
+      {({ navigation }) => (
+        <WorkerHomeScreen
+          onBookings={() => {
+            navigation.navigate(
+              'Bookings',
+            )
+          }}
+          onSchedule={() => {
+            navigation
+              .getParent()
+              ?.navigate(
+                'Schedule',
               )
-            }}
-            onSchedule={() => {
-              navigation
-                .getParent()
-                ?.navigate(
-                  'Schedule',
-                )
-            }}
-            onNotifications={() => {
-              navigation
-                .getParent()
-                ?.navigate(
-                  'Notifications',
-                )
-            }}
-            onProfile={() => {
-              navigation.navigate(
-                'Profile',
+          }}
+          onNotifications={() => {
+            navigation
+              .getParent()
+              ?.navigate(
+                'Notifications',
               )
-            }}
-          />
-        )}
-      </Tab.Screen>
+          }}
+          onProfile={() => {
+            navigation.navigate(
+              'Profile',
+            )
+          }}
+        />
+      )}
+    </Tab.Screen>
 
-      <Tab.Screen name="Bookings">
-        {({ navigation }) => (
-          <WorkerBookingsScreen
-            onBookingPress={(
-              bookingId,
-            ) => {
-              navigation
-                .getParent()
-                ?.navigate(
-                  'BookingDetails',
+    <Tab.Screen
+      name="Bookings"
+      options={{
+        tabBarLabel: 'Jobs',
+        tabBarIcon: ({
+          color,
+          size,
+          focused,
+        }) => (
+          <Ionicons
+            name={
+              focused
+                ? 'briefcase'
+                : 'briefcase-outline'
+            }
+            size={size}
+            color={color}
+          />
+        ),
+      }}
+    >
+      {({ navigation }) => (
+        <WorkerBookingsScreen
+          onBookingPress={(
+            bookingId,
+          ) => {
+            navigation
+              .getParent()
+              ?.navigate(
+                'BookingDetails',
+                {
+                  bookingId,
+                },
+              )
+          }}
+        />
+      )}
+    </Tab.Screen>
+
+    <Tab.Screen
+      name="Earnings"
+      options={{
+        tabBarLabel: 'Earnings',
+        tabBarIcon: ({
+          color,
+          size,
+          focused,
+        }) => (
+          <Ionicons
+            name={
+              focused
+                ? 'wallet'
+                : 'wallet-outline'
+            }
+            size={size}
+            color={color}
+          />
+        ),
+      }}
+    >
+      {({ navigation }) => (
+        <WorkerEarningsScreen
+          onEarningPress={(
+            earningId,
+          ) => {
+            navigation
+              .getParent()
+              ?.navigate(
+                'EarningDetails',
+                {
+                  earningId,
+                },
+              )
+          }}
+        />
+      )}
+    </Tab.Screen>
+
+    <Tab.Screen
+      name="Profile"
+      options={{
+        tabBarLabel: 'Profile',
+        tabBarIcon: ({
+          color,
+          size,
+          focused,
+        }) => (
+          <Ionicons
+            name={
+              focused
+                ? 'person'
+                : 'person-outline'
+            }
+            size={size}
+            color={color}
+          />
+        ),
+      }}
+    >
+      {({ navigation }) => (
+        <ProfileScreen
+          onEditProfile={() => {
+            navigation
+              .getParent()
+              ?.navigate(
+                'EditProfile',
+              )
+          }}
+          onSettings={() => {
+            navigation
+              .getParent()
+              ?.navigate(
+                'Settings',
+              )
+          }}
+          onSignedOut={() => {
+            navigation
+              .getParent()
+              ?.getParent()
+              ?.reset({
+                index: 0,
+                routes: [
                   {
-                    bookingId,
+                    name: 'Login',
                   },
-                )
-            }}
-          />
-        )}
-      </Tab.Screen>
-
-      <Tab.Screen name="Earnings">
-        {({ navigation }) => (
-          <WorkerEarningsScreen
-            onEarningPress={(
-              earningId,
-            ) => {
-              navigation
-                .getParent()
-                ?.navigate(
-                  'EarningDetails',
-                  {
-                    earningId,
-                  },
-                )
-            }}
-          />
-        )}
-      </Tab.Screen>
-
-      <Tab.Screen name="Profile">
-        {({ navigation }) => (
-          <ProfileScreen
-            onEditProfile={() => {
-              navigation
-                .getParent()
-                ?.navigate(
-                  'EditProfile',
-                )
-            }}
-            onSettings={() => {
-              navigation
-                .getParent()
-                ?.navigate(
-                  'Settings',
-                )
-            }}
-            onSignedOut={() => {
-              navigation
-                .getParent()
-                ?.getParent()
-                ?.reset({
-                  index: 0,
-                  routes: [
-                    {
-                      name: 'Login',
-                    },
-                  ],
-                })
-            }}
-          />
-        )}
-      </Tab.Screen>
-    </Tab.Navigator>
-  )
+                ],
+              })
+          }}
+        />
+      )}
+    </Tab.Screen>
+  </Tab.Navigator>
+)
 }
 
 export default function WorkerNavigator() {
@@ -426,25 +516,38 @@ export default function WorkerNavigator() {
 }
 
 const styles = StyleSheet.create({
-  
 
   tabBar: {
-    height:
-      UI.sizes.tabBarHeight,
-    paddingTop:
-      UI.spacing.sm,
-    paddingBottom:
-      UI.spacing.sm,
+    height: 72,
+    paddingTop: 8,
+    paddingBottom: 8,
+
     borderTopWidth: 1,
     borderTopColor:
       UI.colors.border,
+
     backgroundColor:
       UI.colors.surface,
+
+    elevation: 8,
+
+    shadowColor:
+      UI.colors.primary,
+
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+
+    shadowOpacity: 0.06,
+
+    shadowRadius: 8,
   },
 
   tabBarLabel: {
-    fontSize:
-      UI.typography.small,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
   },
+
 })
