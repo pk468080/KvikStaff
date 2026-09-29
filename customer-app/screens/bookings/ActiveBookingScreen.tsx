@@ -1437,12 +1437,7 @@ const [
             )}
           />
 
-          <Row
-            label="Booking ID"
-            value={
-              booking.id
-            }
-          />
+        
 
           <Row
             label="Start"
@@ -1506,14 +1501,7 @@ const [
                   Worker assigned
                 </Text>
 
-                <Text
-                  style={
-                    styles.workerId
-                  }
-                >
-                  Worker ID:{' '}
-                  {booking.worker_id}
-                </Text>
+                
 
                 {tracking ? (
                   <View
@@ -1551,20 +1539,7 @@ const [
                     locationFreshness ===
                       'fresh' ? (
                       <>
-                        <Text
-                          style={
-                            styles.location
-                          }
-                        >
-                          Current position:{' '}
-                          {location.latitude.toFixed(
-                            5,
-                          )}
-                          ,{' '}
-                          {location.longitude.toFixed(
-                            5,
-                          )}
-                        </Text>
+                        
 
                         <Text
                           style={
