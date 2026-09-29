@@ -7,7 +7,6 @@ import {
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -38,6 +37,15 @@ import {
 } from '../../context/WorkerRuntimeContext'
 
 import {
+  getWorkerBooking,
+} from '../../services/bookings/workerBookings.service'
+
+import {
+  getWorkerBookingContext,
+  type WorkerBookingContext,
+} from '../../services/bookings/workerBookingContext.service'
+
+import {
   getWorkerBookingOffers,
   getWorkerBookingOfferRemainingSeconds,
   isWorkerBookingOfferPending,
@@ -45,50 +53,38 @@ import {
   type WorkerBookingOffer,
 } from '../../services/bookings/workerBookingOffers.service'
 
+import {
+  formatBookingAmount,
+  formatBookingDateTime,
+  getBookingDurationHours,
+  getBookingStatusLabel,
+  getBookingTypeLabel,
+} from '../../lib/workerBookingUtils'
+
+import type {
+  BookingStatus,
+  WorkerBooking,
+} from '../../types/booking'
+
 type BookingOfferScreenProps = {
   bookingId: string
   onBack?: () => void
   onAccepted?: (bookingId: string) => void
 }
 
-function formatDateTime(
-  value: string,
-): string {
-  const date = new Date(
-    value,
-  )
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return '—'
-  }
-
-  return date.toLocaleString(
-    'en-IN',
-    {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    },
-  )
-}
-
 function formatRemainingTime(
   totalSeconds: number,
 ): string {
-  const safeSeconds = Math.max(
-    0,
-    totalSeconds,
-  )
+  const safeSeconds =
+    Math.max(
+      0,
+      totalSeconds,
+    )
 
-  const minutes = Math.floor(
-    safeSeconds / 60,
-  )
+  const minutes =
+    Math.floor(
+      safeSeconds / 60,
+    )
 
   const seconds =
     safeSeconds % 60
@@ -96,6 +92,23 @@ function formatRemainingTime(
   return `${minutes}:${seconds
     .toString()
     .padStart(2, '0')}`
+}
+
+function formatDuration(
+  booking: WorkerBooking,
+): string {
+  const hours =
+    getBookingDurationHours(
+      booking,
+    )
+
+  if (
+    hours === null
+  ) {
+    return `${booking.durationValue} ${booking.durationUnit}`
+  }
+
+  return `${booking.durationValue} ${booking.durationUnit} · ${hours}h`
 }
 
 function getOfferStatusLabel(
@@ -122,7 +135,7 @@ function getOfferStatusLabel(
   }
 }
 
-function getStatusIcon(
+function getOfferStatusIcon(
   status: WorkerBookingOffer['status'],
 ): keyof typeof Ionicons.glyphMap {
   switch (status) {
@@ -144,6 +157,110 @@ function getStatusIcon(
   }
 }
 
+function getOfferStatusColor(
+  status: WorkerBookingOffer['status'],
+): string {
+  switch (status) {
+    case 'accepted':
+      return UI.colors.success
+
+    case 'declined':
+    case 'expired':
+    case 'cancelled':
+      return UI.colors.error
+
+    case 'pending':
+    default:
+      return UI.colors.secondary
+  }
+}
+
+function DetailRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  label: string
+  value: string
+}) {
+  return (
+    <View
+      style={
+        styles.detailRow
+      }
+    >
+      <View
+        style={
+          styles.detailIcon
+        }
+      >
+        <Ionicons
+          name={icon}
+          size={18}
+          color={
+            UI.colors.secondary
+          }
+        />
+      </View>
+
+      <View
+        style={
+          styles.detailCopy
+        }
+      >
+        <Text
+          style={
+            styles.detailLabel
+          }
+        >
+          {label}
+        </Text>
+
+        <Text
+          style={
+            styles.detailValue
+          }
+        >
+          {value}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+}: {
+  eyebrow: string
+  title: string
+}) {
+  return (
+    <View
+      style={
+        styles.sectionHeader
+      }
+    >
+      <Text
+        style={
+          styles.sectionEyebrow
+        }
+      >
+        {eyebrow}
+      </Text>
+
+      <Text
+        style={
+          styles.sectionTitle
+        }
+      >
+        {title}
+      </Text>
+    </View>
+  )
+}
+
 export default function BookingOfferScreen({
   bookingId,
   onBack,
@@ -161,9 +278,18 @@ export default function BookingOfferScreen({
   )
 
   const [
-    remainingSeconds,
-    setRemainingSeconds,
-  ] = useState(0)
+    booking,
+    setBooking,
+  ] = useState<WorkerBooking | null>(
+    null,
+  )
+
+  const [
+    context,
+    setContext,
+  ] = useState<WorkerBookingContext | null>(
+    null,
+  )
 
   const [
     loading,
@@ -181,8 +307,20 @@ export default function BookingOfferScreen({
   ] = useState(false)
 
   const [
+    remainingSeconds,
+    setRemainingSeconds,
+  ] = useState(0)
+
+  const [
     error,
     setError,
+  ] = useState<string | null>(
+    null,
+  )
+
+  const [
+    detailsError,
+    setDetailsError,
   ] = useState<string | null>(
     null,
   )
@@ -199,6 +337,7 @@ export default function BookingOfferScreen({
         }
 
         setError(null)
+        setDetailsError(null)
 
         try {
           const offers =
@@ -208,7 +347,19 @@ export default function BookingOfferScreen({
             offers.find(
               item =>
                 item.bookingId ===
-                bookingId,
+                  bookingId &&
+                (
+                  item.status ===
+                    'pending' ||
+                  item.status ===
+                    'accepted' ||
+                  item.status ===
+                    'declined' ||
+                  item.status ===
+                    'expired' ||
+                  item.status ===
+                    'cancelled'
+                ),
             )
 
           if (!matchingOffer) {
@@ -226,6 +377,63 @@ export default function BookingOfferScreen({
               matchingOffer,
             ),
           )
+
+          /*
+           * Booking details and privacy-safe customer/location
+           * context are loaded separately from the offer itself.
+           *
+           * No customer phone or internal worker information is
+           * requested.
+           */
+          try {
+            const nextBooking =
+              await getWorkerBooking(
+                bookingId,
+              )
+
+            setBooking(
+              nextBooking,
+            )
+
+            if (
+              nextBooking
+            ) {
+              try {
+                const nextContext =
+                  await getWorkerBookingContext(
+                    bookingId,
+                  )
+
+                setContext(
+                  nextContext,
+                )
+              } catch (cause) {
+                setContext(
+                  null,
+                )
+
+                setDetailsError(
+                  cause instanceof Error
+                    ? cause.message
+                    : 'Some job details are temporarily unavailable.',
+                )
+              }
+            }
+          } catch (cause) {
+            setBooking(
+              null,
+            )
+
+            setContext(
+              null,
+            )
+
+            setDetailsError(
+              cause instanceof Error
+                ? cause.message
+                : 'Job details are temporarily unavailable.',
+            )
+          }
         } catch (cause) {
           setError(
             cause instanceof Error
@@ -237,7 +445,9 @@ export default function BookingOfferScreen({
           setRefreshing(false)
         }
       },
-      [bookingId],
+      [
+        bookingId,
+      ],
     )
 
   useEffect(() => {
@@ -248,12 +458,9 @@ export default function BookingOfferScreen({
 
   useEffect(() => {
     if (
-      offerRevision === 0
+      offerRevision === 0 ||
+      responding
     ) {
-      return
-    }
-
-    if (responding) {
       return
     }
 
@@ -274,18 +481,24 @@ export default function BookingOfferScreen({
         offer,
       )
     ) {
-      setRemainingSeconds(0)
+      setRemainingSeconds(
+        0,
+      )
+
       return
     }
 
     const interval =
-      setInterval(() => {
-        setRemainingSeconds(
-          getWorkerBookingOfferRemainingSeconds(
-            offer,
-          ),
-        )
-      }, 1000)
+      setInterval(
+        () => {
+          setRemainingSeconds(
+            getWorkerBookingOfferRemainingSeconds(
+              offer,
+            ),
+          )
+        },
+        1000,
+      )
 
     return () => {
       clearInterval(
@@ -315,6 +528,7 @@ export default function BookingOfferScreen({
           setError(
             'This booking offer is no longer available.',
           )
+
           return
         }
 
@@ -337,14 +551,14 @@ export default function BookingOfferScreen({
             )
           }
 
+          const respondedAt =
+            new Date().toISOString()
+
           const nextStatus =
             response ===
             'accept'
               ? 'accepted'
               : 'declined'
-
-          const respondedAt =
-            new Date().toISOString()
 
           setOffer(
             current =>
@@ -360,7 +574,9 @@ export default function BookingOfferScreen({
                 : current,
           )
 
-          setRemainingSeconds(0)
+          setRemainingSeconds(
+            0,
+          )
 
           if (
             response ===
@@ -392,7 +608,7 @@ export default function BookingOfferScreen({
     useCallback(() => {
       Alert.alert(
         'Accept booking?',
-        'Accepting this offer assigns the booking to you.',
+        'Accepting this offer assigns the booking to you and opens the active job workflow.',
         [
           {
             text: 'Cancel',
@@ -465,7 +681,7 @@ export default function BookingOfferScreen({
               styles.loadingText
             }
           >
-            Checking the latest assignment offer for your account.
+            Getting the latest assignment details.
           </Text>
         </View>
       </ScreenContainer>
@@ -519,6 +735,11 @@ export default function BookingOfferScreen({
     isPending &&
     displayedSeconds <= 0
 
+  const statusColor =
+    getOfferStatusColor(
+      offer.status,
+    )
+
   return (
     <ScreenContainer>
       <ScrollView
@@ -549,35 +770,21 @@ export default function BookingOfferScreen({
             styles.topBar
           }
         >
-          {onBack ? (
-            <Pressable
-              onPress={
-                onBack
-              }
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              style={({ pressed }) => [
-                styles.backButton,
-                pressed &&
-                  styles.buttonPressed,
-              ]}
-            >
-              <Ionicons
-                name="arrow-back"
-                size={21}
-                color={
-                  UI.colors.primary
+          <View
+            style={
+              styles.topBarLeft
+            }
+          >
+            {onBack ? (
+              <AppButton
+                title="Back"
+                variant="secondary"
+                onPress={
+                  onBack
                 }
               />
-            </Pressable>
-          ) : (
-            <View
-              style={
-                styles.backButtonPlaceholder
-              }
-            />
-          )}
+            ) : null}
+          </View>
 
           <View
             style={
@@ -601,31 +808,11 @@ export default function BookingOfferScreen({
             </Text>
           </View>
 
-          <Pressable
-            onPress={() => {
-              void loadOffer(true)
-            }}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Refresh offer"
-            disabled={
-              refreshing ||
-              responding
+          <View
+            style={
+              styles.topBarRight
             }
-            style={({ pressed }) => [
-              styles.refreshButton,
-              pressed &&
-                styles.buttonPressed,
-            ]}
-          >
-            <Ionicons
-              name="refresh"
-              size={20}
-              color={
-                UI.colors.primary
-              }
-            />
-          </Pressable>
+          />
         </View>
 
         {error ? (
@@ -634,19 +821,13 @@ export default function BookingOfferScreen({
               styles.warningBox
             }
           >
-            <View
-              style={
-                styles.warningIcon
+            <Ionicons
+              name="alert-circle-outline"
+              size={20}
+              color={
+                UI.colors.warning
               }
-            >
-              <Ionicons
-                name="alert-circle-outline"
-                size={18}
-                color={
-                  UI.colors.warning
-                }
-              />
-            </View>
+            />
 
             <View
               style={
@@ -658,7 +839,7 @@ export default function BookingOfferScreen({
                   styles.warningTitle
                 }
               >
-                Offer update notice
+                Offer update
               </Text>
 
               <Text
@@ -678,19 +859,23 @@ export default function BookingOfferScreen({
           }
         >
           <View
-            style={
-              styles.heroIcon
-            }
+            style={[
+              styles.heroIcon,
+              {
+                backgroundColor:
+                  UI.colors.infoBackground,
+              },
+            ]}
           >
             <Ionicons
               name={
-                getStatusIcon(
+                getOfferStatusIcon(
                   offer.status,
                 )
               }
               size={28}
               color={
-                UI.colors.primary
+                statusColor
               }
             />
           </View>
@@ -700,7 +885,7 @@ export default function BookingOfferScreen({
               styles.heroEyebrow
             }
           >
-            WORK OPPORTUNITY
+            JOB OFFER
           </Text>
 
           <Text
@@ -709,19 +894,30 @@ export default function BookingOfferScreen({
             }
           >
             {isPending
-              ? 'A new assignment is waiting'
+              ? 'A new job is waiting'
               : getOfferStatusLabel(
                   offer.status,
                 )}
           </Text>
 
-          <Text
-            style={
-              styles.heroSubtitle
-            }
-          >
-            Booking ID • {bookingId}
-          </Text>
+          {booking ? (
+            <Text
+              style={
+                styles.heroService
+              }
+            >
+              {context?.serviceName ||
+                'Service booking'}
+            </Text>
+          ) : (
+            <Text
+              style={
+                styles.heroService
+              }
+            >
+              Service booking
+            </Text>
+          )}
 
           {isPending ? (
             <View
@@ -736,7 +932,7 @@ export default function BookingOfferScreen({
               >
                 <Ionicons
                   name="time-outline"
-                  size={19}
+                  size={20}
                   color={
                     UI.colors.secondary
                   }
@@ -789,292 +985,487 @@ export default function BookingOfferScreen({
                 </Text>
               </View>
             </View>
-          ) : (
+          ) : null}
+        </View>
+
+        {detailsError ? (
+          <View
+            style={
+              styles.warningBox
+            }
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color={
+                UI.colors.secondary
+              }
+            />
+
             <View
               style={
-                styles.finalStatus
+                styles.warningCopy
               }
             >
-              <Ionicons
-                name={
-                  getStatusIcon(
-                    offer.status,
-                  )
+              <Text
+                style={
+                  styles.warningTitle
                 }
-                size={20}
-                color={
-                  offer.status ===
-                  'accepted'
-                    ? UI.colors.success
-                    : offer.status ===
-                        'declined' ||
-                      offer.status ===
-                        'expired' ||
-                      offer.status ===
-                        'cancelled'
-                      ? UI.colors.error
-                      : UI.colors.secondary
-                }
-              />
+              >
+                Some details unavailable
+              </Text>
 
               <Text
                 style={
-                  styles.finalStatusText
+                  styles.warningText
                 }
               >
-                {getOfferStatusLabel(
-                  offer.status,
-                )}
+                {detailsError}
               </Text>
             </View>
-          )}
-        </View>
+          </View>
+        ) : null}
 
-        <View
-          style={
-            styles.section
-          }
-        >
-          <Text
-            style={
-              styles.sectionEyebrow
-            }
-          >
-            OFFER INFORMATION
-          </Text>
-
-          <Text
-            style={
-              styles.sectionTitle
-            }
-          >
-            Assignment details
-          </Text>
-
-          <View
-            style={
-              styles.infoCard
-            }
-          >
-            <InfoRow
-              icon="briefcase-outline"
-              label="Booking"
-              value={
-                bookingId
+        {booking ? (
+          <>
+            <View
+              style={
+                styles.section
               }
-            />
+            >
+              <SectionHeader
+                eyebrow="JOB DETAILS"
+                title="What you are accepting"
+              />
 
-            <InfoDivider />
+              <View
+                style={
+                  styles.card
+                }
+              >
+                {context?.customerName ? (
+                  <>
+                    <DetailRow
+                      icon="person-outline"
+                      label="Customer"
+                      value={
+                        context.customerName
+                      }
+                    />
 
-            <InfoRow
-              icon="paper-plane-outline"
-              label="Offered"
-              value={formatDateTime(
-                offer.offeredAt,
-              )}
-            />
+                    <View
+                      style={
+                        styles.divider
+                      }
+                    />
+                  </>
+                ) : null}
 
-            <InfoDivider />
-
-            <InfoRow
-              icon="time-outline"
-              label="Offer expires"
-              value={formatDateTime(
-                offer.expiresAt,
-              )}
-            />
-
-            {offer.respondedAt ? (
-              <>
-                <InfoDivider />
-
-                <InfoRow
-                  icon="checkmark-done-outline"
-                  label="Responded"
-                  value={formatDateTime(
-                    offer.respondedAt,
-                  )}
+                <DetailRow
+                  icon="briefcase-outline"
+                  label="Service"
+                  value={
+                    context?.serviceName ||
+                    'Service'
+                  }
                 />
-              </>
+
+                {context?.variantName ? (
+                  <>
+                    <View
+                      style={
+                        styles.divider
+                      }
+                    />
+
+                    <DetailRow
+                      icon="layers-outline"
+                      label="Package"
+                      value={
+                        context.variantName
+                      }
+                    />
+                  </>
+                ) : null}
+
+                <View
+                  style={
+                    styles.divider
+                  }
+                />
+
+                <DetailRow
+                  icon="calendar-outline"
+                  label="Scheduled"
+                  value={
+                    formatBookingDateTime(
+                      booking.scheduledStart,
+                    )
+                  }
+                />
+
+                <View
+                  style={
+                    styles.divider
+                  }
+                />
+
+                <DetailRow
+                  icon="time-outline"
+                  label="Duration"
+                  value={
+                    formatDuration(
+                      booking,
+                    )
+                  }
+                />
+
+                <View
+                  style={
+                    styles.divider
+                  }
+                />
+
+                <DetailRow
+                  icon="repeat-outline"
+                  label="Booking type"
+                  value={
+                    getBookingTypeLabel(
+                      booking.bookingType,
+                    )
+                  }
+                />
+              </View>
+            </View>
+
+            <View
+              style={
+                styles.section
+              }
+            >
+              <SectionHeader
+                eyebrow="SERVICE LOCATION"
+                title="Where the job is"
+              />
+
+              <View
+                style={
+                  styles.locationCard
+                }
+              >
+                <View
+                  style={
+                    styles.locationIcon
+                  }
+                >
+                  <Ionicons
+                    name="location-outline"
+                    size={22}
+                    color={
+                      UI.colors.secondary
+                    }
+                  />
+                </View>
+
+                <View
+                  style={
+                    styles.locationCopy
+                  }
+                >
+                  {context?.addressLabel ? (
+                    <Text
+                      style={
+                        styles.locationLabel
+                      }
+                    >
+                      {context.addressLabel}
+                    </Text>
+                  ) : null}
+
+                  <Text
+                    style={
+                      styles.locationAddress
+                    }
+                  >
+                    {context?.addressLine ||
+                      'Service address unavailable'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {booking.notes ? (
+              <View
+                style={
+                  styles.section
+                }
+              >
+                <SectionHeader
+                  eyebrow="CUSTOMER NOTES"
+                  title="Job instructions"
+                />
+
+                <View
+                  style={
+                    styles.notesCard
+                  }
+                >
+                  <Ionicons
+                    name="document-text-outline"
+                    size={21}
+                    color={
+                      UI.colors.secondary
+                    }
+                  />
+
+                  <Text
+                    style={
+                      styles.notesText
+                    }
+                  >
+                    {booking.notes}
+                  </Text>
+                </View>
+              </View>
             ) : null}
-          </View>
-        </View>
-
-        {isPending && !isExpired ? (
-          <View
-            style={
-              styles.decisionSection
-            }
-          >
-            <Text
-              style={
-                styles.sectionEyebrow
-              }
-            >
-              YOUR RESPONSE
-            </Text>
-
-            <Text
-              style={
-                styles.sectionTitle
-              }
-            >
-              Do you want this job?
-            </Text>
-
-            <Text
-              style={
-                styles.decisionDescription
-              }
-            >
-              Accepting assigns this booking to your worker account. Declining releases the offer.
-            </Text>
 
             <View
               style={
-                styles.acceptButton
+                styles.section
               }
             >
-              <AppButton
-                title={
-                  responding
-                    ? 'Accepting...'
-                    : 'Accept job'
-                }
-                disabled={
-                  responding
-                }
-                onPress={
-                  confirmAccept
-                }
+              <SectionHeader
+                eyebrow="OFFER"
+                title="Offer timing"
               />
-            </View>
 
-            <View
-              style={
-                styles.declineButton
-              }
-            >
-              <AppButton
-                title={
-                  responding
-                    ? 'Please wait...'
-                    : 'Decline'
-                }
-                variant="secondary"
-                disabled={
-                  responding
-                }
-                onPress={
-                  confirmDecline
-                }
-              />
-            </View>
-          </View>
-        ) : null}
-
-        {offer.status ===
-        'accepted' ? (
-          <View
-            style={
-              styles.resultCardSuccess
-            }
-          >
-            <View
-              style={
-                styles.resultIconSuccess
-              }
-            >
-              <Ionicons
-                name="checkmark"
-                size={22}
-                color={
-                  UI.colors.success
-                }
-              />
-            </View>
-
-            <View
-              style={
-                styles.resultCopy
-              }
-            >
-              <Text
+              <View
                 style={
-                  styles.resultTitleSuccess
+                  styles.card
                 }
               >
-                Booking accepted
-              </Text>
+                <DetailRow
+                  icon="paper-plane-outline"
+                  label="Offered"
+                  value={
+                    formatBookingDateTime(
+                      offer.offeredAt,
+                    )
+                  }
+                />
 
-              <Text
-                style={
-                  styles.resultText
-                }
-              >
-                This job is now assigned to your worker account.
-              </Text>
+                <View
+                  style={
+                    styles.divider
+                  }
+                />
+
+                <DetailRow
+                  icon="hourglass-outline"
+                  label="Offer expires"
+                  value={
+                    formatBookingDateTime(
+                      offer.expiresAt,
+                    )
+                  }
+                />
+
+                {offer.respondedAt ? (
+                  <>
+                    <View
+                      style={
+                        styles.divider
+                      }
+                    />
+
+                    <DetailRow
+                      icon="checkmark-done-outline"
+                      label="Responded"
+                      value={
+                        formatBookingDateTime(
+                          offer.respondedAt,
+                        )
+                      }
+                    />
+                  </>
+                ) : null}
+
+                <View
+                  style={
+                    styles.divider
+                  }
+                />
+
+                <DetailRow
+                  icon="information-circle-outline"
+                  label="Status"
+                  value={
+                    getOfferStatusLabel(
+                      offer.status,
+                    )
+                  }
+                />
+              </View>
             </View>
 
-            <Pressable
-              onPress={() => {
-                onAccepted?.(
-                  offer.bookingId,
-                )
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Open accepted booking"
-              style={({ pressed }) => [
-                styles.resultArrowButton,
-                pressed &&
-                  styles.buttonPressed,
-              ]}
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={
-                  UI.colors.secondary
+            {isPending &&
+            !isExpired ? (
+              <View
+                style={
+                  styles.decisionSection
                 }
-              />
-            </Pressable>
+              >
+                <Text
+                  style={
+                    styles.decisionTitle
+                  }
+                >
+                  Do you want this job?
+                </Text>
+
+                <Text
+                  style={
+                    styles.decisionText
+                  }
+                >
+                  Accepting assigns this booking to your worker account and opens the active job workflow.
+                </Text>
+
+                <View
+                  style={
+                    styles.primaryButton
+                  }
+                >
+                  <AppButton
+                    title={
+                      responding
+                        ? 'Accepting...'
+                        : 'Accept job'
+                    }
+                    disabled={
+                      responding
+                    }
+                    onPress={
+                      confirmAccept
+                    }
+                  />
+                </View>
+
+                <View
+                  style={
+                    styles.secondaryButton
+                  }
+                >
+                  <AppButton
+                    title={
+                      responding
+                        ? 'Please wait...'
+                        : 'Decline'
+                    }
+                    variant="secondary"
+                    disabled={
+                      responding
+                    }
+                    onPress={
+                      confirmDecline
+                    }
+                  />
+                </View>
+              </View>
+            ) : null}
+
+            {!isPending ? (
+              <View
+                style={
+                  styles.finalStatusCard
+                }
+              >
+                <View
+                  style={
+                    styles.finalStatusIcon
+                  }
+                >
+                  <Ionicons
+                    name={
+                      getOfferStatusIcon(
+                        offer.status,
+                      )
+                    }
+                    size={22}
+                    color={
+                      statusColor
+                    }
+                  />
+                </View>
+
+                <View
+                  style={
+                    styles.finalStatusCopy
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.finalStatusTitle,
+                      {
+                        color:
+                          statusColor,
+                      },
+                    ]}
+                  >
+                    {getOfferStatusLabel(
+                      offer.status,
+                    )}
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.finalStatusText
+                    }
+                  >
+                    This offer is no longer awaiting a worker response.
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </>
+        ) : (
+          <View
+            style={
+              styles.noDetailsCard
+            }
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={24}
+              color={
+                UI.colors.secondary
+              }
+            />
+
+            <Text
+              style={
+                styles.noDetailsTitle
+              }
+            >
+              Job details unavailable
+            </Text>
+
+            <Text
+              style={
+                styles.noDetailsText
+              }
+            >
+              The offer exists, but the booking details could not be loaded right now.
+            </Text>
           </View>
-        ) : null}
-
-        {offer.status ===
-        'declined' ? (
-          <ResultCard
-            icon="close-circle-outline"
-            title="Offer declined"
-            message="You declined this booking offer. It cannot be accepted again."
-          />
-        ) : null}
-
-        {offer.status ===
-        'cancelled' ? (
-          <ResultCard
-            icon="ban-outline"
-            title="Offer cancelled"
-            message="This booking offer was cancelled before you responded."
-          />
-        ) : null}
-
-        {offer.status ===
-        'expired' ||
-        isExpired ? (
-          <ResultCard
-            icon="time-outline"
-            title="Offer expired"
-            message="The response window for this offer has closed."
-          />
-        ) : null}
+        )}
 
         <Text
           style={
             styles.footerText
           }
         >
-          Offer information is loaded for the authenticated TempStaff worker account.
+          Customer phone numbers and internal account identifiers are not shown on this screen.
         </Text>
 
         <View
@@ -1087,274 +1478,75 @@ export default function BookingOfferScreen({
   )
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  label: string
-  value: string
-}) {
-  return (
-    <View
-      style={
-        styles.infoRow
-      }
-    >
-      <View
-        style={
-          styles.infoIcon
-        }
-      >
-        <Ionicons
-          name={icon}
-          size={18}
-          color={
-            UI.colors.secondary
-          }
-        />
-      </View>
-
-      <View
-        style={
-          styles.infoCopy
-        }
-      >
-        <Text
-          style={
-            styles.infoLabel
-          }
-        >
-          {label}
-        </Text>
-
-        <Text
-          numberOfLines={3}
-          style={
-            styles.infoValue
-          }
-        >
-          {value}
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-function InfoDivider() {
-  return (
-    <View
-      style={
-        styles.infoDivider
-      }
-    />
-  )
-}
-
-function ResultCard({
-  icon,
-  title,
-  message,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  title: string
-  message: string
-}) {
-  return (
-    <View
-      style={
-        styles.resultCard
-      }
-    >
-      <View
-        style={
-          styles.resultIcon
-        }
-      >
-        <Ionicons
-          name={icon}
-          size={22}
-          color={
-            UI.colors.secondary
-          }
-        />
-      </View>
-
-      <View
-        style={
-          styles.resultCopy
-        }
-      >
-        <Text
-          style={
-            styles.resultTitle
-          }
-        >
-          {title}
-        </Text>
-
-        <Text
-          style={
-            styles.resultText
-          }
-        >
-          {message}
-        </Text>
-      </View>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal:
       UI.spacing.lg,
     paddingTop:
-      UI.spacing.md,
-    paddingBottom:
-      UI.spacing.xxxl,
+      UI.spacing.lg,
   },
 
   topBar: {
+    minHeight: 48,
     flexDirection:
       'row',
     alignItems:
       'center',
     justifyContent:
       'space-between',
-    minHeight: 44,
+    marginBottom:
+      UI.spacing.lg,
   },
 
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius:
-      UI.radius.pill,
-    alignItems:
-      'center',
-    justifyContent:
-      'center',
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
-
-  backButtonPlaceholder: {
-    width: 44,
-    height: 44,
+  topBarLeft: {
+    width: 70,
   },
 
   topBarCenter: {
+    flex: 1,
     alignItems:
       'center',
   },
 
+  topBarRight: {
+    width: 70,
+  },
+
   topBarEyebrow: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontSize:
+      UI.typography.caption,
+    fontWeight:
+      '900',
+    letterSpacing:
+      1.2,
     color:
-      UI.colors.secondary,
+      UI.colors.textMuted,
   },
 
   topBarTitle: {
-    marginTop: 2,
+    marginTop:
+      2,
     fontSize:
-      UI.typography.bodyLarge,
+      UI.typography.subtitle,
     fontWeight:
       '900',
     color:
       UI.colors.text,
   },
 
-  refreshButton: {
-    width: 44,
-    height: 44,
-    borderRadius:
-      UI.radius.pill,
-    alignItems:
-      'center',
-    justifyContent:
-      'center',
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
-
-  buttonPressed: {
-    opacity: 0.7,
-  },
-
-  warningBox: {
-    flexDirection:
-      'row',
-    alignItems:
-      'flex-start',
-    marginTop:
-      UI.spacing.lg,
-    padding:
-      UI.spacing.md,
-    borderRadius:
-      UI.radius.lg,
-    backgroundColor:
-      UI.colors.warningBackground,
-    borderWidth: 1,
-    borderColor:
-      '#FDE68A',
-  },
-
-  warningIcon: {
-    width: 32,
-    height: 32,
-    borderRadius:
-      UI.radius.pill,
-    alignItems:
-      'center',
-    justifyContent:
-      'center',
-    backgroundColor:
-      UI.colors.surface,
-  },
-
-  warningCopy: {
-    flex: 1,
-    marginLeft:
-      UI.spacing.sm,
-  },
-
-  warningTitle: {
-    fontSize:
-      UI.typography.small,
-    fontWeight:
-      '800',
-    color:
-      UI.colors.warning,
-  },
-
-  warningText: {
-    marginTop:
-      UI.spacing.xs,
-    fontSize:
-      UI.typography.small,
-    lineHeight: 18,
-    color:
-      UI.colors.textSecondary,
-  },
-
   heroCard: {
-    marginTop:
-      UI.spacing.lg,
     padding:
       UI.spacing.xl,
     borderRadius:
       UI.radius.xl,
     backgroundColor:
-      UI.colors.primary,
+      UI.colors.surface,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
+    alignItems:
+      'center',
   },
 
   heroIcon: {
@@ -1366,69 +1558,77 @@ const styles = StyleSheet.create({
       'center',
     justifyContent:
       'center',
-    backgroundColor:
-      UI.colors.surface,
   },
 
   heroEyebrow: {
     marginTop:
       UI.spacing.lg,
-    fontSize: 10,
+    fontSize:
+      UI.typography.caption,
     fontWeight:
-      '800',
-    letterSpacing: 1.1,
+      '900',
+    letterSpacing:
+      1.1,
     color:
-      UI.colors.surface,
-    opacity: 0.72,
+      UI.colors.textMuted,
   },
 
   heroTitle: {
     marginTop:
-      UI.spacing.sm,
-    fontSize: 26,
-    lineHeight: 32,
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.title,
+    lineHeight:
+      30,
     fontWeight:
       '900',
     color:
-      UI.colors.surface,
+      UI.colors.text,
+    textAlign:
+      'center',
   },
 
-  heroSubtitle: {
+  heroService: {
     marginTop:
-      UI.spacing.sm,
+      UI.spacing.xs,
     fontSize:
-      UI.typography.small,
+      UI.typography.body,
+    fontWeight:
+      '700',
     color:
-      UI.colors.surface,
-    opacity: 0.76,
+      UI.colors.secondary,
+    textAlign:
+      'center',
   },
 
   timerCard: {
+    width:
+      '100%',
+    marginTop:
+      UI.spacing.lg,
     flexDirection:
       'row',
     alignItems:
       'center',
-    marginTop:
-      UI.spacing.xl,
     padding:
       UI.spacing.md,
     borderRadius:
       UI.radius.lg,
     backgroundColor:
-      UI.colors.surface,
+      UI.colors.infoBackground,
   },
 
   timerIcon: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     borderRadius:
-      UI.radius.md,
+      UI.radius.pill,
     alignItems:
       'center',
     justifyContent:
       'center',
     backgroundColor:
-      UI.colors.infoBackground,
+      UI.colors.surface,
   },
 
   timerCopy: {
@@ -1438,10 +1638,10 @@ const styles = StyleSheet.create({
   },
 
   timerLabel: {
-    fontSize: 9,
+    fontSize:
+      UI.typography.caption,
     fontWeight:
       '800',
-    letterSpacing: 0.9,
     color:
       UI.colors.textMuted,
   },
@@ -1449,8 +1649,8 @@ const styles = StyleSheet.create({
   timerValue: {
     marginTop:
       UI.spacing.xs,
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize:
+      UI.typography.title,
     fontWeight:
       '900',
     color:
@@ -1497,29 +1697,49 @@ const styles = StyleSheet.create({
       UI.colors.error,
   },
 
-  finalStatus: {
+  warningBox: {
+    marginTop:
+      UI.spacing.md,
+    padding:
+      UI.spacing.md,
+    borderRadius:
+      UI.radius.lg,
     flexDirection:
       'row',
     alignItems:
-      'center',
-    marginTop:
-      UI.spacing.xl,
-    paddingTop:
-      UI.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor:
-      'rgba(255,255,255,0.14)',
+      'flex-start',
+    backgroundColor:
+      UI.colors.warningBackground,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
   },
 
-  finalStatusText: {
+  warningCopy: {
+    flex: 1,
     marginLeft:
       UI.spacing.sm,
+  },
+
+  warningTitle: {
     fontSize:
-      UI.typography.body,
+      UI.typography.small,
     fontWeight:
-      '800',
+      '900',
     color:
-      UI.colors.surface,
+      UI.colors.text,
+  },
+
+  warningText: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.caption,
+    lineHeight:
+      17,
+    color:
+      UI.colors.textSecondary,
   },
 
   section: {
@@ -1527,14 +1747,20 @@ const styles = StyleSheet.create({
       UI.spacing.xxl,
   },
 
+  sectionHeader: {
+    marginBottom:
+      UI.spacing.md,
+  },
+
   sectionEyebrow: {
-    fontSize: 10,
+    fontSize:
+      UI.typography.caption,
     fontWeight:
-      '800',
+      '900',
     letterSpacing:
-      1.05,
+      1,
     color:
-      UI.colors.secondary,
+      UI.colors.textMuted,
   },
 
   sectionTitle: {
@@ -1542,16 +1768,13 @@ const styles = StyleSheet.create({
       UI.spacing.xs,
     fontSize:
       UI.typography.subtitle,
-    lineHeight: 23,
     fontWeight:
-      '800',
+      '900',
     color:
       UI.colors.text,
   },
 
-  infoCard: {
-    marginTop:
-      UI.spacing.md,
+  card: {
     paddingHorizontal:
       UI.spacing.lg,
     paddingVertical:
@@ -1560,12 +1783,13 @@ const styles = StyleSheet.create({
       UI.radius.xl,
     backgroundColor:
       UI.colors.surface,
-    borderWidth: 1,
+    borderWidth:
+      1,
     borderColor:
       UI.colors.border,
   },
 
-  infoRow: {
+  detailRow: {
     flexDirection:
       'row',
     alignItems:
@@ -1574,9 +1798,9 @@ const styles = StyleSheet.create({
       UI.spacing.md,
   },
 
-  infoIcon: {
-    width: 38,
-    height: 38,
+  detailIcon: {
+    width: 40,
+    height: 40,
     borderRadius:
       UI.radius.md,
     alignItems:
@@ -1587,162 +1811,191 @@ const styles = StyleSheet.create({
       UI.colors.infoBackground,
   },
 
-  infoCopy: {
+  detailCopy: {
     flex: 1,
     marginLeft:
       UI.spacing.md,
   },
 
-  infoLabel: {
+  detailLabel: {
     fontSize:
       UI.typography.caption,
     color:
       UI.colors.textMuted,
   },
 
-  infoValue: {
+  detailValue: {
     marginTop:
       UI.spacing.xs,
     fontSize:
       UI.typography.small,
+    lineHeight:
+      19,
     fontWeight:
       '800',
     color:
       UI.colors.text,
   },
 
-  infoDivider: {
-    height: 1,
+  divider: {
+    height:
+      1,
     backgroundColor:
       UI.colors.border,
   },
 
-  decisionSection: {
-    marginTop:
-      UI.spacing.xxl,
-  },
-
-  decisionDescription: {
-    marginTop:
-      UI.spacing.xs,
-    fontSize:
-      UI.typography.small,
-    lineHeight: 18,
-    color:
-      UI.colors.textSecondary,
-  },
-
-  acceptButton: {
-    marginTop:
-      UI.spacing.lg,
-  },
-
-  declineButton: {
-    marginTop:
-      UI.spacing.sm,
-  },
-
-  resultCardSuccess: {
+  locationCard: {
     flexDirection:
       'row',
     alignItems:
-      'center',
-    marginTop:
-      UI.spacing.xxl,
+      'flex-start',
     padding:
       UI.spacing.lg,
     borderRadius:
       UI.radius.xl,
     backgroundColor:
-      UI.colors.successBackground,
-    borderWidth: 1,
+      UI.colors.surface,
+    borderWidth:
+      1,
     borderColor:
-      UI.colors.success,
+      UI.colors.border,
   },
 
-  resultCard: {
-    flexDirection:
-      'row',
+  locationIcon: {
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.md,
     alignItems:
       'center',
-    marginTop:
-      UI.spacing.xxl,
-    padding:
-      UI.spacing.lg,
-    borderRadius:
-      UI.radius.xl,
+    justifyContent:
+      'center',
     backgroundColor:
       UI.colors.infoBackground,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
   },
 
-  resultIconSuccess: {
-    width: 44,
-    height: 44,
-    borderRadius:
-      UI.radius.pill,
-    alignItems:
-      'center',
-    justifyContent:
-      'center',
-    backgroundColor:
-      UI.colors.surface,
-  },
-
-  resultIcon: {
-    width: 44,
-    height: 44,
-    borderRadius:
-      UI.radius.pill,
-    alignItems:
-      'center',
-    justifyContent:
-      'center',
-    backgroundColor:
-      UI.colors.surface,
-  },
-
-  resultCopy: {
+  locationCopy: {
     flex: 1,
     marginLeft:
       UI.spacing.md,
-    marginRight:
-      UI.spacing.sm,
   },
 
-  resultTitleSuccess: {
+  locationLabel: {
     fontSize:
-      UI.typography.bodyLarge,
-    fontWeight:
-      '900',
-    color:
-      UI.colors.success,
-  },
-
-  resultTitle: {
-    fontSize:
-      UI.typography.bodyLarge,
+      UI.typography.small,
     fontWeight:
       '900',
     color:
       UI.colors.text,
   },
 
-  resultText: {
+  locationAddress: {
     marginTop:
       UI.spacing.xs,
     fontSize:
       UI.typography.small,
-    lineHeight: 18,
+    lineHeight:
+      20,
     color:
       UI.colors.textSecondary,
   },
 
-  resultArrowButton: {
-    width: 38,
-    height: 38,
+  notesCard: {
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+    padding:
+      UI.spacing.lg,
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  notesText: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+    fontSize:
+      UI.typography.small,
+    lineHeight:
+      20,
+    color:
+      UI.colors.textSecondary,
+  },
+
+  decisionSection: {
+    marginTop:
+      UI.spacing.xxl,
+    padding:
+      UI.spacing.lg,
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  decisionTitle: {
+    fontSize:
+      UI.typography.subtitle,
+    fontWeight:
+      '900',
+    color:
+      UI.colors.text,
+  },
+
+  decisionText: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    lineHeight:
+      19,
+    color:
+      UI.colors.textSecondary,
+  },
+
+  primaryButton: {
+    marginTop:
+      UI.spacing.lg,
+  },
+
+  secondaryButton: {
+    marginTop:
+      UI.spacing.sm,
+  },
+
+  finalStatusCard: {
+    marginTop:
+      UI.spacing.xxl,
+    padding:
+      UI.spacing.lg,
+    borderRadius:
+      UI.radius.xl,
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  finalStatusIcon: {
+    width: 46,
+    height: 46,
     borderRadius:
       UI.radius.pill,
     alignItems:
@@ -1750,7 +2003,72 @@ const styles = StyleSheet.create({
     justifyContent:
       'center',
     backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  finalStatusCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+  },
+
+  finalStatusTitle: {
+    fontSize:
+      UI.typography.bodyLarge,
+    fontWeight:
+      '900',
+  },
+
+  finalStatusText: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    lineHeight:
+      18,
+    color:
+      UI.colors.textSecondary,
+  },
+
+  noDetailsCard: {
+    marginTop:
+      UI.spacing.xxl,
+    padding:
+      UI.spacing.xl,
+    borderRadius:
+      UI.radius.xl,
+    alignItems:
+      'center',
+    backgroundColor:
       UI.colors.surface,
+    borderWidth:
+      1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  noDetailsTitle: {
+    marginTop:
+      UI.spacing.md,
+    fontSize:
+      UI.typography.subtitle,
+    fontWeight:
+      '900',
+    color:
+      UI.colors.text,
+  },
+
+  noDetailsText: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    lineHeight:
+      19,
+    color:
+      UI.colors.textSecondary,
+    textAlign:
+      'center',
   },
 
   footerText: {
@@ -1758,7 +2076,8 @@ const styles = StyleSheet.create({
       UI.spacing.xl,
     fontSize:
       UI.typography.caption,
-    lineHeight: 16,
+    lineHeight:
+      17,
     color:
       UI.colors.textMuted,
     textAlign:
@@ -1796,10 +2115,12 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop:
       UI.spacing.sm,
-    maxWidth: 300,
+    maxWidth:
+      300,
     fontSize:
       UI.typography.body,
-    lineHeight: 20,
+    lineHeight:
+      20,
     color:
       UI.colors.textSecondary,
     textAlign:
