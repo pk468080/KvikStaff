@@ -21,6 +21,8 @@ import {
 export type WorkerRuntimeContextValue = {
   session: Session | null
 
+  sessionReady: boolean
+
   bookingRevision: number
   offerRevision: number
   occurrenceRevision: number
@@ -64,6 +66,11 @@ export function WorkerRuntimeProvider({
     session,
     setSession,
   ] = useState<Session | null>(null)
+
+  const [
+    sessionReady,
+    setSessionReady,
+  ] = useState(false)
 
   const [
     bookingRevision,
@@ -134,6 +141,10 @@ export function WorkerRuntimeProvider({
           }
 
           setSession(null)
+        } finally {
+          if (mounted) {
+            setSessionReady(true)
+          }
         }
       }
 
@@ -156,6 +167,14 @@ export function WorkerRuntimeProvider({
           setSession(
             nextSession,
           )
+
+          /*
+           * The listener can fire before the initial
+           * getSession() promise resolves. Mark the
+           * runtime ready as soon as Supabase gives us
+           * an authoritative auth-state event.
+           */
+          setSessionReady(true)
         },
       )
 
@@ -455,6 +474,8 @@ export function WorkerRuntimeProvider({
       () => ({
         session,
 
+        sessionReady,
+
         bookingRevision,
         offerRevision,
         occurrenceRevision,
@@ -467,6 +488,7 @@ export function WorkerRuntimeProvider({
       }),
       [
         session,
+        sessionReady,
 
         bookingRevision,
         offerRevision,

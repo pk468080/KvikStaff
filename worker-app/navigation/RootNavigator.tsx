@@ -1,5 +1,10 @@
 import {
+  useEffect,
+} from 'react'
+
+import {
   NavigationContainer,
+  useNavigationContainerRef,
 } from '@react-navigation/native'
 
 import {
@@ -20,6 +25,10 @@ import WorkerPresenceRuntime from '../components/runtime/WorkerPresenceRuntime'
 
 import WorkerNavigator from './WorkerNavigator'
 
+import {
+  useWorkerRuntime,
+} from '../context/WorkerRuntimeContext'
+
 import type {
   RootStackParamList,
 } from '../types/navigation'
@@ -29,9 +38,73 @@ const Stack =
     RootStackParamList
   >()
 
-export default function RootNavigator() {
+function WorkerAuthNavigationGuard() {
+  const navigationRef =
+    useNavigationContainerRef<RootStackParamList>()
+
+  const {
+    session,
+    sessionReady,
+  } = useWorkerRuntime()
+
+  useEffect(() => {
+    if (!sessionReady) {
+      return
+    }
+
+    if (session) {
+      return
+    }
+
+    if (
+      !navigationRef.isReady()
+    ) {
+      return
+    }
+
+    const currentRoute =
+      navigationRef.getCurrentRoute()
+
+    /*
+     * SplashScreen owns the initial anonymous
+     * session decision. Do not interrupt it.
+     */
+    if (
+      currentRoute?.name ===
+      'Splash'
+    ) {
+      return
+    }
+
+    /*
+     * Login is already the correct anonymous
+     * destination.
+     */
+    if (
+      currentRoute?.name ===
+      'Login'
+    ) {
+      return
+    }
+
+    navigationRef.resetRoot({
+      index: 0,
+      routes: [
+        {
+          name: 'Login',
+        },
+      ],
+    })
+  }, [
+    navigationRef,
+    session,
+    sessionReady,
+  ])
+
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+    >
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{
@@ -146,5 +219,11 @@ export default function RootNavigator() {
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
+  )
+}
+
+export default function RootNavigator() {
+  return (
+    <WorkerAuthNavigationGuard />
   )
 }
