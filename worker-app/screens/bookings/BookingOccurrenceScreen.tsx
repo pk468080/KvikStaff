@@ -7,6 +7,7 @@ import {
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -16,8 +17,8 @@ import {
 } from 'react-native'
 
 import {
-  AppButton,
-} from '../../components/ui/AppButton'
+  Ionicons,
+} from '@expo/vector-icons'
 
 import {
   ScreenContainer,
@@ -33,22 +34,20 @@ import {
 
 import {
   getWorkerBookingOccurrence,
+  getWorkerBookingOccurrencesForBooking,
+  performWorkerOccurrenceAction,
 } from '../../services/bookings/workerBookingOccurrences.service'
 
 import {
   getWorkerBooking,
 } from '../../services/bookings/workerBookings.service'
 
-import BookingChatPanel from '../../components/bookings/BookingChatPanel'
-
-import {
-  performWorkerOccurrenceAction,
-} from '../../services/bookings/workerBookingOccurrences.service'
-
 import {
   verifyWorkerOccurrenceEndOtp,
   verifyWorkerOccurrenceStartOtp,
 } from '../../services/bookings/workerBookingOtp.service'
+
+import BookingChatPanel from '../../components/bookings/BookingChatPanel'
 
 import type {
   WorkerBookingActionResponse,
@@ -94,10 +93,10 @@ function getStatusLabel(
 ): string {
   switch (status) {
     case 'on_the_way':
-      return 'On the Way'
+      return 'On the way'
 
     case 'in_progress':
-      return 'In Progress'
+      return 'In progress'
 
     default:
       return (
@@ -121,9 +120,8 @@ function formatDateTime(
     return '—'
   }
 
-  const date = new Date(
-    value,
-  )
+  const date =
+    new Date(value)
 
   if (
     Number.isNaN(
@@ -134,7 +132,7 @@ function formatDateTime(
   }
 
   return date.toLocaleString(
-    undefined,
+    'en-IN',
     {
       day: '2-digit',
       month: 'short',
@@ -148,11 +146,20 @@ function formatDateTime(
 function formatAmount(
   value: number,
 ): string {
-  if (!Number.isFinite(value)) {
+  if (
+    !Number.isFinite(value)
+  ) {
     return '—'
   }
 
-  return value.toFixed(2)
+  return new Intl.NumberFormat(
+    'en-IN',
+    {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    },
+  ).format(value)
 }
 
 function isStartOtpRequired(
@@ -182,6 +189,8 @@ function getPrimaryAction(
 ): {
   action: WorkerOccurrenceAction
   title: string
+  subtitle: string
+  icon: keyof typeof Ionicons.glyphMap
   disabled?: boolean
 } | null {
   switch (occurrence.status) {
@@ -200,7 +209,12 @@ function getPrimaryAction(
 
       return {
         action: 'on_the_way',
-        title: 'Start Journey',
+        title: 'Start journey',
+        subtitle:
+          hasStarted
+            ? 'Head to the customer location when you are ready.'
+            : `Available from ${formatDateTime(occurrence.scheduledStart)}.`,
+        icon: 'navigate-outline',
         disabled:
           !hasStarted,
       }
@@ -209,12 +223,90 @@ function getPrimaryAction(
     case 'on_the_way':
       return {
         action: 'arrived',
-        title: 'Mark Arrived',
+        title: 'Mark arrived',
+        subtitle:
+          'Confirm when you reach the customer location.',
+        icon: 'location-outline',
       }
 
     default:
       return null
   }
+}
+
+function ActionCard({
+  title,
+  subtitle,
+  icon,
+  onPress,
+  disabled,
+}: {
+  title: string
+  subtitle: string
+  icon: keyof typeof Ionicons.glyphMap
+  onPress: () => void
+  disabled: boolean
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      style={({ pressed }) => [
+        styles.actionCard,
+        pressed &&
+          !disabled &&
+          styles.actionPressed,
+        disabled &&
+          styles.actionDisabled,
+      ]}
+    >
+      <View
+        style={
+          styles.actionIcon
+        }
+      >
+        <Ionicons
+          name={icon}
+          size={22}
+          color={
+            UI.colors.surface
+          }
+        />
+      </View>
+
+      <View
+        style={
+          styles.actionCopy
+        }
+      >
+        <Text
+          style={
+            styles.actionTitle
+          }
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={
+            styles.actionSubtitle
+          }
+        >
+          {subtitle}
+        </Text>
+      </View>
+
+      <Ionicons
+        name="chevron-forward"
+        size={19}
+        color={
+          UI.colors.surface
+        }
+      />
+    </Pressable>
+  )
 }
 
 export default function BookingOccurrenceScreen({
@@ -299,11 +391,6 @@ export default function BookingOccurrenceScreen({
             nextOccurrence,
           )
 
-          /*
-           * Chat is optional here. A failure to load
-           * the parent booking must not block normal
-           * occurrence actions for the worker.
-           */
           try {
             const parentBooking =
               await getWorkerBooking(
@@ -511,7 +598,7 @@ export default function BookingOccurrenceScreen({
               styles.loadingTitle
             }
           >
-            Loading occurrence
+            Loading job
           </Text>
 
           <Text
@@ -519,7 +606,7 @@ export default function BookingOccurrenceScreen({
               styles.loadingText
             }
           >
-            Fetching the scheduled worker occurrence...
+            Fetching your scheduled occurrence...
           </Text>
         </View>
       </ScreenContainer>
@@ -590,12 +677,17 @@ export default function BookingOccurrenceScreen({
         }
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={
+              refreshing
+            }
             onRefresh={() => {
               void loadOccurrence(
                 true,
               )
             }}
+            tintColor={
+              UI.colors.secondary
+            }
           />
         }
         showsVerticalScrollIndicator={
@@ -603,95 +695,115 @@ export default function BookingOccurrenceScreen({
         }
       >
         <View
-          style={styles.header}
+          style={
+            styles.topBar
+          }
         >
-          <View
-            style={
-              styles.headerCopy
-            }
-          >
-            <Text
-              style={
-                styles.eyebrow
-              }
-            >
-              BOOKING OCCURRENCE
-            </Text>
-
-            <Text
-              style={styles.title}
-            >
-              Occurrence{' '}
-              {occurrence.occurrenceIndex}
-            </Text>
-
-            <Text
-              style={
-                styles.bookingId
-              }
-            >
-              {occurrence.bookingId}
-            </Text>
-          </View>
-
           {onBack ? (
-            <View
-              style={
-                styles.headerButton
+            <Pressable
+              onPress={
+                onBack
               }
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={({ pressed }) => [
+                styles.headerButton,
+                pressed &&
+                  styles.headerButtonPressed,
+              ]}
             >
-              <AppButton
-                title="Back"
-                variant="secondary"
-                onPress={
-                  onBack
+              <Ionicons
+                name="arrow-back"
+                size={21}
+                color={
+                  UI.colors.primary
                 }
               />
-            </View>
-          ) : null}
-        </View>
+            </Pressable>
+          ) : (
+            <View
+              style={
+                styles.headerButtonPlaceholder
+              }
+            />
+          )}
 
-        {error ? (
           <View
             style={
-              styles.warningBox
+              styles.topBarCenter
             }
           >
             <Text
               style={
-                styles.warningTitle
+                styles.topBarEyebrow
               }
             >
-              Occurrence update notice
+              TEMPSTAFF
             </Text>
 
             <Text
               style={
-                styles.warningText
+                styles.topBarTitle
               }
             >
-              {error}
+              Occurrence
             </Text>
           </View>
-        ) : null}
+
+          <Pressable
+            onPress={() => {
+              void loadOccurrence(
+                true,
+              )
+            }}
+            disabled={
+              refreshing ||
+              actionLoading ||
+              otpLoading
+            }
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh occurrence"
+            style={({ pressed }) => [
+              styles.headerButton,
+              pressed &&
+                styles.headerButtonPressed,
+            ]}
+          >
+            <Ionicons
+              name="refresh"
+              size={20}
+              color={
+                UI.colors.primary
+              }
+            />
+          </Pressable>
+        </View>
 
         <View
           style={
-            styles.statusCard
+            styles.heroCard
           }
         >
           <View
             style={
-              styles.statusHeader
+              styles.heroTop
             }
           >
-            <Text
+            <View
               style={
-                styles.statusEyebrow
+                styles.occurrenceIcon
               }
             >
-              CURRENT STATUS
-            </Text>
+              <Ionicons
+                name="calendar-outline"
+                size={26}
+                color={
+                  UI.colors.primary
+                }
+              />
+            </View>
 
             <StatusBadge
               label={getStatusLabel(
@@ -705,7 +817,24 @@ export default function BookingOccurrenceScreen({
 
           <Text
             style={
-              styles.scheduleText
+              styles.heroEyebrow
+            }
+          >
+            SCHEDULED JOB
+          </Text>
+
+          <Text
+            style={
+              styles.heroTitle
+            }
+          >
+            Occurrence{' '}
+            {occurrence.occurrenceIndex}
+          </Text>
+
+          <Text
+            style={
+              styles.heroDate
             }
           >
             {formatDateTime(
@@ -715,7 +844,7 @@ export default function BookingOccurrenceScreen({
 
           <Text
             style={
-              styles.scheduleEndText
+              styles.heroEnd
             }
           >
             Ends{' '}
@@ -723,61 +852,143 @@ export default function BookingOccurrenceScreen({
               occurrence.scheduledEnd,
             )}
           </Text>
+
+          <View
+            style={
+              styles.heroIdRow
+            }
+          >
+            <Text
+              style={
+                styles.heroIdLabel
+              }
+            >
+              JOB ID
+            </Text>
+
+            <Text
+              style={
+                styles.heroId
+              }
+              numberOfLines={1}
+            >
+              #{occurrence.bookingId.slice(
+                0,
+                8,
+              )}
+            </Text>
+          </View>
         </View>
 
-        {occurrence.status ===
-          'on_the_way' &&
-        customerId ? (
-          <BookingChatPanel
-            bookingId={occurrence.bookingId}
-            customerId={customerId}
-            occurrenceId={occurrence.id}
-          />
+        {error ? (
+          <View
+            style={
+              styles.warningBox
+            }
+          >
+            <View
+              style={
+                styles.warningIcon
+              }
+            >
+              <Ionicons
+                name="alert-circle-outline"
+                size={18}
+                color={
+                  UI.colors.warning
+                }
+              />
+            </View>
+
+            <View
+              style={
+                styles.warningCopy
+              }
+            >
+              <Text
+                style={
+                  styles.warningTitle
+                }
+              >
+                Job update notice
+              </Text>
+
+              <Text
+                style={
+                  styles.warningText
+                }
+              >
+                {error}
+              </Text>
+            </View>
+          </View>
         ) : null}
 
         {primaryAction ? (
           <View
             style={
-              styles.primaryActionCard
+              styles.nextStepSection
             }
           >
             <Text
               style={
-                styles.actionTitle
+                styles.sectionEyebrow
               }
             >
-              Next worker action
+              NEXT STEP
             </Text>
 
             <Text
-  style={
-    styles.actionDescription
-  }
->
-  {primaryAction.disabled
-    ? `This shift starts at ${formatDateTime(
-        occurrence.scheduledStart,
-      )}. Start Journey will become available at the scheduled start time.`
-    : primaryAction.action ===
-        'on_the_way'
-      ? 'Start your journey to the customer location.'
-      : 'Mark that you have arrived at the customer location.'}
-</Text>
+              style={
+                styles.sectionTitle
+              }
+            >
+              Keep the job moving
+            </Text>
 
-            <AppButton
-  title={
-    primaryAction.title
-  }
-  disabled={
-    actionLoading ||
-    primaryAction.disabled === true
-  }
-  onPress={() => {
-    void runAction(
-      primaryAction.action,
-    )
-  }}
-/>
+            <ActionCard
+              title={
+                primaryAction.title
+              }
+              subtitle={
+                primaryAction.subtitle
+              }
+              icon={
+                primaryAction.icon
+              }
+              disabled={
+                actionLoading ||
+                primaryAction.disabled ===
+                  true
+              }
+              onPress={() => {
+                void runAction(
+                  primaryAction.action,
+                )
+              }}
+            />
+          </View>
+        ) : null}
+
+        {occurrence.status ===
+          'on_the_way' &&
+        customerId ? (
+          <View
+            style={
+              styles.section
+            }
+          >
+            <BookingChatPanel
+              bookingId={
+                occurrence.bookingId
+              }
+              customerId={
+                customerId
+              }
+              occurrenceId={
+                occurrence.id
+              }
+            />
           </View>
         ) : null}
 
@@ -785,9 +996,17 @@ export default function BookingOccurrenceScreen({
         endOtpRequired ? (
           <View
             style={
-              styles.otpCard
+              styles.section
             }
           >
+            <Text
+              style={
+                styles.sectionEyebrow
+              }
+            >
+              VERIFICATION
+            </Text>
+
             <Text
               style={
                 styles.sectionTitle
@@ -798,101 +1017,171 @@ export default function BookingOccurrenceScreen({
                 : 'Complete service'}
             </Text>
 
-            <Text
+            <View
               style={
-                styles.sectionSubtitle
+                styles.otpCard
               }
             >
-              {startOtpRequired
-                ? 'Enter the 6-digit OTP provided by the customer before starting the service.'
-                : 'Enter the 6-digit OTP provided by the customer to complete the service.'}
-            </Text>
+              <View
+                style={
+                  styles.otpHeader
+                }
+              >
+                <View
+                  style={
+                    styles.otpIcon
+                  }
+                >
+                  <Ionicons
+                    name="shield-checkmark-outline"
+                    size={21}
+                    color={
+                      UI.colors.warning
+                    }
+                  />
+                </View>
 
-            <TextInput
-              value={otp}
-              onChangeText={value => {
-                setOtp(
-                  value
-                    .replace(
-                      /\D/g,
-                      '',
-                    )
-                    .slice(
-                      0,
-                      6,
-                    ),
-                )
-              }}
-              keyboardType="number-pad"
-              maxLength={6}
-              placeholder="6-digit OTP"
-              placeholderTextColor={
-                UI.colors.textMuted
-              }
-              editable={!otpLoading}
-              style={
-                styles.otpInput
-              }
-              textContentType="oneTimeCode"
-              autoComplete="sms-otp"
-            />
+                <View
+                  style={
+                    styles.otpHeaderCopy
+                  }
+                >
+                  <Text
+                    style={
+                      styles.otpTitle
+                    }
+                  >
+                    Customer verification
+                  </Text>
 
-            <AppButton
-              title={
-                otpLoading
-                  ? 'Verifying...'
-                  : startOtpRequired
-                    ? 'Verify Start OTP'
-                    : 'Verify End OTP'
-              }
-              disabled={
-                otpLoading ||
-                otp.length !== 6
-              }
-              onPress={() => {
-                void verifyOtp()
-              }}
-            />
+                  <Text
+                    style={
+                      styles.otpDescription
+                    }
+                  >
+                    {startOtpRequired
+                      ? 'Enter the 6-digit OTP provided by the customer before starting the service.'
+                      : 'Enter the 6-digit OTP provided by the customer to complete the service.'}
+                  </Text>
+                </View>
+              </View>
+
+              <TextInput
+                value={
+                  otp
+                }
+                onChangeText={value => {
+                  setOtp(
+                    value
+                      .replace(
+                        /\D/g,
+                        '',
+                      )
+                      .slice(
+                        0,
+                        6,
+                      ),
+                  )
+                }}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholder="6-digit OTP"
+                placeholderTextColor={
+                  UI.colors.textMuted
+                }
+                editable={
+                  !otpLoading
+                }
+                style={
+                  styles.otpInput
+                }
+                textContentType="oneTimeCode"
+                autoComplete="sms-otp"
+              />
+
+              <AppButtonLocal
+                title={
+                  otpLoading
+                    ? 'Verifying...'
+                    : startOtpRequired
+                      ? 'Verify start OTP'
+                      : 'Verify end OTP'
+                }
+                disabled={
+                  otpLoading ||
+                  otp.length !== 6
+                }
+                onPress={() => {
+                  void verifyOtp()
+                }}
+              />
+            </View>
           </View>
         ) : null}
 
         {canCancel ? (
-          <View
-            style={
-              styles.cancelAction
+          <Pressable
+            onPress={
+              confirmCancel
             }
+            disabled={
+              actionLoading ||
+              otpLoading
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Cancel occurrence"
+            style={({ pressed }) => [
+              styles.cancelButton,
+              pressed &&
+                styles.cancelPressed,
+            ]}
           >
-            <AppButton
-              title="Cancel Occurrence"
-              variant="secondary"
-              disabled={
-                actionLoading ||
-                otpLoading
-              }
-              onPress={
-                confirmCancel
+            <Ionicons
+              name="close-circle-outline"
+              size={19}
+              color={
+                UI.colors.error
               }
             />
-          </View>
+
+            <Text
+              style={
+                styles.cancelText
+              }
+            >
+              Cancel occurrence
+            </Text>
+          </Pressable>
         ) : null}
 
         <View
-          style={styles.section}
+          style={
+            styles.section
+          }
         >
+          <Text
+            style={
+              styles.sectionEyebrow
+            }
+          >
+            SCHEDULE
+          </Text>
+
           <Text
             style={
               styles.sectionTitle
             }
           >
-            Schedule
+            Shift timing
           </Text>
 
           <View
             style={
-              styles.card
+              styles.infoCard
             }
           >
             <InfoRow
+              icon="calendar-outline"
               label="Occurrence date"
               value={
                 occurrence.occurrenceDate
@@ -902,6 +1191,7 @@ export default function BookingOccurrenceScreen({
             <InfoDivider />
 
             <InfoRow
+              icon="play-circle-outline"
               label="Scheduled start"
               value={
                 formatDateTime(
@@ -913,6 +1203,7 @@ export default function BookingOccurrenceScreen({
             <InfoDivider />
 
             <InfoRow
+              icon="stopwatch-outline"
               label="Scheduled end"
               value={
                 formatDateTime(
@@ -924,100 +1215,140 @@ export default function BookingOccurrenceScreen({
         </View>
 
         <View
-          style={styles.section}
+          style={
+            styles.section
+          }
         >
+          <Text
+            style={
+              styles.sectionEyebrow
+            }
+          >
+            PAYMENT
+          </Text>
+
           <Text
             style={
               styles.sectionTitle
             }
           >
-            Payment
+            Earnings for this occurrence
           </Text>
 
           <View
             style={
-              styles.card
+              styles.paymentCard
             }
           >
-            <InfoRow
-              label="Base amount"
-              value={formatAmount(
-                occurrence.baseAmount,
-              )}
-            />
+            <View
+              style={
+                styles.paymentMain
+              }
+            >
+              <View
+                style={
+                  styles.paymentIcon
+                }
+              >
+                <Ionicons
+                  name="cash-outline"
+                  size={23}
+                  color={
+                    UI.colors.success
+                  }
+                />
+              </View>
 
-            <InfoDivider />
+              <View
+                style={
+                  styles.paymentCopy
+                }
+              >
+                <Text
+                  style={
+                    styles.paymentLabel
+                  }
+                >
+                  Total
+                </Text>
 
-            <InfoRow
-              label="Discount"
-              value={formatAmount(
-                occurrence.discountAmount,
-              )}
-            />
-
-            <InfoDivider />
-
-            <InfoRow
-              label="Platform fee"
-              value={formatAmount(
-                occurrence.platformFee,
-              )}
-            />
-
-            <InfoDivider />
-
-            <InfoRow
-              label="Tax"
-              value={formatAmount(
-                occurrence.taxAmount,
-              )}
-            />
-
-            <InfoDivider />
+                <Text
+                  style={
+                    styles.paymentAmount
+                  }
+                >
+                  {formatAmount(
+                    occurrence.totalAmount,
+                  )}
+                </Text>
+              </View>
+            </View>
 
             <View
               style={
-                styles.totalRow
+                styles.paymentGrid
               }
             >
-              <Text
-                style={
-                  styles.totalLabel
+              <PaymentItem
+                label="Base"
+                value={
+                  occurrence.baseAmount
                 }
-              >
-                Total
-              </Text>
+              />
 
-              <Text
-                style={
-                  styles.totalValue
+              <PaymentItem
+                label="Discount"
+                value={
+                  occurrence.discountAmount
                 }
-              >
-                {formatAmount(
-                  occurrence.totalAmount,
-                )}
-              </Text>
+                negative
+              />
+
+              <PaymentItem
+                label="Platform fee"
+                value={
+                  occurrence.platformFee
+                }
+              />
+
+              <PaymentItem
+                label="Tax"
+                value={
+                  occurrence.taxAmount
+                }
+              />
             </View>
           </View>
         </View>
 
         <View
-          style={styles.section}
+          style={
+            styles.section
+          }
         >
+          <Text
+            style={
+              styles.sectionEyebrow
+            }
+          >
+            SERVICE PROGRESS
+          </Text>
+
           <Text
             style={
               styles.sectionTitle
             }
           >
-            Service progress
+            Job timeline
           </Text>
 
           <View
             style={
-              styles.card
+              styles.progressCard
             }
           >
             <ProgressRow
+              icon="navigate-outline"
               label="Journey started"
               value={
                 occurrence.journeyStartedAt
@@ -1025,6 +1356,7 @@ export default function BookingOccurrenceScreen({
             />
 
             <ProgressRow
+              icon="location-outline"
               label="Arrived"
               value={
                 occurrence.arrivedAt
@@ -1032,6 +1364,7 @@ export default function BookingOccurrenceScreen({
             />
 
             <ProgressRow
+              icon="play-circle-outline"
               label="Started"
               value={
                 occurrence.startedAt
@@ -1039,6 +1372,7 @@ export default function BookingOccurrenceScreen({
             />
 
             <ProgressRow
+              icon="checkmark-circle-outline"
               label="Completed"
               value={
                 occurrence.completedAt
@@ -1052,17 +1386,60 @@ export default function BookingOccurrenceScreen({
             styles.footerText
           }
         >
-          Occurrence actions and OTP verification are processed through the authenticated worker account.
+          TempStaff worker occurrence
         </Text>
+
+        <View
+          style={
+            styles.bottomSpacing
+          }
+        />
       </ScrollView>
     </ScreenContainer>
   )
 }
 
+function AppButtonLocal({
+  title,
+  onPress,
+  disabled,
+}: {
+  title: string
+  onPress: () => void
+  disabled: boolean
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      style={({ pressed }) => [
+        styles.verifyButton,
+        pressed &&
+          !disabled &&
+          styles.verifyButtonPressed,
+        disabled &&
+          styles.verifyButtonDisabled,
+      ]}
+    >
+      <Text
+        style={
+          styles.verifyButtonText
+        }
+      >
+        {title}
+      </Text>
+    </Pressable>
+  )
+}
+
 function InfoRow({
+  icon,
   label,
   value,
 }: {
+  icon: keyof typeof Ionicons.glyphMap
   label: string
   value: string
 }) {
@@ -1072,21 +1449,41 @@ function InfoRow({
         styles.infoRow
       }
     >
-      <Text
+      <View
         style={
-          styles.infoLabel
+          styles.infoIcon
         }
       >
-        {label}
-      </Text>
+        <Ionicons
+          name={icon}
+          size={18}
+          color={
+            UI.colors.secondary
+          }
+        />
+      </View>
 
-      <Text
+      <View
         style={
-          styles.infoValue
+          styles.infoCopy
         }
       >
-        {value}
-      </Text>
+        <Text
+          style={
+            styles.infoLabel
+          }
+        >
+          {label}
+        </Text>
+
+        <Text
+          style={
+            styles.infoValue
+          }
+        >
+          {value}
+        </Text>
+      </View>
     </View>
   )
 }
@@ -1101,38 +1498,107 @@ function InfoDivider() {
   )
 }
 
-function ProgressRow({
+function PaymentItem({
   label,
   value,
+  negative = false,
 }: {
   label: string
-  value: string | null
+  value: number
+  negative?: boolean
 }) {
   return (
     <View
       style={
-        styles.progressRow
+        styles.paymentItem
       }
     >
       <Text
         style={
-          styles.infoLabel
+          styles.paymentItemLabel
         }
       >
         {label}
       </Text>
 
       <Text
+        style={[
+          styles.paymentItemValue,
+          negative &&
+            styles.paymentItemValueNegative,
+        ]}
+      >
+        {formatAmount(
+          negative
+            ? -Math.abs(value)
+            : value,
+        )}
+      </Text>
+    </View>
+  )
+}
+
+function ProgressRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  label: string
+  value: string | null
+}) {
+  const completed =
+    Boolean(value)
+
+  return (
+    <View
+      style={
+        styles.progressRow
+      }
+    >
+      <View
+        style={[
+          styles.progressIcon,
+          completed &&
+            styles.progressIconCompleted,
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={18}
+          color={
+            completed
+              ? UI.colors.success
+              : UI.colors.textMuted
+          }
+        />
+      </View>
+
+      <View
         style={
-          styles.infoValue
+          styles.progressCopy
         }
       >
-        {value
-          ? formatDateTime(
-              value,
-            )
-          : 'Pending'}
-      </Text>
+        <Text
+          style={
+            styles.progressLabel
+          }
+        >
+          {label}
+        </Text>
+
+        <Text
+          style={[
+            styles.progressValue,
+            completed &&
+              styles.progressValueCompleted,
+          ]}
+        >
+          {value
+            ? formatDateTime(value)
+            : 'Pending'}
+        </Text>
+      </View>
     </View>
   )
 }
@@ -1140,77 +1606,230 @@ function ProgressRow({
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal:
-      UI.spacing.xl,
+      UI.spacing.lg,
     paddingTop:
-      UI.spacing.xl,
+      UI.spacing.md,
     paddingBottom:
       UI.spacing.xxxl,
   },
 
-  header: {
+  topBar: {
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
-    marginBottom:
-      UI.spacing.lg,
-  },
-
-  headerCopy: {
-    flex: 1,
-    paddingRight:
-      UI.spacing.md,
+      'center',
+    justifyContent:
+      'space-between',
+    minHeight: 44,
   },
 
   headerButton: {
-    width: 76,
+    width: 44,
+    height: 44,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
   },
 
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.1,
+  headerButtonPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+
+  headerButtonPressed: {
+    opacity: 0.7,
+  },
+
+  topBarCenter: {
+    alignItems:
+      'center',
+  },
+
+  topBarEyebrow: {
+    fontSize: 9,
+    fontWeight:
+      '800',
+    letterSpacing: 1,
     color:
       UI.colors.secondary,
   },
 
-  title: {
-    marginTop:
-      UI.spacing.sm,
+  topBarTitle: {
+    marginTop: 2,
     fontSize:
-      UI.typography.title,
-    lineHeight: 30,
-    fontWeight: '800',
+      UI.typography.bodyLarge,
+    fontWeight:
+      '900',
     color:
       UI.colors.text,
   },
 
-  bookingId: {
+  heroCard: {
+    marginTop:
+      UI.spacing.lg,
+    padding:
+      UI.spacing.xl,
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.primary,
+  },
+
+  heroTop: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    justifyContent:
+      'space-between',
+  },
+
+  occurrenceIcon: {
+    width: 56,
+    height: 56,
+    borderRadius:
+      UI.radius.lg,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  heroEyebrow: {
+    marginTop:
+      UI.spacing.lg,
+    fontSize: 10,
+    fontWeight:
+      '800',
+    letterSpacing:
+      1.1,
+    color:
+      UI.colors.surface,
+    opacity: 0.72,
+  },
+
+  heroTitle: {
+    marginTop:
+      UI.spacing.sm,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight:
+      '900',
+    color:
+      UI.colors.surface,
+  },
+
+  heroDate: {
+    marginTop:
+      UI.spacing.sm,
+    fontSize:
+      UI.typography.bodyLarge,
+    fontWeight:
+      '800',
+    color:
+      UI.colors.surface,
+  },
+
+  heroEnd: {
     marginTop:
       UI.spacing.xs,
     fontSize:
-      UI.typography.caption,
+      UI.typography.small,
     color:
-      UI.colors.textMuted,
+      UI.colors.surface,
+    opacity: 0.76,
+  },
+
+  heroIdRow: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    justifyContent:
+      'space-between',
+    marginTop:
+      UI.spacing.xl,
+    paddingTop:
+      UI.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor:
+      'rgba(255,255,255,0.14)',
+  },
+
+  heroIdLabel: {
+    fontSize: 9,
+    fontWeight:
+      '800',
+    letterSpacing:
+      0.9,
+    color:
+      UI.colors.surface,
+    opacity: 0.64,
+  },
+
+  heroId: {
+    maxWidth: 140,
+    fontSize:
+      UI.typography.small,
+    fontWeight:
+      '700',
+    color:
+      UI.colors.surface,
+    opacity: 0.86,
   },
 
   warningBox: {
-    marginBottom:
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+    marginTop:
       UI.spacing.lg,
     padding:
       UI.spacing.md,
     borderRadius:
-      UI.radius.md,
+      UI.radius.lg,
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor:
+      '#FDE68A',
+  },
+
+  warningIcon: {
+    width: 32,
+    height: 32,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  warningCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.sm,
   },
 
   warningTitle: {
     fontSize:
       UI.typography.small,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
       UI.colors.warning,
   },
@@ -1220,122 +1839,198 @@ const styles = StyleSheet.create({
       UI.spacing.xs,
     fontSize:
       UI.typography.small,
-    lineHeight: 18,
+    lineHeight:
+      18,
     color:
       UI.colors.textSecondary,
   },
 
-  statusCard: {
-    padding:
-      UI.spacing.xl,
-    borderRadius:
-      UI.radius.xl,
-    backgroundColor:
-      UI.colors.primary,
+  nextStepSection: {
+    marginTop:
+      UI.spacing.xxl,
   },
 
-  statusHeader: {
+  section: {
+    marginTop:
+      UI.spacing.xxl,
+  },
+
+  sectionEyebrow: {
+    fontSize: 10,
+    fontWeight:
+      '800',
+    letterSpacing:
+      1.05,
+    color:
+      UI.colors.secondary,
+  },
+
+  sectionTitle: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.subtitle,
+    lineHeight:
+      23,
+    fontWeight:
+      '800',
+    color:
+      UI.colors.text,
+  },
+
+  actionCard: {
     flexDirection:
       'row',
     alignItems:
       'center',
-    justifyContent:
-      'space-between',
-  },
-
-  statusEyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color:
-      UI.colors.surface,
-    opacity: 0.72,
-  },
-
-  scheduleText: {
     marginTop:
-      UI.spacing.lg,
-    fontSize:
-      UI.typography.bodyLarge,
-    lineHeight: 23,
-    fontWeight: '800',
-    color:
-      UI.colors.surface,
-  },
-
-  scheduleEndText: {
-    marginTop:
-      UI.spacing.xs,
-    fontSize:
-      UI.typography.small,
-    color:
-      UI.colors.surface,
-    opacity: 0.72,
-  },
-
-  primaryActionCard: {
-    marginTop:
-      UI.spacing.lg,
+      UI.spacing.md,
     padding:
       UI.spacing.lg,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
-      UI.colors.infoBackground,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.info,
+      UI.colors.secondary,
+  },
+
+  actionPressed: {
+    opacity:
+      0.8,
+  },
+
+  actionDisabled: {
+    opacity:
+      0.55,
+  },
+
+  actionIcon: {
+    width: 46,
+    height: 46,
+    borderRadius:
+      UI.radius.lg,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      'rgba(255,255,255,0.14)',
+  },
+
+  actionCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+    marginRight:
+      UI.spacing.sm,
   },
 
   actionTitle: {
     fontSize:
       UI.typography.bodyLarge,
-    fontWeight: '800',
+    fontWeight:
+      '900',
     color:
-      UI.colors.text,
+      UI.colors.surface,
   },
 
-  actionDescription: {
+  actionSubtitle: {
     marginTop:
       UI.spacing.xs,
-    marginBottom:
-      UI.spacing.md,
     fontSize:
       UI.typography.small,
-    lineHeight: 18,
+    lineHeight:
+      18,
     color:
-      UI.colors.textSecondary,
+      UI.colors.surface,
+    opacity:
+      0.78,
+  },
+
+  cancelButton: {
+    flexDirection:
+      'row',
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    marginTop:
+      UI.spacing.md,
+    paddingVertical:
+      UI.spacing.md,
+  },
+
+  cancelPressed: {
+    opacity:
+      0.65,
+  },
+
+  cancelText: {
+    marginLeft:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    fontWeight:
+      '800',
+    color:
+      UI.colors.error,
   },
 
   otpCard: {
     marginTop:
-      UI.spacing.lg,
+      UI.spacing.md,
     padding:
       UI.spacing.lg,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
     borderColor:
-      UI.colors.warning,
+      '#FDE68A',
   },
 
-  sectionTitle: {
+  otpHeader: {
+    flexDirection:
+      'row',
+    alignItems:
+      'flex-start',
+  },
+
+  otpIcon: {
+    width: 42,
+    height: 42,
+    borderRadius:
+      UI.radius.lg,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.surface,
+  },
+
+  otpHeaderCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+  },
+
+  otpTitle: {
     fontSize:
-      UI.typography.subtitle,
-    lineHeight: 23,
-    fontWeight: '800',
+      UI.typography.bodyLarge,
+    fontWeight:
+      '900',
     color:
       UI.colors.text,
   },
 
-  sectionSubtitle: {
+  otpDescription: {
     marginTop:
       UI.spacing.xs,
     fontSize:
       UI.typography.small,
-    lineHeight: 18,
+    lineHeight:
+      18,
     color:
       UI.colors.textSecondary,
   },
@@ -1358,28 +2053,53 @@ const styles = StyleSheet.create({
     color:
       UI.colors.text,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     letterSpacing: 6,
-    textAlign: 'center',
+    textAlign:
+      'center',
   },
 
-  cancelAction: {
-    marginTop:
-      UI.spacing.sm,
+  verifyButton: {
+    minHeight: 52,
+    borderRadius:
+      UI.radius.md,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.primary,
   },
 
-  section: {
-    marginTop:
-      UI.spacing.xl,
+  verifyButtonPressed: {
+    opacity:
+      0.8,
   },
 
-  card: {
+  verifyButtonDisabled: {
+    opacity:
+      0.55,
+  },
+
+  verifyButtonText: {
+    fontSize:
+      UI.typography.body,
+    fontWeight:
+      '800',
+    color:
+      UI.colors.surface,
+  },
+
+  infoCard: {
     marginTop:
       UI.spacing.md,
-    padding:
+    paddingHorizontal:
       UI.spacing.lg,
+    paddingVertical:
+      UI.spacing.sm,
     borderRadius:
-      UI.radius.lg,
+      UI.radius.xl,
     backgroundColor:
       UI.colors.surface,
     borderWidth: 1,
@@ -1391,73 +2111,226 @@ const styles = StyleSheet.create({
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
+      'center',
+    paddingVertical:
+      UI.spacing.md,
+  },
+
+  infoIcon: {
+    width: 38,
+    height: 38,
+    borderRadius:
+      UI.radius.md,
+    alignItems:
+      'center',
     justifyContent:
-      'space-between',
-    gap: UI.spacing.md,
+      'center',
+    backgroundColor:
+      UI.colors.infoBackground,
+  },
+
+  infoCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
   },
 
   infoLabel: {
-    flex: 1,
     fontSize:
-      UI.typography.small,
+      UI.typography.caption,
     color:
-      UI.colors.textSecondary,
+      UI.colors.textMuted,
   },
 
   infoValue: {
-    flex: 1,
+    marginTop:
+      UI.spacing.xs,
     fontSize:
       UI.typography.small,
-    fontWeight: '700',
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
-    textAlign: 'right',
   },
 
   infoDivider: {
     height: 1,
-    marginVertical:
-      UI.spacing.md,
     backgroundColor:
       UI.colors.border,
   },
 
-  totalRow: {
+  paymentCard: {
+    marginTop:
+      UI.spacing.md,
+    padding:
+      UI.spacing.lg,
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
+  },
+
+  paymentMain: {
     flexDirection:
       'row',
     alignItems:
       'center',
+  },
+
+  paymentIcon: {
+    width: 48,
+    height: 48,
+    borderRadius:
+      UI.radius.lg,
+    alignItems:
+      'center',
     justifyContent:
-      'space-between',
+      'center',
+    backgroundColor:
+      UI.colors.successBackground,
   },
 
-  totalLabel: {
+  paymentCopy: {
+    marginLeft:
+      UI.spacing.md,
+  },
+
+  paymentLabel: {
     fontSize:
-      UI.typography.bodyLarge,
-    fontWeight: '800',
+      UI.typography.caption,
+    color:
+      UI.colors.textMuted,
+  },
+
+  paymentAmount: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.title,
+    lineHeight:
+      30,
+    fontWeight:
+      '900',
     color:
       UI.colors.text,
   },
 
-  totalValue: {
+  paymentGrid: {
+    flexDirection:
+      'row',
+    flexWrap:
+      'wrap',
+    marginTop:
+      UI.spacing.lg,
+    paddingTop:
+      UI.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor:
+      UI.colors.border,
+  },
+
+  paymentItem: {
+    width: '50%',
+    paddingVertical:
+      UI.spacing.sm,
+  },
+
+  paymentItemLabel: {
     fontSize:
-      UI.typography.bodyLarge,
-    fontWeight: '900',
+      UI.typography.caption,
+    color:
+      UI.colors.textMuted,
+  },
+
+  paymentItemValue: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.small,
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
+  },
+
+  paymentItemValueNegative: {
+    color:
+      UI.colors.error,
+  },
+
+  progressCard: {
+    marginTop:
+      UI.spacing.md,
+    paddingHorizontal:
+      UI.spacing.lg,
+    paddingVertical:
+      UI.spacing.sm,
+    borderRadius:
+      UI.radius.xl,
+    backgroundColor:
+      UI.colors.surface,
+    borderWidth: 1,
+    borderColor:
+      UI.colors.border,
   },
 
   progressRow: {
     flexDirection:
       'row',
     alignItems:
-      'flex-start',
-    justifyContent:
-      'space-between',
+      'center',
     paddingVertical:
-      UI.spacing.sm,
-    gap: UI.spacing.md,
+      UI.spacing.md,
+  },
+
+  progressIcon: {
+    width: 40,
+    height: 40,
+    borderRadius:
+      UI.radius.pill,
+    alignItems:
+      'center',
+    justifyContent:
+      'center',
+    backgroundColor:
+      UI.colors.background,
+  },
+
+  progressIconCompleted: {
+    backgroundColor:
+      UI.colors.successBackground,
+  },
+
+  progressCopy: {
+    flex: 1,
+    marginLeft:
+      UI.spacing.md,
+  },
+
+  progressLabel: {
+    fontSize:
+      UI.typography.small,
+    fontWeight:
+      '700',
+    color:
+      UI.colors.text,
+  },
+
+  progressValue: {
+    marginTop:
+      UI.spacing.xs,
+    fontSize:
+      UI.typography.caption,
+    color:
+      UI.colors.textMuted,
+  },
+
+  progressValueCompleted: {
+    color:
+      UI.colors.success,
   },
 
   footerText: {
@@ -1465,10 +2338,15 @@ const styles = StyleSheet.create({
       UI.spacing.xl,
     fontSize:
       UI.typography.caption,
-    lineHeight: 16,
     color:
       UI.colors.textMuted,
-    textAlign: 'center',
+    textAlign:
+      'center',
+  },
+
+  bottomSpacing: {
+    height:
+      UI.spacing.xxl,
   },
 
   loadingContainer: {
@@ -1486,20 +2364,25 @@ const styles = StyleSheet.create({
       UI.spacing.lg,
     fontSize:
       UI.typography.subtitle,
-    fontWeight: '800',
+    fontWeight:
+      '800',
     color:
       UI.colors.text,
-    textAlign: 'center',
+    textAlign:
+      'center',
   },
 
   loadingText: {
     marginTop:
       UI.spacing.sm,
+    maxWidth: 300,
     fontSize:
       UI.typography.body,
-    lineHeight: 20,
+    lineHeight:
+      20,
     color:
       UI.colors.textSecondary,
-    textAlign: 'center',
+    textAlign:
+      'center',
   },
 })
