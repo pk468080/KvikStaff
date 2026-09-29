@@ -1,7 +1,7 @@
 import {
   useEffect,
 } from 'react'
-
+import WorkerNotificationRouter from '../components/runtime/WorkerNotificationRouter'
 import {
   Alert,
   StyleSheet,
@@ -204,6 +204,24 @@ function WorkerTabs() {
   ])
 
   return (
+  <>
+    <WorkerNotificationRouter
+      onBookingPress={bookingId => {
+        void navigateToWorkerBooking(
+          navigation,
+          bookingId,
+        )
+      }}
+      onBookingOfferPress={bookingId => {
+        navigation.navigate(
+          'BookingOffer',
+          {
+            bookingId,
+          },
+        )
+      }}
+    />
+
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
@@ -393,8 +411,10 @@ function WorkerTabs() {
           />
         )}
       </Tab.Screen>
-    </Tab.Navigator>
-  )
+        </Tab.Navigator>
+  </>
+)
+  
 }
 
 export default function WorkerNavigator() {
