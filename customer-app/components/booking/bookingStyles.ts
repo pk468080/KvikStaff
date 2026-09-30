@@ -431,12 +431,12 @@ export const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  flowContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 28,
-  },
-
+ flowContent: {
+  flexGrow: 1,
+  paddingHorizontal: 20,
+  paddingTop: 20,
+  paddingBottom: 18,
+},
   flowEyebrow: {
     fontSize: 9,
     lineHeight: 12,
@@ -446,19 +446,20 @@ export const styles = StyleSheet.create({
   },
 
   flowStepTitle: {
-    marginTop: 4,
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '800',
-    color: '#062F52',
-  },
+  marginTop: 4,
+  fontSize: 22,
+  lineHeight: 27,
+  fontWeight: '800',
+  color: '#062F52',
+},
 
   flowServiceName: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#5E7C8B',
-  },
+  marginTop: 2,
+  fontSize: 13,
+  lineHeight: 18,
+  fontWeight: '600',
+  color: '#5E7C8B',
+},
 
   infoBanner: {
     flexDirection: 'row',
@@ -579,23 +580,25 @@ export const styles = StyleSheet.create({
   },
 
   stepDescription: {
-    marginTop: 16,
-    marginBottom: 12,
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#5E7C8B',
-  },
+  marginTop: 12,
+  marginBottom: 14,
+  fontSize: 12.5,
+  lineHeight: 18,
+  color: '#5E7C8B',
+},
 
   selectionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    padding: 15,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5F2F5',
-  },
+  flexDirection: 'row',
+  alignItems: 'center',
+  minHeight: 88,
+  marginTop: 4,
+  paddingHorizontal: 14,
+  paddingVertical: 13,
+  borderRadius: 16,
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1,
+  borderColor: '#E5F2F5',
+},
 
   selectionIcon: {
     width: 42,
@@ -625,11 +628,12 @@ export const styles = StyleSheet.create({
   },
 
   selectionValue: {
-    marginTop: 3,
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#062F52',
-  },
+  marginTop: 2,
+  fontSize: 17,
+  lineHeight: 22,
+  fontWeight: '800',
+  color: '#062F52',
+},
 
   selectionHint: {
     marginTop: 2,
@@ -965,14 +969,14 @@ export const styles = StyleSheet.create({
     height: 10,
   },
 
-  flowFooter: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5F2F5',
-  },
+ flowFooter: {
+  paddingHorizontal: 20,
+  paddingTop: 10,
+  paddingBottom: 8,
+  backgroundColor: '#FFFFFF',
+  borderTopWidth: 1,
+  borderTopColor: '#E5F2F5',
+},
 
   footerMiniSummary: {
     flexDirection: 'row',
@@ -1000,16 +1004,15 @@ export const styles = StyleSheet.create({
     color: '#062F52',
   },
 
-  primaryButton: {
-    minHeight: 52,
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1D6CF2',
-  },
-
+ primaryButton: {
+  minHeight: 50,
+  borderRadius: 15,
+  paddingHorizontal: 18,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#1D6CF2',
+},
   primaryButtonDisabled: {
     backgroundColor: '#CBD5E1',
   },
