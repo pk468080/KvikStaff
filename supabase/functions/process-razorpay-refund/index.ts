@@ -1034,7 +1034,7 @@ Deno.serve(
         );
       }
 
-      if (
+              if (
         !claimResult ||
         claimResult.status !==
           "processing"
@@ -1046,6 +1046,33 @@ Deno.serve(
               true,
             error:
               "Refund could not be claimed for provider processing.",
+          },
+          409,
+        );
+      }
+
+      /*
+       * If the claim was idempotent, another worker already
+       * owns this refund's processing attempt.
+       *
+       * Do not submit another Razorpay refund request.
+       * The existing processing attempt will either finalize
+       * successfully or be reconciled by the processing path.
+       */
+      if (
+        claimResult.idempotent ===
+        true
+      ) {
+        return json(
+          {
+            success: false,
+            processing:
+              true,
+            alreadyProcessing:
+              true,
+            refundId,
+            error:
+              "Refund is already being processed. No duplicate Razorpay refund was submitted.",
           },
           409,
         );
