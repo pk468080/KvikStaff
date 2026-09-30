@@ -39,6 +39,8 @@ import {
 
 import {
   cancelCustomerBooking,
+  getCustomerBookingRefunds,
+  type CustomerRefundRecord,
 } from '../../services/booking/bookingCancellation.service'
 
 import {
@@ -301,6 +303,14 @@ export default function ActiveBookingScreen({
     )
 
   const [
+    refunds,
+    setRefunds,
+  ] =
+    useState<CustomerRefundRecord[]>(
+      [],
+    )
+
+  const [
     location,
     setLocation,
   ] =
@@ -393,6 +403,17 @@ const [
       setBooking(
         nextBooking,
       )
+
+      if (nextBooking.status === 'cancelled') {
+        const nextRefunds =
+          await getCustomerBookingRefunds(
+            bookingId,
+          )
+
+        setRefunds(nextRefunds)
+      } else {
+        setRefunds([])
+      }
 
       const nextHistory =
         await getCustomerBookingStatusHistory(
@@ -708,7 +729,7 @@ const [
       'Cancel booking?',
       currentBooking.worker_id
         ? 'This booking has an assigned worker and requires support/admin cancellation.'
-        : 'The cancellation policy will be applied. If a refund is due, a refund request will be created for processing.',
+        : 'The cancellation policy will be applied. Any eligible refund will be initiated automatically and its status will appear on this screen.',
       [
         {
           text: 'Keep booking',
@@ -722,14 +743,28 @@ const [
               try {
                 setError(null)
 
-                await cancelCustomerBooking(
-                  currentBooking.id,
-                  currentBooking.booking_type,
-                )
+                const cancellationResult =
+                  await cancelCustomerBooking(
+                    currentBooking.id,
+                    currentBooking.booking_type,
+                  )
 
                 setOtp(null)
 
                 await refresh()
+
+                const refundAmount = Number(
+                  cancellationResult.refund_amount ??
+                    cancellationResult.refund?.refund_amount ??
+                    0,
+                )
+
+                Alert.alert(
+                  'Booking cancelled',
+                  refundAmount > 0
+                    ? `A refund of ₹${refundAmount.toFixed(2)} has been initiated. You can track its status in the Refund section below.`
+                    : 'The booking has been cancelled. No refund is due under the cancellation policy.',
+                )
               } catch (
                 nextError
               ) {
@@ -1473,6 +1508,75 @@ const [
           />
         </View>
 
+        {refunds.length > 0 ? (
+          <View
+            style={
+              styles.card
+            }
+          >
+            <Text
+              style={
+                styles.sectionTitle
+              }
+            >
+              Refund
+            </Text>
+
+            {refunds.map(
+              refund => (
+                <View
+                  key={
+                    refund.id
+                  }
+                  style={
+                    styles.refundBlock
+                  }
+                >
+                  <Row
+                    label="Amount"
+                    value={formatMoney(
+                      Number(
+                        refund.amount,
+                      ),
+                    )}
+                  />
+
+                  <Row
+                    label="Status"
+                    value={formatRefundStatus(
+                      refund.status,
+                    )}
+                  />
+
+                  <Row
+                    label="Requested"
+                    value={formatDateTime(
+                      refund.requested_at,
+                    )}
+                  />
+
+                  {refund.processed_at ? (
+                    <Row
+                      label="Processed"
+                      value={formatDateTime(
+                        refund.processed_at,
+                      )}
+                    />
+                  ) : null}
+                </View>
+              ),
+            )}
+
+            <Text
+              style={
+                styles.refundMessage
+              }
+            >
+              Refund status is checked automatically while this booking is cancelled.
+            </Text>
+          </View>
+        ) : null}
+
         {!terminal &&
         booking.status !==
           'pending_payment' &&
@@ -1764,6 +1868,34 @@ const [
       </ScrollView>
     </ScreenContainer>
   )
+}
+
+function formatRefundStatus(
+  status: string,
+) {
+  switch (status) {
+    case 'pending':
+      return 'Refund pending'
+
+    case 'processing':
+      return 'Refund processing'
+
+    case 'succeeded':
+      return 'Refund completed'
+
+    case 'failed':
+      return 'Refund failed'
+
+    case 'cancelled':
+      return 'Refund cancelled'
+
+    default:
+  return status
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, value =>
+      value.toUpperCase(),
+    )
+  }
 }
 
 function Row({
@@ -2130,7 +2262,21 @@ const styles =
       lineHeight: 18,
     },
 
-    row: {
+    refundBlock: {
+    marginTop: 6,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#ececec',
+  },
+
+  refundMessage: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#666',
+  },
+
+  row: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       gap: 16,
