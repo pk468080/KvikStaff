@@ -1,6 +1,6 @@
 import {
+  useCallback,
   useEffect,
-  useMemo,
   useRef,
 } from 'react'
 
@@ -101,37 +101,39 @@ export default function LiveWorkerMap({
       null,
     )
 
+    const workerLatitude = workerLocation.latitude
+  const workerLongitude = workerLocation.longitude
+
+  const customerLatitude =
+    customerLocation.latitude
+
+  const customerLongitude =
+    customerLocation.longitude
+
   const distanceKm =
-    useMemo(
-      () =>
-        calculateDistanceKm(
-          workerLocation,
-          customerLocation,
-        ),
-      [
-        workerLocation.latitude,
-        workerLocation.longitude,
-        customerLocation.latitude,
-        customerLocation.longitude,
-      ],
+    calculateDistanceKm(
+      {
+        latitude: workerLatitude,
+        longitude: workerLongitude,
+      },
+      {
+        latitude: customerLatitude,
+        longitude: customerLongitude,
+      },
     )
 
   const fitMapToBothLocations =
-    () => {
+    useCallback(() => {
       requestAnimationFrame(() => {
         mapRef.current?.fitToCoordinates(
           [
             {
-              latitude:
-                customerLocation.latitude,
-              longitude:
-                customerLocation.longitude,
+              latitude: customerLatitude,
+              longitude: customerLongitude,
             },
             {
-              latitude:
-                workerLocation.latitude,
-              longitude:
-                workerLocation.longitude,
+              latitude: workerLatitude,
+              longitude: workerLongitude,
             },
           ],
           {
@@ -145,15 +147,22 @@ export default function LiveWorkerMap({
           },
         )
       })
-    }
+    }, [
+      customerLatitude,
+      customerLongitude,
+      workerLatitude,
+      workerLongitude,
+    ])
 
   useEffect(() => {
     const previousLocation =
       previousWorkerLocationRef.current
 
     if (!previousLocation) {
-      previousWorkerLocationRef.current =
-        workerLocation
+      previousWorkerLocationRef.current = {
+        latitude: workerLatitude,
+        longitude: workerLongitude,
+      }
 
       fitMapToBothLocations()
 
@@ -162,23 +171,22 @@ export default function LiveWorkerMap({
 
     workerMarkerRef.current?.animateMarkerToCoordinate(
       {
-        latitude:
-          workerLocation.latitude,
-        longitude:
-          workerLocation.longitude,
+        latitude: workerLatitude,
+        longitude: workerLongitude,
       },
       900,
     )
 
     fitMapToBothLocations()
 
-    previousWorkerLocationRef.current =
-      workerLocation
+    previousWorkerLocationRef.current = {
+      latitude: workerLatitude,
+      longitude: workerLongitude,
+    }
   }, [
-    workerLocation.latitude,
-    workerLocation.longitude,
-    customerLocation.latitude,
-    customerLocation.longitude,
+    fitMapToBothLocations,
+    workerLatitude,
+    workerLongitude,
   ])
 
   return (

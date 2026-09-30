@@ -70,7 +70,7 @@ function addMessage(
   )
 }
 
-export default function BookingChatPanel({
+function BookingChatPanelContent({
   bookingId,
   workerId,
   occurrenceId = null,
@@ -124,11 +124,6 @@ export default function BookingChatPanel({
       | ReturnType<typeof supabase.channel>
       | null = null
 
-    setConversationId(null)
-    setCurrentUserId(null)
-    setMessages([])
-    setError(null)
-    setLoading(true)
 
     void (async () => {
       try {
@@ -523,3 +518,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 })
+export default function BookingChatPanel(
+  props: BookingChatPanelProps,
+) {
+  const chatKey = [
+    props.bookingId,
+    props.workerId,
+    props.occurrenceId ?? '',
+  ].join(':')
+
+  return (
+    <BookingChatPanelContent
+      key={chatKey}
+      {...props}
+    />
+  )
+}
+

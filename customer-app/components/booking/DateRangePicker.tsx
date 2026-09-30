@@ -102,20 +102,20 @@ export default function DateRangePicker({
     }
   }
 
-  function generateCalendarDays(): Array<{
-    date: Date
-    isInRange: boolean
-    isExcluded: boolean
-    isStartEnd: boolean
-  }> {
+  function generateCalendarDays(): {
+  date: Date
+  isInRange: boolean
+  isExcluded: boolean
+  isStartEnd: boolean
+}[] {
     if (!startDate || !endDate) return []
 
-    const days: Array<{
-      date: Date
-      isInRange: boolean
-      isExcluded: boolean
-      isStartEnd: boolean
-    }> = []
+    const days: {
+  date: Date
+  isInRange: boolean
+  isExcluded: boolean
+  isStartEnd: boolean
+}[] = []
 
     const cursor = new Date(startDate)
 
