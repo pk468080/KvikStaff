@@ -418,3 +418,5 @@ verify_jwt = false
 # The customer is not authenticated before OTP verification.
 [functions.customer-auth]
 verify_jwt = false
+[functions.process-razorpay-refund]
+verify_jwt = false
