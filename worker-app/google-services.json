@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "536386345090",
+    "project_id": "tempstaff-ce8d3",
+    "storage_bucket": "tempstaff-ce8d3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:536386345090:android:b91902dfa72d065884bc9b",
+        "android_client_info": {
+          "package_name": "com.princerajput.workerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQsILNvlJJy2h9dvgHxEFoS7I-dTo8c70"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -190,15 +190,6 @@ export default function SettingsScreen({
     }
   }
 
-  function showUnavailable(
-    title: string,
-  ) {
-    Alert.alert(
-      title,
-      'This setting is not configured in the current worker app build.',
-    )
-  }
-
   return (
     <ScreenContainer>
       <ScrollView
@@ -462,64 +453,6 @@ export default function SettingsScreen({
               disabled={signingOut}
             />
           ) : null}
-        </View>
-
-        <View
-          style={styles.section}
-        >
-          <View
-            style={styles.sectionHeader}
-          >
-            <View>
-              <Text
-                style={styles.sectionEyebrow}
-              >
-                APP
-              </Text>
-
-              <Text
-                style={styles.sectionTitle}
-              >
-                Notification preferences
-              </Text>
-            </View>
-
-            <View
-              style={styles.sectionIcon}
-            >
-              <Ionicons
-                name="options-outline"
-                size={18}
-                color={UI.colors.secondary}
-              />
-            </View>
-          </View>
-
-          <Text
-            style={styles.sectionDescription}
-          >
-            Notification delivery is handled by the worker
-            notification service. Detailed preference controls
-            are not configured in this build.
-          </Text>
-
-          <SettingsRow
-            icon="options-outline"
-            iconBackground={
-              UI.colors.background
-            }
-            iconColor={
-              UI.colors.textSecondary
-            }
-            title="Notification preferences"
-            subtitle="Preference controls are currently unavailable."
-            onPress={() => {
-              showUnavailable(
-                'Notification preferences',
-              )
-            }}
-            disabled={signingOut}
-          />
         </View>
 
         <View
@@ -791,16 +724,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor:
       UI.colors.infoBackground,
-  },
-
-  sectionDescription: {
-    marginBottom:
-      UI.spacing.sm,
-    fontSize:
-      UI.typography.small,
-    lineHeight: 18,
-    color:
-      UI.colors.textSecondary,
   },
 
   settingsRow: {
