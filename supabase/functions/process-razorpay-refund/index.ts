@@ -507,21 +507,41 @@ Deno.serve(
         );
       }
 
-      const body =
+            const body =
         await req
           .json()
           .catch(
             () => null,
           );
 
-      const refundId =
-        body?.refundId;
+      const requestUrl =
+        new URL(
+          req.url,
+        );
 
-      if (
-        typeof refundId !==
-          "string" ||
-        !refundId
-      ) {
+      const queryRefundId =
+        requestUrl.searchParams.get(
+          "refundId",
+        );
+
+      const refundId =
+        typeof body?.refundId ===
+          "string" &&
+        body.refundId.trim()
+          ? body.refundId.trim()
+          : queryRefundId?.trim() ||
+            "";
+
+      if (!refundId) {
+        return json(
+          {
+            success: false,
+            error:
+              "refundId is required",
+          },
+          400,
+        );
+      }
         return json(
           {
             success: false,
