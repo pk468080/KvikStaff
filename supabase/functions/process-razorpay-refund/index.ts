@@ -4,7 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-tempstaff-refund-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -39,111 +39,7 @@ function basicAuth(
   )}`;
 }
 
-function getInternalApiKeys(): string[] {
-  const keys: string[] = [];
-
-  const secretKeysRaw =
-    Deno.env.get(
-      "SUPABASE_SECRET_KEYS",
-    );
-
-  if (secretKeysRaw) {
-    try {
-      const parsed =
-        JSON.parse(
-          secretKeysRaw,
-        ) as Record<
-          string,
-          unknown
-        >;
-
-      for (
-        const value of Object.values(
-          parsed,
-        )
-      ) {
-        if (
-          typeof value ===
-          "string"
-        ) {
-          keys.push(value);
-        }
-      }
-    } catch (error) {
-      console.error(
-        "[TempStaff] Failed to parse SUPABASE_SECRET_KEYS:",
-        error,
-      );
-    }
-  }
-
-  const legacyServiceRoleKey =
-    Deno.env.get(
-      "SUPABASE_SERVICE_ROLE_KEY",
-    );
-
-  if (
-    legacyServiceRoleKey &&
-    !keys.includes(
-      legacyServiceRoleKey,
-    )
-  ) {
-    keys.push(
-      legacyServiceRoleKey,
-    );
-  }
-
-  return keys;
-}
-
 async function isInternalServiceRequest(
-  req: Request,
-  supabaseUrl: string,
-  serviceRoleKey: string,
-): Promise<boolean> {
-  const apiKey =
-    req.headers.get(
-      "apikey",
-    ) ??
-    "";
-
-  if (!apiKey) {
-    return false;
-  }
-
-  if (
-    getInternalApiKeys().includes(
-      apiKey,
-    )
-  ) {
-    return true;
-  }
-
-  try {
-    const response =
-      await fetch(
-        `${supabaseUrl}/rest/v1/rpc/verify_refund_processor_secret`,
-        {
-          method: "POST",
-          headers: {
-            apikey:
-              serviceRoleKey,
-            Authorization:
-              `Bearer ${serviceRoleKey}`,
-            "Content-Type":
-              "application/json",
-          },
-          body:
-            JSON.stringify({
-              p_secret:
-                apiKey,
-            }),
-        },
-      );
-
-    if (!response.ok) {
-      return false;
-    }async function isInternalServiceRequest(
   req: Request,
   supabaseUrl: string,
   serviceRoleKey: string,
@@ -401,7 +297,7 @@ async function getAdminContext(
   supabaseUrl: string,
   serviceRoleKey: string,
 ) {
-   if (
+  if (
     await isInternalServiceRequest(
       req,
       supabaseUrl,
@@ -546,7 +442,7 @@ Deno.serve(
         );
       }
 
-                 const body =
+      const body =
         await req
           .json()
           .catch(
@@ -1135,7 +1031,7 @@ Deno.serve(
         );
       }
 
-              if (
+      if (
         !claimResult ||
         claimResult.status !==
           "processing"
