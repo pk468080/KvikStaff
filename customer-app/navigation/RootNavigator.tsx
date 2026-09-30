@@ -19,6 +19,7 @@ import LocationFetchingScreen from '../screens/location/LocationFetchingScreen'
 
 import {
   createCustomerProfile,
+  getCustomerAuthState,
   sendOtp,
 } from '../services/auth/auth.service'
 
@@ -135,6 +136,68 @@ export default function RootNavigator() {
         },
       ],
     })
+  }
+
+  async function handleOtpVerified(
+    verifiedPhone: string,
+    navigation: {
+      replace: (
+        screen: keyof RootStackParamList,
+      ) => void
+    },
+  ) {
+    setPhone(verifiedPhone)
+
+    try {
+      /*
+       * The OTP Edge Function establishes the Auth session,
+       * but the customer profile is the authoritative source
+       * for deciding which customer screen should be opened.
+       */
+      const authState =
+        await getCustomerAuthState()
+
+      if (
+        !authState.authenticated
+      ) {
+        navigation.replace(
+          'Login',
+        )
+        return
+      }
+
+      setPhone(
+        authState.phone ||
+          verifiedPhone,
+      )
+
+      if (
+        authState.needsRegistration
+      ) {
+        navigation.replace(
+          'Registration',
+        )
+        return
+      }
+
+      navigation.replace(
+        'Customer',
+      )
+    } catch (error) {
+      console.error(
+        'Unable to validate customer session after OTP verification:',
+        error,
+      )
+
+      /*
+       * Do not enter the authenticated customer
+       * navigation stack when the session/profile state
+       * cannot be authoritatively validated.
+       */
+      navigation.replace(
+        'Login',
+      )
+    }
   }
 
   function handleSplashFinished(
@@ -272,25 +335,10 @@ export default function RootNavigator() {
           {({ navigation }) => (
             <OtpScreen
               phone={phone}
-              onVerified={(
-                verifiedPhone,
-                needsRegistration,
-              ) => {
-                setPhone(
+              onVerified={verifiedPhone => {
+                void handleOtpVerified(
                   verifiedPhone,
-                )
-
-                if (
-                  needsRegistration
-                ) {
-                  navigation.replace(
-                    'Registration',
-                  )
-                  return
-                }
-
-                navigation.replace(
-                  'Customer',
+                  navigation,
                 )
               }}
             />
