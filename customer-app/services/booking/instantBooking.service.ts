@@ -21,7 +21,8 @@ export async function createCustomerInstantBooking(
 			p_booking_type: 'instant',
 			p_scheduled_start: input.startTime,
 			p_scheduled_end: input.endTime,
-			p_notes: input.notes ?? null,
+			p_notes:
+  input.notes?.trim() || '',
 		},
 	)
 

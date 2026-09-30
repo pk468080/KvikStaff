@@ -83,18 +83,40 @@ export async function createCustomerSupportTicket(
       p_subject: subject,
       p_description:
         description,
-      p_booking_id:
-        input.bookingId ?? null,
-      p_payment_id:
-        input.paymentId ?? null,
-      p_worker_id:
-        input.workerId ?? null,
-      p_refund_request_id:
-        input.refundRequestId ??
-        null,
-      p_payment_refund_id:
-        input.paymentRefundId ??
-        null,
+            ...(input.bookingId
+        ? {
+            p_booking_id:
+              input.bookingId,
+          }
+        : {}),
+
+      ...(input.paymentId
+        ? {
+            p_payment_id:
+              input.paymentId,
+          }
+        : {}),
+
+      ...(input.workerId
+        ? {
+            p_worker_id:
+              input.workerId,
+          }
+        : {}),
+
+      ...(input.refundRequestId
+        ? {
+            p_refund_request_id:
+              input.refundRequestId,
+          }
+        : {}),
+
+      ...(input.paymentRefundId
+        ? {
+            p_payment_refund_id:
+              input.paymentRefundId,
+          }
+        : {}),
     },
   )
 

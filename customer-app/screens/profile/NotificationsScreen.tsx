@@ -110,8 +110,8 @@ export default function NotificationsScreen({
                 row.title,
               message:
                 row.message,
-              notificationType:
-                row.notification_type,
+             notificationType:
+  row.notification_type ?? '',
               isRead:
                 row.is_read === true,
               createdAt:

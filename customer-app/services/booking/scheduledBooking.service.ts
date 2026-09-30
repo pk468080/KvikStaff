@@ -107,8 +107,12 @@ export async function createCustomerScheduledBooking(
         p_off_dates:
           input.excludedDates,
 
-        p_notes:
-          input.notes ?? null,
+                ...(input.notes?.trim()
+          ? {
+              p_notes:
+                input.notes.trim(),
+            }
+          : {}),
       },
     )
 

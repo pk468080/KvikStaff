@@ -110,13 +110,14 @@ export async function getOrCreateCustomerAddress(
   } = await supabase
     .from('addresses')
     .insert({
-      user_id: userId,
-      label:
-        input.label?.trim() || null,
-      address_line: address,
-      latitude: input.latitude,
-      longitude: input.longitude,
-    })
+  user_id: userId,
+  label:
+    input.label?.trim() || null,
+  address_line: address,
+  latitude: input.latitude,
+  longitude: input.longitude,
+  location: null,
+})
     .select('id')
     .single()
 

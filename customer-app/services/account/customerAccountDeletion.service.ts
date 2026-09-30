@@ -11,6 +11,31 @@ export type AccountDeletionRequest = {
   reviewedAt: string | null
 }
 
+const ACCOUNT_DELETION_STATUSES = [
+  'pending',
+  'approved',
+  'rejected',
+] as const
+
+type AccountDeletionStatus =
+  (typeof ACCOUNT_DELETION_STATUSES)[number]
+
+function normalizeAccountDeletionStatus(
+  value: string,
+): AccountDeletionStatus {
+  if (
+    ACCOUNT_DELETION_STATUSES.includes(
+      value as AccountDeletionStatus,
+    )
+  ) {
+    return value as AccountDeletionStatus
+  }
+
+  throw new Error(
+    `Unexpected account deletion request status: ${value}`,
+  )
+}
+
 async function getAuthenticatedUserId() {
   const {
     data,
@@ -72,7 +97,10 @@ export async function getLatestAccountDeletionRequest(): Promise<
     id: data.id,
     reason:
       data.reason ?? null,
-    status: data.status,
+    status:
+      normalizeAccountDeletionStatus(
+        data.status,
+      ),
     requestedAt:
       data.requested_at,
     reviewedAt:
@@ -120,7 +148,10 @@ export async function requestAccountDeletion(
       id: existing.id,
       reason:
         existing.reason ?? null,
-      status: existing.status,
+      status:
+        normalizeAccountDeletionStatus(
+          existing.status,
+        ),
       requestedAt:
         existing.requested_at,
       reviewedAt:
@@ -168,7 +199,10 @@ export async function requestAccountDeletion(
     id: data.id,
     reason:
       data.reason ?? null,
-    status: data.status,
+    status:
+      normalizeAccountDeletionStatus(
+        data.status,
+      ),
     requestedAt:
       data.requested_at,
     reviewedAt:

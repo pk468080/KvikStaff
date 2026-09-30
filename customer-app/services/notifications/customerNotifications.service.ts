@@ -104,8 +104,12 @@ export async function registerCustomerPushToken(
     {
       p_token:
         normalizedToken,
+      ...(normalizedPlatform
+  ? {
       p_platform:
         normalizedPlatform,
+    }
+  : {}),
     },
   )
 
