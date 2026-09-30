@@ -1523,105 +1523,186 @@ function ServiceCard({
   isFavourite?: boolean
   variant?: 'grid' | 'featured'
 }) {
-  const initials = getServiceInitials(service.name)
-  const [imageRatio, setImageRatio] = useState<number | null>(null)
+  const initials = getServiceInitials(
+    service.name,
+  )
+
+  const isGrid =
+    variant === 'grid'
 
   return (
     <TouchableOpacity
-      style={[styles.card, variant === 'featured' && styles.featuredCard]}
+      style={[
+        styles.card,
+        isGrid &&
+          styles.gridCard,
+        variant ===
+          'featured' &&
+          styles.featuredCard,
+      ]}
       activeOpacity={0.88}
       onPress={onPress}
     >
       <View
         style={[
           styles.cardImageWrap,
-          variant === 'featured' && styles.featuredCardImageWrap,
+          isGrid &&
+            styles.gridCardImageWrap,
+          variant ===
+            'featured' &&
+            styles.featuredCardImageWrap,
         ]}
       >
         {service.imageUrl ? (
           <Image
-            source={{ uri: service.imageUrl }}
+            source={{
+              uri: service.imageUrl,
+            }}
             style={[
               styles.cardImage,
-              { aspectRatio: imageRatio ?? 1.15 },
+              isGrid &&
+                styles.gridCardImage,
             ]}
-            resizeMode="contain"
-            onLoad={({ nativeEvent }) => {
-              const width = Number(nativeEvent.source?.width)
-              const height = Number(nativeEvent.source?.height)
-
-              if (width > 0 && height > 0) {
-                setImageRatio(width / height)
-              }
-            }}
+            resizeMode={
+              isGrid
+                ? 'cover'
+                : 'contain'
+            }
           />
         ) : (
-          <View style={styles.cardImageFallback}>
-            <Text style={styles.cardImageFallbackText}>
+          <View
+            style={[
+              styles.cardImageFallback,
+              isGrid &&
+                styles.gridCardImageFallback,
+            ]}
+          >
+            <Text
+              style={
+                styles.cardImageFallbackText
+              }
+            >
               {initials}
             </Text>
           </View>
         )}
 
-        <View style={styles.cardImageShade} />
+        <View
+          style={styles.cardImageShade}
+        />
 
-        <View style={styles.cardPricePill}>
-          <Text style={styles.cardPricePillText}>
-            {service.hourlyPrice === null
+        <View
+          style={styles.cardPricePill}
+        >
+          <Text
+            style={
+              styles.cardPricePillText
+            }
+          >
+            {service.hourlyPrice ===
+            null
               ? 'Price unavailable'
               : `${service.currency ?? ''} ${service.hourlyPrice}/hr`}
           </Text>
         </View>
 
-        <View style={styles.cardImageBadge}>
-          <View style={styles.cardImageBadgeDot} />
-          <Text style={styles.cardImageBadgeText}>
-            {service.isFeatured ? 'FEATURED' : 'HOURLY'}
+        <View
+          style={styles.cardImageBadge}
+        >
+          <View
+            style={
+              styles.cardImageBadgeDot
+            }
+          />
+
+          <Text
+            style={
+              styles.cardImageBadgeText
+            }
+          >
+            {service.isFeatured
+              ? 'FEATURED'
+              : 'HOURLY'}
           </Text>
         </View>
 
         {onToggleFavourite ? (
           <TouchableOpacity
-            style={styles.favoriteButton}
+            style={
+              styles.favoriteButton
+            }
             onPress={event => {
               event.stopPropagation?.()
               onToggleFavourite()
             }}
             activeOpacity={0.82}
           >
-            <Text style={styles.favoriteButtonText}>
-              {isFavourite ? '♥' : '♡'}
+            <Text
+              style={
+                styles.favoriteButtonText
+              }
+            >
+              {isFavourite
+                ? '♥'
+                : '♡'}
             </Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
-      <View style={styles.cardContent}>
-        <Text style={styles.serviceName} numberOfLines={1}>
+      <View
+        style={[
+          styles.cardContent,
+          isGrid &&
+            styles.gridCardContent,
+        ]}
+      >
+        <Text
+          style={styles.serviceName}
+          numberOfLines={1}
+        >
           {service.name}
         </Text>
 
         {service.description ? (
-          <Text style={styles.description} numberOfLines={2}>
+          <Text
+            style={styles.description}
+            numberOfLines={2}
+          >
             {service.description}
           </Text>
         ) : (
-          <Text style={styles.descriptionFallback} numberOfLines={1}>
+          <Text
+            style={
+              styles.descriptionFallback
+            }
+            numberOfLines={1}
+          >
             Flexible staffing support
           </Text>
         )}
 
-        <View style={styles.bookRow}>
-          <Text style={styles.hourlyLabel}>
+        <View
+          style={styles.bookRow}
+        >
+          <Text
+            style={styles.hourlyLabel}
+          >
             STARTING FROM
           </Text>
 
-          <View style={styles.bookAction}>
-            <Text style={styles.book}>
+          <View
+            style={styles.bookAction}
+          >
+            <Text
+              style={styles.book}
+            >
               Book
             </Text>
 
-            <Text style={styles.bookArrow}>
+            <Text
+              style={styles.bookArrow}
+            >
               →
             </Text>
           </View>
@@ -2104,28 +2185,52 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    width: '47.6%',
-    marginBottom: 13,
-    borderRadius: 18,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-    shadowColor: COLORS.ink,
-    shadowOpacity: 0.055,
-    shadowRadius: 15,
-    shadowOffset: {
-      width: 0,
-      height: 7,
-    },
-    elevation: 2,
+  width: '47.6%',
+  marginBottom: 14,
+  borderRadius: 18,
+  backgroundColor: COLORS.white,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  overflow: 'hidden',
+  shadowColor: COLORS.ink,
+  shadowOpacity: 0.055,
+  shadowRadius: 15,
+  shadowOffset: {
+    width: 0,
+    height: 7,
   },
+  elevation: 2,
+},
+
+gridCard: {
+  alignSelf: 'flex-start',
+},
 
   cardImageWrap: {
     backgroundColor: '#F3F8F9',
     position: 'relative',
     overflow: 'hidden',
   },
+  gridCardImageWrap: {
+  aspectRatio: 1.15,
+  width: '100%',
+  backgroundColor: '#F3F8F9',
+  position: 'relative',
+  overflow: 'hidden',
+},
+
+gridCardImage: {
+  width: '100%',
+  height: '100%',
+  backgroundColor: '#F3F8F9',
+},
+
+gridCardImageFallback: {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: COLORS.primarySoft,
+},
 
   cardImage: {
     width: '100%',
@@ -2196,9 +2301,14 @@ const styles = StyleSheet.create({
   },
 
   cardContent: {
-    padding: 10,
-    paddingBottom: 11,
-  },
+  padding: 10,
+  paddingBottom: 11,
+},
+
+gridCardContent: {
+  minHeight: 103,
+  justifyContent: 'space-between',
+},
 
   serviceName: {
     fontSize: 14,
