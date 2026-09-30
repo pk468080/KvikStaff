@@ -143,6 +143,45 @@ async function isInternalServiceRequest(
 
     if (!response.ok) {
       return false;
+    }async function isInternalServiceRequest(
+  req: Request,
+  supabaseUrl: string,
+  serviceRoleKey: string,
+): Promise<boolean> {
+  const processorSecret =
+    req.headers.get(
+      "x-tempstaff-refund-secret",
+    ) ??
+    "";
+
+  if (!processorSecret) {
+    return false;
+  }
+
+  try {
+    const response =
+      await fetch(
+        `${supabaseUrl}/rest/v1/rpc/verify_refund_processor_secret`,
+        {
+          method: "POST",
+          headers: {
+            apikey:
+              serviceRoleKey,
+            Authorization:
+              `Bearer ${serviceRoleKey}`,
+            "Content-Type":
+              "application/json",
+          },
+          body:
+            JSON.stringify({
+              p_secret:
+                processorSecret,
+            }),
+        },
+      );
+
+    if (!response.ok) {
+      return false;
     }
 
     const result =
