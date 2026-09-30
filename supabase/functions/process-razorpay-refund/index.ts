@@ -96,9 +96,11 @@ function getInternalApiKeys(): string[] {
   return keys;
 }
 
-function isInternalServiceRequest(
+async function isInternalServiceRequest(
   req: Request,
-): boolean {
+  supabaseUrl: string,
+  serviceRoleKey: string,
+): Promise<boolean> {
   const apiKey =
     req.headers.get(
       "apikey",
@@ -109,9 +111,56 @@ function isInternalServiceRequest(
     return false;
   }
 
-  return getInternalApiKeys().includes(
-    apiKey,
-  );
+  if (
+    getInternalApiKeys().includes(
+      apiKey,
+    )
+  ) {
+    return true;
+  }
+
+  try {
+    const response =
+      await fetch(
+        `${supabaseUrl}/rest/v1/rpc/verify_refund_processor_secret`,
+        {
+          method: "POST",
+          headers: {
+            apikey:
+              serviceRoleKey,
+            Authorization:
+              `Bearer ${serviceRoleKey}`,
+            "Content-Type":
+              "application/json",
+          },
+          body:
+            JSON.stringify({
+              p_secret:
+                apiKey,
+            }),
+        },
+      );
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const result =
+      await response
+        .json()
+        .catch(
+          () => false,
+        );
+
+    return result === true;
+  } catch (error) {
+    console.error(
+      "[TempStaff] Internal refund secret validation failed:",
+      error,
+    );
+
+    return false;
+  }
 }
 
 async function finalizeRefund(
@@ -313,9 +362,11 @@ async function getAdminContext(
   supabaseUrl: string,
   serviceRoleKey: string,
 ) {
-  if (
-    isInternalServiceRequest(
+   if (
+    await isInternalServiceRequest(
       req,
+      supabaseUrl,
+      serviceRoleKey,
     )
   ) {
     return {
