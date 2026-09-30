@@ -334,6 +334,23 @@ function findMatchingRefund(
       ) === refundId,
   );
 }
+function findRefundByProviderId(
+  refunds: unknown[],
+  providerRefundId: string,
+) {
+  return refunds.find(
+    (
+      item: Record<
+        string,
+        unknown
+      >,
+    ) =>
+      String(
+        item?.id ?? "",
+      ) === providerRefundId,
+  );
+}
+
 
 async function getAdminContext(
   req: Request,
@@ -744,9 +761,8 @@ Deno.serve(
     /*
      * First reconcile against Razorpay.
      *
-     * This is mandatory before retrying because a previous
-     * request may have succeeded at the provider while the
-     * network/database response was lost.
+     * A previous request may already have succeeded even if
+     * TempStaff never received the provider response.
      */
     const gatewayRefunds =
       await fetchRazorpayRefunds(
@@ -755,16 +771,37 @@ Deno.serve(
         keySecret,
       );
 
-    const matchingRefund =
+    /*
+     * Prefer an explicitly stored provider refund ID.
+     *
+     * This is the strongest local idempotency signal.
+     */
+    const providerMatchedRefund =
+      refund.provider_refund_id
+        ? findRefundByProviderId(
+            gatewayRefunds,
+            refund.provider_refund_id,
+          )
+        : null;
+
+    /*
+     * Otherwise match using the TempStaff refund ID embedded
+     * in Razorpay refund notes.
+     */
+    const tempStaffMatchedRefund =
       findMatchingRefund(
         gatewayRefunds,
         refundId,
       );
 
+    const matchingRefund =
+      providerMatchedRefund ||
+      tempStaffMatchedRefund;
+
     /*
-     * Provider already contains the refund.
+     * Provider already contains this refund.
      *
-     * Finalize locally and NEVER submit another provider request.
+     * Finalize locally and NEVER submit another refund request.
      */
     if (
       matchingRefund?.id
@@ -797,17 +834,36 @@ Deno.serve(
     }
 
     /*
-     * No matching Razorpay refund exists.
+     * The local record already contains a provider refund ID,
+     * but Razorpay did not return that refund in the payment's
+     * refund list.
      *
-     * The database dispatcher only sends processing refunds
-     * after they have been stale for 10 minutes. At that point
-     * it is safe to move the refund back to pending so the normal
-     * claim -> provider request flow can retry.
+     * Do NOT create another refund. Preserve the processing state
+     * for later reconciliation/manual investigation.
+     */
+    if (
+      refund.provider_refund_id
+    ) {
+      return json(
+        {
+          success: false,
+          processing:
+            true,
+          refundId,
+          providerRefundId:
+            refund.provider_refund_id,
+          error:
+            "A provider refund ID is already recorded locally, but the refund could not be reconciled with Razorpay. No duplicate refund was submitted.",
+        },
+        409,
+      );
+    }
+
+    /*
+     * No matching provider refund exists and no provider ID is
+     * recorded locally.
      *
-     * IMPORTANT:
-     * We only do this AFTER checking Razorpay. This prevents a
-     * duplicate refund when the previous provider request actually
-     * succeeded but local confirmation was lost.
+     * Requeue only after the stale-processing window has elapsed.
      */
     const requeueResult =
       await requeueStaleRefund(
@@ -832,10 +888,9 @@ Deno.serve(
     }
 
     /*
-     * The RPC may decide the refund is still fresh, already changed,
-     * succeeded, or requires reconciliation.
+     * The RPC decided the refund should remain processing.
      *
-     * Do not force another provider request.
+     * Never force another provider request here.
      */
     return json(
       {
@@ -858,11 +913,8 @@ Deno.serve(
     );
 
     /*
-     * Never requeue when provider reconciliation itself failed.
-     *
-     * We cannot safely know whether the previous provider request
-     * succeeded, so the refund must remain processing until a later
-     * reconciliation attempt succeeds.
+     * We cannot safely determine the provider-side outcome,
+     * therefore do not requeue or submit another refund.
      */
     return json(
       {
@@ -877,6 +929,94 @@ Deno.serve(
   }
 }
 
+/*
+ * A pending refund should normally never have a provider refund ID.
+ *
+ * Treat such a state as an idempotency/reconciliation condition
+ * rather than blindly submitting another provider refund.
+ */
+if (
+  refund.status ===
+    "pending" &&
+  refund.provider_refund_id
+) {
+  try {
+    const gatewayRefunds =
+      await fetchRazorpayRefunds(
+        payment.provider_payment_id,
+        keyId,
+        keySecret,
+      );
+
+    const matchingRefund =
+      findRefundByProviderId(
+        gatewayRefunds,
+        refund.provider_refund_id,
+      );
+
+    if (
+      matchingRefund?.id
+    ) {
+      const finalResult =
+        await finalizeRefund(
+          supabaseUrl,
+          serviceRoleKey,
+          refundId,
+          "succeeded",
+          String(
+            matchingRefund.id,
+          ),
+          null,
+        );
+
+      return json({
+        success: true,
+        reconciled: true,
+        refundId,
+        status:
+          "succeeded",
+        providerRefundId:
+          String(
+            matchingRefund.id,
+          ),
+        result:
+          finalResult,
+      });
+    }
+
+    return json(
+      {
+        success: false,
+        processing:
+          true,
+        refundId,
+        providerRefundId:
+          refund.provider_refund_id,
+        error:
+          "A provider refund ID is already recorded for this pending refund, but Razorpay could not reconcile it. No new refund was submitted.",
+      },
+      409,
+    );
+  } catch (
+    error
+  ) {
+    console.error(
+      "[TempStaff] Pending refund provider-ID reconciliation failed:",
+      error,
+    );
+
+    return json(
+      {
+        success: false,
+        processing:
+          true,
+        error:
+          "Unable to reconcile the recorded provider refund ID. No duplicate refund was submitted.",
+      },
+      502,
+    );
+  }
+}
       if (
         refund.status !==
         "pending"
