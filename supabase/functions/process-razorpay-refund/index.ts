@@ -154,6 +154,49 @@ async function finalizeRefund(
   return result;
 }
 
+async function requeueStaleRefund(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  refundId: string,
+) {
+  const response =
+    await fetch(
+      `${supabaseUrl}/rest/v1/rpc/requeue_stale_payment_refund`,
+      {
+        method: "POST",
+        headers: {
+          apikey:
+            serviceRoleKey,
+          Authorization:
+            `Bearer ${serviceRoleKey}`,
+          "Content-Type":
+            "application/json",
+        },
+        body:
+          JSON.stringify({
+            p_refund_id:
+              refundId,
+          }),
+      },
+    );
+
+  const result =
+    await response
+      .json()
+      .catch(
+        () => null,
+      );
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+        result?.error ||
+        "Unable to requeue stale refund",
+    );
+  }
+
+  return result;
+}
 async function fetchRazorpayPayment(
   paymentId: string,
   keyId: string,
@@ -694,83 +737,145 @@ Deno.serve(
        * Reconcile against Razorpay first.
        */
       if (
-        refund.status ===
-        "processing"
-      ) {
-        try {
-          const gatewayRefunds =
-            await fetchRazorpayRefunds(
-              payment.provider_payment_id,
-              keyId,
-              keySecret,
-            );
+  refund.status ===
+  "processing"
+) {
+  try {
+    /*
+     * First reconcile against Razorpay.
+     *
+     * This is mandatory before retrying because a previous
+     * request may have succeeded at the provider while the
+     * network/database response was lost.
+     */
+    const gatewayRefunds =
+      await fetchRazorpayRefunds(
+        payment.provider_payment_id,
+        keyId,
+        keySecret,
+      );
 
-          const matchingRefund =
-            findMatchingRefund(
-              gatewayRefunds,
-              refundId,
-            );
+    const matchingRefund =
+      findMatchingRefund(
+        gatewayRefunds,
+        refundId,
+      );
 
-          if (
-            matchingRefund?.id
-          ) {
-            const finalResult =
-              await finalizeRefund(
-                supabaseUrl,
-                serviceRoleKey,
-                refundId,
-                "succeeded",
-                String(
-                  matchingRefund.id,
-                ),
-                null,
-              );
+    /*
+     * Provider already contains the refund.
+     *
+     * Finalize locally and NEVER submit another provider request.
+     */
+    if (
+      matchingRefund?.id
+    ) {
+      const finalResult =
+        await finalizeRefund(
+          supabaseUrl,
+          serviceRoleKey,
+          refundId,
+          "succeeded",
+          String(
+            matchingRefund.id,
+          ),
+          null,
+        );
 
-            return json({
-              success: true,
-              reconciled: true,
-              refundId,
-              status:
-                "succeeded",
-              providerRefundId:
-                String(
-                  matchingRefund.id,
-                ),
-              result:
-                finalResult,
-            });
-          }
+      return json({
+        success: true,
+        reconciled: true,
+        refundId,
+        status:
+          "succeeded",
+        providerRefundId:
+          String(
+            matchingRefund.id,
+          ),
+        result:
+          finalResult,
+      });
+    }
 
-          return json(
-            {
-              success: false,
-              processing:
-                true,
-              error:
-                "No matching Razorpay refund was found. The refund remains processing and will be reconciled again.",
-            },
-            409,
-          );
-        } catch (
-          error
-        ) {
-          console.error(
-            "[TempStaff] Razorpay refund reconciliation failed:",
-            error,
-          );
+    /*
+     * No matching Razorpay refund exists.
+     *
+     * The database dispatcher only sends processing refunds
+     * after they have been stale for 10 minutes. At that point
+     * it is safe to move the refund back to pending so the normal
+     * claim -> provider request flow can retry.
+     *
+     * IMPORTANT:
+     * We only do this AFTER checking Razorpay. This prevents a
+     * duplicate refund when the previous provider request actually
+     * succeeded but local confirmation was lost.
+     */
+    const requeueResult =
+      await requeueStaleRefund(
+        supabaseUrl,
+        serviceRoleKey,
+        refundId,
+      );
 
-          return json(
-            {
-              success: false,
-              processing:
-                true,
-              error:
-                "Razorpay reconciliation failed. No duplicate refund was attempted.",
-            },
-            502,
-          );
-        }
-      }
+    if (
+      requeueResult?.requeued ===
+      true
+    ) {
+      return json({
+        success: true,
+        requeued: true,
+        refundId,
+        status:
+          "pending",
+        error:
+          "No matching Razorpay refund was found after the stale processing window. The refund was safely requeued for retry.",
+      });
+    }
+
+    /*
+     * The RPC may decide the refund is still fresh, already changed,
+     * succeeded, or requires reconciliation.
+     *
+     * Do not force another provider request.
+     */
+    return json(
+      {
+        success: false,
+        processing:
+          true,
+        refundId,
+        requeueResult,
+        error:
+          "Refund remains under reconciliation. No duplicate Razorpay refund was submitted.",
+      },
+      409,
+    );
+  } catch (
+    error
+  ) {
+    console.error(
+      "[TempStaff] Razorpay refund reconciliation failed:",
+      error,
+    );
+
+    /*
+     * Never requeue when provider reconciliation itself failed.
+     *
+     * We cannot safely know whether the previous provider request
+     * succeeded, so the refund must remain processing until a later
+     * reconciliation attempt succeeds.
+     */
+    return json(
+      {
+        success: false,
+        processing:
+          true,
+        error:
+          "Razorpay reconciliation failed. The refund remains processing and no duplicate refund was attempted.",
+      },
+      502,
+    );
+  }
+}
 
       if (
         refund.status !==
