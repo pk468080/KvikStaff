@@ -869,16 +869,16 @@ function DetailRow({
 const styles =
   StyleSheet.create({
     content: {
-      paddingBottom: 120,
-    },
+  paddingHorizontal: 20,
+  paddingBottom: 120,
+},
 
     header: {
-      paddingHorizontal: 20,
-      paddingTop: 10,
-      paddingBottom: 16,
-      backgroundColor:
-        '#FFFFFF',
-    },
+  paddingTop: 10,
+  paddingBottom: 14,
+  backgroundColor:
+    '#FFFFFF',
+},
 
     brandRow: {
       flexDirection:
@@ -947,13 +947,12 @@ const styles =
     },
 
     title: {
-      marginTop: 2,
-      fontSize: 24,
-      lineHeight: 30,
-      fontWeight: '800',
-      color: '#062F52',
-    },
-
+  marginTop: 2,
+  fontSize: 22,
+  lineHeight: 28,
+  fontWeight: '800',
+  color: '#062F52',
+},
     progressTrack: {
       height: 4,
       marginTop: 16,
@@ -991,18 +990,17 @@ const styles =
     },
 
     serviceHero: {
-      flexDirection:
-        'row',
-      alignItems:
-        'center',
-      marginHorizontal: 20,
-      marginTop: 4,
-      marginBottom: 14,
-      padding: 16,
-      borderRadius: 18,
-      backgroundColor:
-        '#062F52',
-    },
+  flexDirection:
+    'row',
+  alignItems:
+    'center',
+  marginTop: 2,
+  marginBottom: 18,
+  padding: 15,
+  borderRadius: 18,
+  backgroundColor:
+    '#062F52',
+},
 
     serviceImageWrap: {
       width: 64,
@@ -1062,35 +1060,34 @@ const styles =
     },
 
     row: {
-      flexDirection:
-        'row',
-      justifyContent:
-        'space-between',
-      alignItems:
-        'flex-start',
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor:
-        '#EAF1F4',
-      gap: 18,
-    },
+  flexDirection:
+    'row',
+  alignItems:
+    'flex-start',
+  paddingVertical: 11,
+  borderBottomWidth: 1,
+  borderBottomColor:
+    '#EAF1F4',
+  columnGap: 16,
+},
 
     rowLabel: {
-      flex: 0.9,
-      fontSize: 13,
-      color: '#6B8795',
-      fontWeight: '600',
-    },
+  width: '40%',
+  fontSize: 12.5,
+  lineHeight: 18,
+  color: '#6B8795',
+  fontWeight: '600',
+},
 
     rowValue: {
-      flex: 1.4,
-      textAlign:
-        'right',
-      fontSize: 14,
-      lineHeight: 19,
-      fontWeight: '700',
-      color: '#062F52',
-    },
+  flex: 1,
+  textAlign:
+    'right',
+  fontSize: 13.5,
+  lineHeight: 19,
+  fontWeight: '700',
+  color: '#062F52',
+},
 
     locationCard: {
       flexDirection:
@@ -1145,20 +1142,19 @@ const styles =
       fontWeight: '600',
     },
 
-    priceIntro: {
-      flexDirection:
-        'row',
-      alignItems:
-        'center',
-      justifyContent:
-        'space-between',
-      marginHorizontal: 20,
-      marginBottom: 10,
-      padding: 14,
-      borderRadius: 15,
-      backgroundColor:
-        '#EAF7F7',
-    },
+   priceIntro: {
+  flexDirection:
+    'row',
+  alignItems:
+    'center',
+  justifyContent:
+    'space-between',
+  marginBottom: 10,
+  padding: 14,
+  borderRadius: 15,
+  backgroundColor:
+    '#EAF7F7',
+},
 
     priceIntroEyebrow: {
       fontSize: 9,
@@ -1187,18 +1183,16 @@ const styles =
       fontWeight: '800',
       color: '#087F72',
     },
-
-    errorContainer: {
-      marginHorizontal: 20,
-      marginVertical: 16,
-      padding: 14,
-      borderRadius: 14,
-      backgroundColor:
-        '#FFF4F4',
-      borderWidth: 1,
-      borderColor:
-        '#F4C7C7',
-    },
+errorContainer: {
+  marginVertical: 16,
+  padding: 14,
+  borderRadius: 14,
+  backgroundColor:
+    '#FFF4F4',
+  borderWidth: 1,
+  borderColor:
+    '#F4C7C7',
+},
 
     errorTitle: {
       fontSize: 14,
