@@ -225,12 +225,13 @@ export async function requestWorkerLocationPermissions(): Promise<
 }
 
 export async function ensureWorkerForegroundLocationPermission(): Promise<void> {
-  const permissions =
-    await getWorkerLocationPermissions()
+  const permission =
+    await Location.getForegroundPermissionsAsync()
 
   if (
-    permissions.foreground ===
-    'granted'
+    mapPermissionStatus(
+      permission.status,
+    ) === 'granted'
   ) {
     return
   }
@@ -346,12 +347,13 @@ export async function getLastKnownWorkerLocation(
       .defaultUpdateIntervalSeconds *
     1000,
 ): Promise<WorkerLocation | null> {
-  const permissions =
-    await getWorkerLocationPermissions()
+  const permission =
+    await Location.getForegroundPermissionsAsync()
 
   if (
-    permissions.foreground !==
-    'granted'
+    mapPermissionStatus(
+      permission.status,
+    ) !== 'granted'
   ) {
     return null
   }
@@ -362,7 +364,7 @@ export async function getLastKnownWorkerLocation(
     ) ??
     WORKER.location
       .defaultUpdateIntervalSeconds *
-      1000
+    1000
 
   const location =
     await Location.getLastKnownPositionAsync(
@@ -383,12 +385,13 @@ export async function getLastKnownWorkerLocation(
 }
 
 export async function getWorkerLocationAccuracy(): Promise<number | null> {
-  const permissions =
-    await getWorkerLocationPermissions()
+  const permission =
+    await Location.getForegroundPermissionsAsync()
 
   if (
-    permissions.foreground !==
-    'granted'
+    mapPermissionStatus(
+      permission.status,
+    ) !== 'granted'
   ) {
     return null
   }
