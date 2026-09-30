@@ -1,3 +1,8 @@
+import {
+  AppState,
+  Platform,
+} from 'react-native'
+
 import 'react-native-url-polyfill/auto'
 import 'expo-sqlite/localStorage/install'
 
@@ -41,3 +46,26 @@ export const supabase =
       },
     },
   )
+
+/*
+ * On native platforms, keep Supabase session refresh
+ * active while the app is in the foreground and stop
+ * it while the app is backgrounded.
+ *
+ * This listener is intentionally registered once.
+ */
+if (Platform.OS !== 'web') {
+  AppState.addEventListener(
+    'change',
+    nextAppState => {
+      if (
+        nextAppState ===
+        'active'
+      ) {
+        supabase.auth.startAutoRefresh()
+      } else {
+        supabase.auth.stopAutoRefresh()
+      }
+    },
+  )
+}
