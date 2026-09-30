@@ -507,7 +507,7 @@ Deno.serve(
         );
       }
 
-            const body =
+                 const body =
         await req
           .json()
           .catch(
@@ -533,15 +533,6 @@ Deno.serve(
             "";
 
       if (!refundId) {
-        return json(
-          {
-            success: false,
-            error:
-              "refundId is required",
-          },
-          400,
-        );
-      }
         return json(
           {
             success: false,
