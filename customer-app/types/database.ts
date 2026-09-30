@@ -3606,6 +3606,10 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      get_customer_booking_refunds: {
+  Args: { p_booking_id: string }
+  Returns: Json
+}
       cancel_service_availability_request: {
         Args: { p_request_id: string }
         Returns: {

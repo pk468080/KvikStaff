@@ -49,10 +49,10 @@ export type CustomerCancellationResult = {
     gross_amount?: number
   }
   refund_amount?: number
-  refund_id?: string
-}
+refund_id?: string | null}
 
 export async function cancelCustomerBooking(
+
   bookingId: string,
   bookingType?: string | null,
 ): Promise<CustomerCancellationResult> {
@@ -85,15 +85,7 @@ export async function cancelCustomerBooking(
 export async function getCustomerBookingRefunds(
   bookingId: string,
 ): Promise<CustomerRefundRecord[]> {
-  const rpc = supabase.rpc as unknown as (
-    functionName: string,
-    args: { p_booking_id: string },
-  ) => Promise<{
-    data: unknown
-    error: { message: string } | null
-  }>
-
-  const { data, error } = await rpc(
+  const { data, error } = await supabase.rpc(
     'get_customer_booking_refunds',
     {
       p_booking_id: bookingId,
@@ -118,4 +110,3 @@ export async function getCustomerBookingRefunds(
 
   return data
 }
-
