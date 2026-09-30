@@ -6,6 +6,10 @@ import {
   View,
 } from 'react-native'
 
+import {
+  SafeAreaView,
+} from 'react-native-safe-area-context'
+
 import DateRangePicker from './DateRangePicker'
 import WeekdaySelector from './WeekdaySelector'
 import RecurringOccurrencePreview from './RecurringOccurrencePreview'
@@ -1500,9 +1504,10 @@ export default function BookingFlowModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View
-        style={styles.flowModal}
-      >
+      <SafeAreaView
+  edges={['top', 'bottom']}
+  style={styles.flowModal}
+>
         <View
           style={styles.flowHeader}
         >
@@ -1707,7 +1712,7 @@ export default function BookingFlowModal({
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
+      </SafeAreaView>
+</Modal>
   )
 }

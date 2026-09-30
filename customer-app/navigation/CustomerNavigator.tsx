@@ -6,6 +6,9 @@ import {
   Text,
 } from 'react-native'
 import {
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context'
+import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack'
 import CustomerPushRegistration from '../components/runtime/CustomerPushRegistration'
@@ -39,6 +42,7 @@ import {
 
 import type { BookingDraft } from '../types/booking'
 import type { HomeService } from '../types/service'
+
 
 type CustomerLocation = {
   latitude: number
@@ -91,12 +95,14 @@ const Tab = createBottomTabNavigator()
 const Stack =
   createNativeStackNavigator<CustomerStackParamList>()
 
-
+const insets = useSafeAreaInsets()
 export default function CustomerNavigator({
   location,
   onLocationChange,
   onSignOut,
 }: CustomerNavigatorProps) {
+  const insets = useSafeAreaInsets()
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -120,7 +126,16 @@ export default function CustomerNavigator({
               headerShown: false,
               tabBarActiveTintColor: '#007AFF',
               tabBarInactiveTintColor: '#8E939B',
-              tabBarStyle: styles.tabBar,
+              tabBarStyle: [
+  styles.tabBar,
+  {
+    marginBottom:
+      Math.max(
+        8,
+        insets.bottom + 4,
+      ),
+  },
+],
               tabBarLabelStyle: styles.tabBarLabel,
               tabBarItemStyle: styles.tabBarItem,
               tabBarActiveBackgroundColor: '#EEF6FF',

@@ -1,8 +1,11 @@
 import {
-  SafeAreaView,
   StyleSheet,
   type ViewProps,
 } from 'react-native'
+
+import {
+  SafeAreaView,
+} from 'react-native-safe-area-context'
 
 export function ScreenContainer({
   style,
@@ -10,8 +13,12 @@ export function ScreenContainer({
 }: ViewProps) {
   return (
     <SafeAreaView
+      edges={['top', 'bottom']}
       {...props}
-      style={[styles.container, style]}
+      style={[
+        styles.container,
+        style,
+      ]}
     />
   )
 }
