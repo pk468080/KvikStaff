@@ -582,6 +582,207 @@ export async function getCustomerBookings(): Promise<
       ),
   )
 }
+export function sortBookingStatusHistory(
+  history: BookingStatusHistoryItem[],
+): BookingStatusHistoryItem[] {
+  if (history.length <= 1) {
+    return [...history]
+  }
+
+  const items = [...history].sort(
+    (left, right) => {
+      const leftTime =
+        Date.parse(left.created_at)
+
+      const rightTime =
+        Date.parse(right.created_at)
+
+      if (
+        Number.isFinite(leftTime) &&
+        Number.isFinite(rightTime) &&
+        leftTime !== rightTime
+      ) {
+        return leftTime - rightTime
+      }
+
+      if (
+        Number.isFinite(leftTime) &&
+        !Number.isFinite(rightTime)
+      ) {
+        return -1
+      }
+
+      if (
+        !Number.isFinite(leftTime) &&
+        Number.isFinite(rightTime)
+      ) {
+        return 1
+      }
+
+      return left.id.localeCompare(
+        right.id,
+      )
+    },
+  )
+
+  const result: BookingStatusHistoryItem[] = []
+
+  let cursor = 0
+  let previousStatus:
+    | BookingStatus
+    | null = null
+
+  while (cursor < items.length) {
+    const firstItem = items[cursor]
+
+    const firstTime =
+      Date.parse(
+        firstItem.created_at,
+      )
+
+    const group: BookingStatusHistoryItem[] =
+      []
+
+    while (
+      cursor < items.length
+    ) {
+      const currentItem =
+        items[cursor]
+
+      const currentTime =
+        Date.parse(
+          currentItem.created_at,
+        )
+
+      const sameTimestamp =
+        (
+          Number.isFinite(firstTime) &&
+          Number.isFinite(currentTime) &&
+          firstTime === currentTime
+        ) ||
+        (
+          firstItem.created_at ===
+          currentItem.created_at
+        )
+
+      if (!sameTimestamp) {
+        break
+      }
+
+      group.push(
+        currentItem,
+      )
+
+      cursor += 1
+    }
+
+    /*
+     * Resolve transitions that share the same timestamp
+     * by following the state chain:
+     *
+     * pending_payment -> paid -> searching_worker
+     *
+     * rather than relying on UUID ordering.
+     */
+    const remaining = [
+      ...group,
+    ]
+
+    while (
+      remaining.length > 0
+    ) {
+      let nextIndex = -1
+
+      if (
+        previousStatus !== null
+      ) {
+        nextIndex =
+          remaining.findIndex(
+            item =>
+              item.old_status ===
+              previousStatus,
+          )
+      }
+
+      /*
+       * For the first transition of the entire history,
+       * prefer the entry without a previous status.
+       */
+      if (
+        nextIndex === -1 &&
+        previousStatus === null
+      ) {
+        nextIndex =
+          remaining.findIndex(
+            item =>
+              item.old_status ===
+              null,
+          )
+      }
+
+      /*
+       * If the database does not provide enough information
+       * to establish the chain, use deterministic UUID ordering
+       * instead of producing unstable UI ordering.
+       */
+      if (
+        nextIndex === -1
+      ) {
+        remaining.sort(
+          (left, right) =>
+            left.id.localeCompare(
+              right.id,
+            ),
+        )
+
+        result.push(
+          ...remaining,
+        )
+
+        previousStatus =
+          remaining[
+            remaining.length - 1
+          ]?.new_status ??
+          previousStatus
+
+        remaining.length = 0
+
+        break
+      }
+
+      const [
+        nextItem,
+      ] =
+        remaining.splice(
+          nextIndex,
+          1,
+        )
+
+      result.push(
+        nextItem,
+      )
+
+      previousStatus =
+        nextItem.new_status
+    }
+
+    /*
+     * If the timestamp group was empty or somehow did not
+     * produce a status, preserve the last known state.
+     */
+    if (
+      result.length > 0 &&
+      previousStatus === null
+    ) {
+      previousStatus =
+        result[
+          result.length - 1
+        ].new_status
+    }
+  }
+
+  return result
+}
 
 export async function getCustomerBookingStatusHistory(
   bookingId: string,
@@ -611,11 +812,14 @@ export async function getCustomerBookingStatusHistory(
     throw error
   }
 
-  return (
-    (data ?? []) as unknown as
-      BookingStatusHistoryItem[]
+  return sortBookingStatusHistory(
+    (
+      (data ?? []) as unknown as
+        BookingStatusHistoryItem[]
+    ),
   )
 }
+
 
 export async function getCustomerActiveBookingOccurrence(
   bookingId: string,

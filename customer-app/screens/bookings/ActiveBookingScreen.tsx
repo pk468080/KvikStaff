@@ -30,6 +30,7 @@ import {
   getWorkerLocationAgeSeconds,
   getWorkerLocationFreshness,
   requestBookingOtp,
+  sortBookingStatusHistory,
   type BookingStatus,
   type BookingStatusHistoryItem,
   type CustomerBooking,
@@ -587,34 +588,23 @@ const [
               payload.new as BookingStatusHistoryItem
 
             setStatusHistory(
-              current => {
-                if (
-                  current.some(
-                    item =>
-                      item.id ===
-                      nextHistory.id,
-                  )
-                ) {
-                  return current
-                }
+  current => {
+    if (
+      current.some(
+        item =>
+          item.id ===
+          nextHistory.id,
+      )
+    ) {
+      return current
+    }
 
-                return [
-                  ...current,
-                  nextHistory,
-                ].sort(
-                  (
-                    left,
-                    right,
-                  ) =>
-                    Date.parse(
-                      left.created_at,
-                    ) -
-                    Date.parse(
-                      right.created_at,
-                    ),
-                )
-              },
-            )
+    return sortBookingStatusHistory([
+      ...current,
+      nextHistory,
+    ])
+  },
+)
           },
         )
 
