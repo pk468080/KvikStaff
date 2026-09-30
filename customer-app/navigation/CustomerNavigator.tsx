@@ -660,45 +660,47 @@ export default function CustomerNavigator({
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    height: 76,
-    marginHorizontal: 12,
+    tabBar: {
+    height: 70,
+    marginHorizontal: 16,
     marginBottom: 10,
-    paddingHorizontal: 8,
-    paddingTop: 7,
-    paddingBottom: 7,
+    paddingHorizontal: 6,
+    paddingTop: 6,
+    paddingBottom: 6,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 0,
-    borderRadius: 24,
-    elevation: 12,
+    borderWidth: 1,
+    borderColor: '#E8EEF2',
+    borderRadius: 22,
+    elevation: 10,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: 5,
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
 
-  tabBarItem: {
-    marginHorizontal: 3,
-    borderRadius: 18,
-    paddingTop: 2,
-    paddingBottom: 2,
+    tabBarItem: {
+    marginHorizontal: 2,
+    borderRadius: 16,
+    paddingTop: 1,
+    paddingBottom: 1,
   },
 
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+   tabBarLabel: {
+    fontSize: 10.5,
+    fontWeight: '700',
     marginTop: 1,
-    marginBottom: 1,
-    letterSpacing: 0.1,
+    marginBottom: 0,
+    letterSpacing: 0,
   },
 
-  tabIcon: {
-    fontSize: 22,
+    tabIcon: {
+    fontSize: 21,
     fontWeight: '500',
-    lineHeight: 24,
+    lineHeight: 23,
     textAlign: 'center',
   },
 })
