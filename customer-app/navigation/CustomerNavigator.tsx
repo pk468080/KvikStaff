@@ -95,7 +95,6 @@ const Tab = createBottomTabNavigator()
 const Stack =
   createNativeStackNavigator<CustomerStackParamList>()
 
-const insets = useSafeAreaInsets()
 export default function CustomerNavigator({
   location,
   onLocationChange,
