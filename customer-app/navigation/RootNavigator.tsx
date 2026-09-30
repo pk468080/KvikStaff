@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   NavigationContainer,
+  useNavigationContainerRef,
 } from '@react-navigation/native'
 import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack'
+
+import { supabase } from '../lib/supabase'
 
 import CustomerNavigator from './CustomerNavigator'
 
@@ -41,6 +44,9 @@ type CustomerLocation = {
 }
 
 export default function RootNavigator() {
+  const navigationRef =
+    useNavigationContainerRef<RootStackParamList>()
+
   const [phone, setPhone] =
     useState('')
 
@@ -51,6 +57,85 @@ export default function RootNavigator() {
     useState<CustomerLocation | null>(
       null,
     )
+
+  useEffect(() => {
+    const {
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        event => {
+          if (
+            event !== 'SIGNED_OUT'
+          ) {
+            return
+          }
+
+          if (
+            !navigationRef.isReady()
+          ) {
+            return
+          }
+
+          const currentRoute =
+            navigationRef.getCurrentRoute()
+              ?.name
+
+          if (
+            currentRoute ===
+              'Login' ||
+            currentRoute ===
+              'Splash'
+          ) {
+            return
+          }
+
+          navigationRef.resetRoot({
+            index: 0,
+            routes: [
+              {
+                name: 'Login',
+              },
+            ],
+          })
+        },
+      )
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [navigationRef])
+
+  function redirectToLogin() {
+    if (
+      !navigationRef.isReady()
+    ) {
+      return
+    }
+
+    const currentRoute =
+      navigationRef.getCurrentRoute()
+        ?.name
+
+    if (
+      currentRoute ===
+        'Login' ||
+      currentRoute ===
+        'Splash'
+    ) {
+      return
+    }
+
+    navigationRef.resetRoot({
+      index: 0,
+      routes: [
+        {
+          name: 'Login',
+        },
+      ],
+    })
+  }
 
   function handleSplashFinished(
     authState: CustomerAuthState,
@@ -147,7 +232,9 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+    >
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{
@@ -267,7 +354,7 @@ export default function RootNavigator() {
         </Stack.Screen>
 
         <Stack.Screen name="Customer">
-          {({ navigation }) => (
+          {() => (
             <CustomerNavigator
               location={
                 customerLocation
@@ -275,7 +362,9 @@ export default function RootNavigator() {
               onLocationChange={
                 handleLocationChange
               }
-              onSignOut={() => navigation.replace('Login')}
+              onSignOut={
+                redirectToLogin
+              }
             />
           )}
         </Stack.Screen>
