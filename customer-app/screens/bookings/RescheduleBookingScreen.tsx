@@ -98,11 +98,28 @@ export default function RescheduleBookingScreen({
     [originalStart, originalEnd],
   )
 
-  const [selectedDate, setSelectedDate] =
+    const [selectedDate, setSelectedDate] =
     useState(originalStart)
 
   const [selectedStartTime, setSelectedStartTime] =
     useState(originalStart)
+
+  const tomorrow = useMemo(() => {
+    const date = new Date()
+
+    date.setHours(
+      0,
+      0,
+      0,
+      0,
+    )
+
+    date.setDate(
+      date.getDate() + 1,
+    )
+
+    return date
+  }, [])
 
   const [showDatePicker, setShowDatePicker] =
     useState(false)
@@ -299,11 +316,16 @@ export default function RescheduleBookingScreen({
             </Text>
           </Pressable>
 
-          {showDatePicker ? (
+                    {showDatePicker ? (
             <DateTimePicker
-              value={selectedDate}
+              value={
+                selectedDate.getTime() <
+                tomorrow.getTime()
+                  ? tomorrow
+                  : selectedDate
+              }
               mode="date"
-              minimumDate={new Date()}
+              minimumDate={tomorrow}
               onChange={handleDateChange}
             />
           ) : null}
