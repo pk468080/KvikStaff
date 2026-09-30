@@ -168,83 +168,173 @@ if (eventInsertError) {
     }
 
     let providerPaymentId = paymentId;
-    let providerPayment: Record<string, any> | null =
-      paymentEntity;
+let providerPayment: Record<string, any> | null =
+  paymentEntity;
 
-    const authHeader =
-      `Basic ${btoa(
-        `${razorpayKeyId}:${razorpayKeySecret}`,
-      )}`;
+const authHeader =
+  `Basic ${btoa(
+    `${razorpayKeyId}:${razorpayKeySecret}`,
+  )}`;
 
-    if (!providerPaymentId) {
-      const response = await fetch(
-        `https://api.razorpay.com/v1/orders/${encodeURIComponent(
-          orderId,
-        )}/payments`,
-        {
-          headers: {
-            Authorization: authHeader,
-          },
+if (providerPaymentId) {
+  /*
+   * payment.captured normally includes the payment entity.
+   *
+   * We still fetch the authoritative Razorpay payment record
+   * instead of trusting the webhook entity blindly.
+   */
+  const response = await fetch(
+    `https://api.razorpay.com/v1/payments/${encodeURIComponent(
+      providerPaymentId,
+    )}`,
+    {
+      headers: {
+        Authorization: authHeader,
+      },
+    },
+  );
+
+  const data =
+    await response
+      .json()
+      .catch(
+        () => null,
+      );
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.description ||
+        "Unable to verify Razorpay payment.",
+    );
+  }
+
+  providerPayment = data;
+} else {
+  /*
+   * order.paid may not contain a payment entity.
+   *
+   * In that case fetch all payments for the order and reconcile
+   * only when exactly one captured payment can be safely selected.
+   *
+   * Never choose an arbitrary captured payment from the list.
+   */
+  const response = await fetch(
+    `https://api.razorpay.com/v1/orders/${encodeURIComponent(
+      orderId,
+    )}/payments`,
+    {
+      headers: {
+        Authorization: authHeader,
+      },
+    },
+  );
+
+  const data =
+    await response
+      .json()
+      .catch(
+        () => null,
+      );
+
+  if (
+    !response.ok ||
+    !Array.isArray(data?.items)
+  ) {
+    throw new Error(
+      "Unable to fetch Razorpay payments for webhook reconciliation.",
+    );
+  }
+
+  const capturedPayments =
+    data.items.filter(
+      (
+        payment: Record<string, unknown>,
+      ) =>
+        payment.status ===
+        "captured" &&
+        payment.order_id ===
+          orderId &&
+        typeof payment.id ===
+          "string",
+    );
+
+  /*
+   * Exactly one captured payment is required when the webhook
+   * does not identify the payment explicitly.
+   */
+  if (
+    capturedPayments.length ===
+    0
+  ) {
+    throw new Error(
+      "Razorpay order is paid but no captured payment is available yet.",
+    );
+  }
+
+  if (
+    capturedPayments.length >
+    1
+  ) {
+    throw new Error(
+      "Razorpay order has multiple captured payments and the webhook does not identify which payment belongs to TempStaff. Manual reconciliation is required.",
+    );
+  }
+
+  const captured =
+    capturedPayments[0];
+
+  providerPaymentId =
+    String(captured.id);
+
+  /*
+   * Fetch the authoritative provider record rather than
+   * finalizing directly from the list response.
+   */
+  const providerResponse =
+    await fetch(
+      `https://api.razorpay.com/v1/payments/${encodeURIComponent(
+        providerPaymentId,
+      )}`,
+      {
+        headers: {
+          Authorization:
+            authHeader,
         },
+      },
+    );
+
+  const providerData =
+    await providerResponse
+      .json()
+      .catch(
+        () => null,
       );
 
-      const data = await response.json();
+  if (
+    !providerResponse.ok
+  ) {
+    throw new Error(
+      providerData?.error
+        ?.description ||
+        "Unable to verify Razorpay payment.",
+    );
+  }
 
-      if (
-        !response.ok ||
-        !Array.isArray(data?.items)
-      ) {
-        throw new Error(
-          "Unable to fetch Razorpay payments for webhook reconciliation.",
-        );
-      }
+  providerPayment =
+    providerData;
+}
 
-      const captured = data.items.find(
-        (payment: Record<string, unknown>) =>
-          payment.status === "captured",
-      );
-
-      if (!captured) {
-        throw new Error(
-          "Razorpay order is paid but no captured payment is available yet.",
-        );
-      }
-
-      providerPaymentId = String(captured.id);
-      providerPayment = captured;
-    } else {
-      const response = await fetch(
-        `https://api.razorpay.com/v1/payments/${encodeURIComponent(
-          providerPaymentId,
-        )}`,
-        {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error?.description ||
-            "Unable to verify Razorpay payment.",
-        );
-      }
-
-      providerPayment = data;
-    }
-
-    if (
-      !providerPayment ||
-      providerPayment.status !== "captured" ||
-      providerPayment.order_id !== orderId
-    ) {
-      throw new Error(
-        "Webhook payment is not a captured payment for the supplied order.",
-      );
-    }
+if (
+  !providerPayment ||
+  providerPayment.status !==
+    "captured" ||
+  providerPayment.order_id !==
+    orderId
+) {
+  throw new Error(
+    "Webhook payment is not a captured payment for the supplied order.",
+  );
+}
 
     const { data: payment, error: paymentLookupError } =
       await supabase
