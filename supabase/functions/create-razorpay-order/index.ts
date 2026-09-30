@@ -240,7 +240,7 @@ Deno.serve(async (req: Request) => {
      * persisted booking data. Client-provided price
      * values are intentionally ignored.
      */
-    const {
+        const {
       data: booking,
       error: bookingError,
     } =
@@ -254,7 +254,8 @@ Deno.serve(async (req: Request) => {
             fulfillment_type,
             service_variant_id,
             total_amount,
-            pricing_snapshot
+            pricing_snapshot,
+            scheduled_start
           `
         )
         .eq("id", bookingId)
@@ -283,6 +284,89 @@ Deno.serve(async (req: Request) => {
 
     failureBookingId =
       bookingId;
+
+    /*
+     * A customer must not be able to pay for an
+     * Instant or Scheduled booking after its service
+     * start time has already passed.
+     *
+     * Recurring bookings are intentionally excluded
+     * because their parent scheduled_start represents
+     * the series and future occurrences may remain.
+     */
+    if (
+      (
+        booking.fulfillment_type ===
+          "instant" ||
+        booking.fulfillment_type ===
+          "scheduled"
+      ) &&
+      (
+        booking.status ===
+          "pending_payment" ||
+        booking.status ===
+          "payment_failed"
+      ) &&
+      typeof booking.scheduled_start ===
+        "string"
+    ) {
+      const scheduledStartMs =
+        new Date(
+          booking.scheduled_start
+        ).getTime();
+
+      if (
+        Number.isFinite(
+          scheduledStartMs
+        ) &&
+        scheduledStartMs <=
+          Date.now()
+      ) {
+        const {
+          error:
+            expireError,
+        } =
+          await adminClient
+            .from("bookings")
+            .update({
+              status:
+                "expired",
+            })
+            .eq(
+              "id",
+              bookingId
+            )
+            .eq(
+              "customer_id",
+              user.id
+            )
+            .in(
+              "status",
+              [
+                "pending_payment",
+                "payment_failed",
+              ]
+            );
+
+        if (expireError) {
+          throw new Error(
+            "Unable to expire the past booking."
+          );
+        }
+
+        return jsonResponse(
+          {
+            success: false,
+            error:
+              "This booking has expired because its scheduled time has passed.",
+            bookingId,
+            status:
+              "expired",
+          },
+          409
+        );
+      }
+    }
 
     /*
      * All supported booking types use the same
