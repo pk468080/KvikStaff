@@ -79,7 +79,7 @@ type BookingRow = {
   id: string
   address_id: string
   status: BookingStatus
-  booking_type?: string | null
+  fulfillment_type?: string | null
   service_name?: string | null
   service_image_url?: string | null
   scheduled_start: string | null
@@ -114,8 +114,8 @@ function mapBooking(
       row.status,
 
     booking_type:
-      row.booking_type ??
-      null,
+  row.fulfillment_type ??
+  null,
 
     service_name:
       row.service_variant?.service?.name ??
