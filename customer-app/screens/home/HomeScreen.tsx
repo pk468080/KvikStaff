@@ -13,7 +13,6 @@ import {
   View,
 } from 'react-native'
 import * as Location from 'expo-location'
-import { Ionicons } from '@expo/vector-icons'
 import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
 
 import {
@@ -952,9 +951,7 @@ const [
                     </Text>
                   </View>
 
-                  <Text style={styles.rebookArrow}>
-                    →
-                  </Text>
+                  <ArrowIcon />
                 </TouchableOpacity>
               )}
             />
@@ -1700,17 +1697,24 @@ function ServiceCard({
             >
               Book
             </Text>
-
-            <Ionicons
-              name="arrow-forward"
-              size={16}
-              color={COLORS.primaryDark}
-              style={{ marginLeft: 4 }}
-            />
           </View>
         </View>
       </View>
     </TouchableOpacity>
+  )
+}
+
+function ArrowIcon() {
+  return (
+    <View
+      style={styles.arrowIcon}
+      accessible={false}
+      importantForAccessibility="no"
+    >
+      <View style={styles.arrowLine} />
+      <View style={styles.arrowHeadTop} />
+      <View style={styles.arrowHeadBottom} />
+    </View>
   )
 }
 
@@ -2421,6 +2425,48 @@ gridCardContent: {
     overflow: 'hidden',
   },
 
+  arrowIcon: {
+    width: 16,
+    height: 16,
+    marginLeft: 6,
+    position: 'relative',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+
+  arrowLine: {
+    position: 'absolute',
+    left: 1,
+    right: 1,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: COLORS.primaryDark,
+  },
+
+  arrowHeadTop: {
+    position: 'absolute',
+    right: 1,
+    top: 2,
+    width: 7,
+    height: 7,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderColor: COLORS.primaryDark,
+    transform: [{ rotate: '45deg' }],
+  },
+
+  arrowHeadBottom: {
+    position: 'absolute',
+    right: 1,
+    bottom: 2,
+    width: 7,
+    height: 7,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderColor: COLORS.primaryDark,
+    transform: [{ rotate: '135deg' }],
+  },
+
   rebookImage: {
     width: '100%',
     height: '100%',
@@ -2448,13 +2494,6 @@ gridCardContent: {
     fontSize: 10,
     fontWeight: '600',
     color: COLORS.muted,
-  },
-
-  rebookArrow: {
-    marginLeft: 7,
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.primaryDark,
   },
 
   favouriteList: {
