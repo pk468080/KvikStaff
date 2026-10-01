@@ -644,6 +644,50 @@ export type Database = {
     }
     Returns: Json
   }
+
+  worker_get_payout_overview: {
+    Args: {}
+    Returns: Json
+  }
+
+  worker_list_payouts: {
+    Args: {
+      p_limit?: number
+    }
+    Returns: Json
+  }
+
+  worker_list_payout_accounts: {
+    Args: {}
+    Returns: Json
+  }
+
+  worker_get_available_earnings: {
+    Args: {}
+    Returns: Json
+  }
+
+  worker_request_payout: {
+    Args: {
+      p_amount: number
+      p_payout_account_id: string
+    }
+    Returns: Json
+  }
+
+  worker_set_default_payout_account: {
+    Args: {
+      p_account_id: string
+    }
+    Returns: Json
+  }
+
+  worker_disable_payout_account: {
+    Args: {
+      p_account_id: string
+    }
+    Returns: Json
+  }
 }
 
     Enums: {

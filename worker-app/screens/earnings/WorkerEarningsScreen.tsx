@@ -15,6 +15,7 @@ import {
 import {
   AppButton,
 } from '../../components/ui/AppButton'
+import WorkerPayoutPanel from '../../components/earnings/WorkerPayoutPanel'
 
 import {
   ScreenContainer,
@@ -397,6 +398,10 @@ export default function WorkerEarningsScreen({
             </View>
           </View>
         </View>
+
+        <WorkerPayoutPanel
+          formatAmount={formatSummaryAmount}
+        />
 
         <View
           style={styles.sectionHeader}
