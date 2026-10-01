@@ -305,7 +305,6 @@ function BookingCard({
           <Text style={styles.actionButtonText}>
             {group === 'active' ? 'Track booking' : 'View booking'}
           </Text>
-          <Text style={styles.actionArrow}>→</Text>
         </View>
       </View>
 
@@ -910,13 +909,6 @@ const styles = StyleSheet.create({
 
   actionButtonText: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#008C8C',
-  },
-
-  actionArrow: {
-    marginLeft: 7,
-    fontSize: 16,
     fontWeight: '800',
     color: '#008C8C',
   },
