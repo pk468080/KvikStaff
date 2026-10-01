@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +18,7 @@ import {
   View,
 } from 'react-native'
 import * as Location from 'expo-location'
+import { useFocusEffect } from '@react-navigation/native'
 import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
 
 import {
@@ -31,6 +37,10 @@ import {
   getHomeServicesForLocation,
 } from '../../services/services/services.service'
 import type { HomeService } from '../../types/service'
+import {
+  formatUnreadNotificationCount,
+  getUnreadCustomerNotificationCount,
+} from '../../services/notifications/customerNotifications.service'
 
 const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 const heroBannerImage = require('../../assets/home/hero-banner.png')
@@ -56,6 +66,7 @@ type HomeScreenProps = {
   onBookingPress?: (
   bookingId: string,
 ) => void
+  onOpenNotifications: () => void
 }
 
 export default function HomeScreen({
@@ -63,6 +74,7 @@ export default function HomeScreen({
   onLocationChange,
   onServicePress,
   onBookingPress,
+  onOpenNotifications,
 }: HomeScreenProps) {
   const [services, setServices] = useState<HomeService[]>([])
   const [address, setAddress] = useState('Current location')
@@ -84,6 +96,8 @@ export default function HomeScreen({
   const [promotions, setPromotions] = useState<HomePromotion[]>([])
   const [contentLoading, setContentLoading] = useState(true)
   const [contentError, setContentError] = useState('')
+  const [unreadNotificationCount, setUnreadNotificationCount] =
+    useState(0)
   const automaticLocationRequestStarted = useRef(false)
 const [
   activeBookings,
@@ -94,6 +108,29 @@ const [
   activeBookingsLoading,
   setActiveBookingsLoading,
 ] = useState(true)
+
+  const loadUnreadNotificationCount = useCallback(
+    async () => {
+      try {
+        const count =
+          await getUnreadCustomerNotificationCount()
+
+        setUnreadNotificationCount(count)
+      } catch (error) {
+        console.error(
+          'Unread notification count error:',
+          error,
+        )
+      }
+    },
+    [],
+  )
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadUnreadNotificationCount()
+    }, [loadUnreadNotificationCount]),
+  )
   const serviceCategories = Array.from(
     new Map(
       services
@@ -699,6 +736,39 @@ const [
                 ›
               </Text>
             </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.notificationButton}
+            activeOpacity={0.82}
+            onPress={onOpenNotifications}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            accessibilityHint="View your notifications"
+          >
+            <View
+              style={styles.notificationBell}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              <View style={styles.notificationBellBody} />
+              <View style={styles.notificationBellBase} />
+              <View style={styles.notificationBellClapper} />
+            </View>
+
+            {unreadNotificationCount > 0 ? (
+              <View
+                style={styles.notificationBadge}
+                accessible={false}
+                importantForAccessibility="no"
+              >
+                <Text style={styles.notificationBadgeText}>
+                  {formatUnreadNotificationCount(
+                    unreadNotificationCount,
+                  )}
+                </Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
         </View>
 
@@ -1795,6 +1865,71 @@ const styles = StyleSheet.create({
   logo: {
     width: 118,
     height: 40,
+  },
+
+  notificationButton: {
+    width: 44,
+    height: 44,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  notificationBell: {
+    width: 26,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+
+  notificationBellBody: {
+    position: 'absolute',
+    top: 2,
+    width: 18,
+    height: 19,
+    borderWidth: 2,
+    borderColor: COLORS.primaryDark,
+    borderRadius: 9,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+  },
+
+  notificationBellBase: {
+    width: 22,
+    height: 2,
+    marginBottom: 3,
+    borderRadius: 1,
+    backgroundColor: COLORS.primaryDark,
+  },
+
+  notificationBellClapper: {
+    position: 'absolute',
+    bottom: 0,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.primaryDark,
+  },
+
+  notificationBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.danger,
+  },
+
+  notificationBadgeText: {
+    fontSize: 9,
+    lineHeight: 11,
+    fontWeight: '900',
+    color: COLORS.white,
   },
 
   locationPill: {

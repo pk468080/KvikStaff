@@ -161,7 +161,7 @@ export default function CustomerNavigator({
                 ),
               }}
             >
-              {() => (
+              {({ navigation }) => (
                <HomeScreen
   location={location}
   onLocationChange={
@@ -181,6 +181,14 @@ export default function CustomerNavigator({
       },
     )
   }}
+    onOpenNotifications={() =>
+      navigation.navigate(
+        'My Profile',
+        {
+          screen: 'Notifications',
+        },
+      )
+    }
 />
               )}
             </Tab.Screen>

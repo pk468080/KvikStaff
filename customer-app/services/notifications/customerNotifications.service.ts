@@ -81,6 +81,51 @@ async function getCurrentCustomerId(): Promise<string> {
   return user.id
 }
 
+export function formatUnreadNotificationCount(
+  count: number,
+): string {
+  const safeCount = Number.isFinite(count)
+    ? Math.max(0, Math.floor(count))
+    : 0
+
+  return safeCount >= 100
+    ? '99+'
+    : String(safeCount)
+}
+
+export async function getUnreadCustomerNotificationCount(): Promise<number> {
+  const customerId =
+    await getCurrentCustomerId()
+
+  const {
+    count,
+    error,
+  } = await supabase
+    .from('notifications')
+    .select('id', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('user_id', customerId)
+    .eq('is_read', false)
+
+  if (error) {
+    throw error
+  }
+
+  if (
+    typeof count !== 'number' ||
+    !Number.isFinite(count)
+  ) {
+    return 0
+  }
+
+  return Math.min(
+    Number.MAX_SAFE_INTEGER,
+    Math.max(0, Math.floor(count)),
+  )
+}
+
 export async function registerCustomerPushToken(
   token: string,
   platform?:
