@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native'
 import * as Location from 'expo-location'
+import { Ionicons } from '@expo/vector-icons'
 import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
 
 import {
@@ -1700,11 +1701,12 @@ function ServiceCard({
               Book
             </Text>
 
-            <Text
-              style={styles.bookArrow}
-            >
-              →
-            </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={16}
+              color={COLORS.primaryDark}
+              style={{ marginLeft: 4 }}
+            />
           </View>
         </View>
       </View>
@@ -2361,14 +2363,6 @@ gridCardContent: {
   book: {
     fontSize: 11,
     fontWeight: '900',
-    color: COLORS.primaryDark,
-  },
-
-  bookArrow: {
-    marginLeft: 4,
-    fontSize: 14,
-    lineHeight: 14,
-    fontWeight: '800',
     color: COLORS.primaryDark,
   },
 
