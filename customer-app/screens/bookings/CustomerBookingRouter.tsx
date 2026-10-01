@@ -24,6 +24,7 @@ import RecurringBookingScreen from './RecurringBookingScreen'
 
 type CustomerBookingRouterProps = {
   bookingId: string
+  onViewInvoice: (bookingId: string) => void
   onReschedule: (
     bookingId: string,
     currentStart: string,
@@ -38,6 +39,7 @@ type BookingView =
 
 export default function CustomerBookingRouter({
   bookingId,
+  onViewInvoice,
   onReschedule,
 }: CustomerBookingRouterProps) {
   const [bookingView, setBookingView] =
@@ -156,7 +158,12 @@ export default function CustomerBookingRouter({
   }
 
   if (bookingView === 'completed') {
-    return <CompletedBookingScreen bookingId={bookingId} />
+    return (
+      <CompletedBookingScreen
+        bookingId={bookingId}
+        onViewInvoice={onViewInvoice}
+      />
+    )
   }
 
   if (bookingView === 'recurring') {

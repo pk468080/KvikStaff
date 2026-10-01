@@ -23,6 +23,9 @@ export type CustomerBooking = {
   scheduled_start: string | null
   scheduled_end: string | null
   total_working_hours: number | null
+  discount_amount: number
+  platform_fee: number
+  tax_amount: number
   total_amount: number | null
   worker_id: string | null
   started_at: string | null
@@ -85,6 +88,9 @@ type BookingRow = {
   scheduled_start: string | null
   scheduled_end: string | null
   total_working_hours: number | null
+  discount_amount: number
+  platform_fee: number
+  tax_amount: number
   total_amount: number | null
   worker_id: string | null
   started_at: string | null
@@ -136,6 +142,15 @@ function mapBooking(
     total_working_hours:
       row.total_working_hours,
 
+    discount_amount:
+      row.discount_amount,
+
+    platform_fee:
+      row.platform_fee,
+
+    tax_amount:
+      row.tax_amount,
+
     total_amount:
       row.total_amount,
 
@@ -171,6 +186,9 @@ const BOOKING_SELECT = `
   scheduled_start,
   scheduled_end,
   total_working_hours,
+  discount_amount,
+  platform_fee,
+  tax_amount,
   total_amount,
   worker_id,
   started_at,

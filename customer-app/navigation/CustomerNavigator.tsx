@@ -19,6 +19,7 @@ import CustomerBookingRouter from '../screens/bookings/CustomerBookingRouter'
 import MyBookingsScreen from '../screens/bookings/MyBookingsScreen'
 import HomeScreen from '../screens/home/HomeScreen'
 import PaymentScreen from '../screens/payment/PaymentScreen'
+import InvoiceReceiptScreen from '../screens/bookings/InvoiceReceiptScreen'
 import CustomerProfileNavigator from './CustomerProfileNavigator'
 
 import {
@@ -87,6 +88,10 @@ export type CustomerStackParamList = {
   }
 
   ActiveBooking: {
+    bookingId: string
+  }
+
+  InvoiceReceipt: {
     bookingId: string
   }
 }
@@ -612,6 +617,12 @@ export default function CustomerNavigator({
             bookingId={
               route.params.bookingId
             }
+            onViewInvoice={bookingId => {
+              navigation.navigate(
+                'InvoiceReceipt',
+                { bookingId },
+              )
+            }}
             onReschedule={(
               bookingId,
               currentStart,
@@ -652,6 +663,14 @@ export default function CustomerNavigator({
                 },
               )
             }
+          />
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="InvoiceReceipt">
+        {({ route }) => (
+          <InvoiceReceiptScreen
+            bookingId={route.params.bookingId}
           />
         )}
       </Stack.Screen>

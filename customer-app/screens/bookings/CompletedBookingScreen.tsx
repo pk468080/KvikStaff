@@ -38,6 +38,7 @@ import {
 
 type CompletedBookingScreenProps = {
   bookingId: string
+  onViewInvoice: (bookingId: string) => void
 }
 
 const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
@@ -101,6 +102,7 @@ function InfoRow({
 
 export default function CompletedBookingScreen({
   bookingId,
+  onViewInvoice,
 }: CompletedBookingScreenProps) {
   const [booking, setBooking] = useState<CustomerBooking | null>(null)
   const [loading, setLoading] = useState(true)
@@ -347,6 +349,15 @@ export default function CompletedBookingScreen({
             value={formatDateTime(booking.completed_at)}
           />
         </View>
+
+        <Pressable
+          onPress={() => onViewInvoice(booking.id)}
+          style={styles.invoiceButton}
+        >
+          <Text style={styles.invoiceButtonText}>
+            View Invoice / Receipt
+          </Text>
+        </Pressable>
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
@@ -672,6 +683,19 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   submitReviewButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  invoiceButton: {
+    marginTop: 14,
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: '#17354A',
+  },
+  invoiceButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
