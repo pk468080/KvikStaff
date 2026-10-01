@@ -54,6 +54,8 @@ const PUSH_TOKEN_SELECT = `
   updated_at
 `
 
+let currentWorkerPushToken: string | null = null
+
 function mapNotification(
   row: WorkerNotificationRow,
 ): WorkerNotification {
@@ -505,9 +507,33 @@ export async function registerWorkerPushToken(
     )
   }
 
+  currentWorkerPushToken =
+    normalizedToken
+
   return mapPushToken(
     row,
   )
+}
+
+export function clearCurrentWorkerPushToken(): void {
+  currentWorkerPushToken = null
+}
+
+export async function deactivateCurrentWorkerPushToken(): Promise<void> {
+  const token =
+    currentWorkerPushToken
+
+  if (!token) {
+    return
+  }
+
+  try {
+    await deactivateWorkerPushToken(
+      token,
+    )
+  } finally {
+    currentWorkerPushToken = null
+  }
 }
 
 export async function deactivateWorkerPushToken(

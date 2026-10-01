@@ -16,6 +16,7 @@ import {
 } from '../../context/WorkerRuntimeContext'
 
 import {
+  clearCurrentWorkerPushToken,
   registerWorkerPushToken,
 } from '../../services/notifications/workerNotifications.service'
 
@@ -166,10 +167,16 @@ export default function WorkerPushRegistration() {
 
   useEffect(() => {
     if (!session?.user?.id) {
+      clearCurrentWorkerPushToken()
+
       return
     }
 
     void registerPushToken()
+
+    return () => {
+      clearCurrentWorkerPushToken()
+    }
   }, [
     session?.user?.id,
   ])

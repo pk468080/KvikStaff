@@ -4,7 +4,7 @@ import type {
 
 import { supabase } from '../../lib/supabase'
 import {
-  deactivateActiveWorkerPushTokens,
+  deactivateCurrentWorkerPushToken,
 } from '../notifications/workerNotifications.service'
 import {
   goOffline,
@@ -743,7 +743,7 @@ export async function signOutWorker(): Promise<void> {
   }
 
   try {
-    await deactivateActiveWorkerPushTokens()
+    await deactivateCurrentWorkerPushToken()
   } catch {
     console.warn(
       'Worker push-token cleanup failed during sign out.',
