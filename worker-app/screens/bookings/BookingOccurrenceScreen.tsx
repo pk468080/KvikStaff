@@ -1402,6 +1402,10 @@ export default function BookingOccurrenceScreen({
             occurrenceId={occurrence.id}
             scheduledStart={occurrence.scheduledStart}
             scheduledEnd={occurrence.scheduledEnd}
+            allowChangeRequests={
+              occurrence.status === 'scheduled' ||
+              occurrence.status === 'assigned'
+            }
           />
         ) : null}
 

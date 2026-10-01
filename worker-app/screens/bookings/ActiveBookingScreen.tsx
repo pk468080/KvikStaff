@@ -1647,6 +1647,9 @@ export default function ActiveBookingScreen({
             bookingId={booking.id}
             scheduledStart={booking.scheduledStart}
             scheduledEnd={booking.scheduledEnd}
+            allowChangeRequests={
+              booking.status === 'assigned'
+            }
           />
         ) : null}
 

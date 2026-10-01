@@ -28,6 +28,7 @@ type WorkerBookingIssuePanelProps = {
   occurrenceId?: string | null
   scheduledStart: string
   scheduledEnd: string
+  allowChangeRequests: boolean
 }
 
 type IssueMode =
@@ -61,6 +62,7 @@ export default function WorkerBookingIssuePanel({
   occurrenceId = null,
   scheduledStart,
   scheduledEnd,
+  allowChangeRequests,
 }: WorkerBookingIssuePanelProps) {
   const [mode, setMode] =
     useState<IssueMode>(null)
@@ -193,18 +195,22 @@ export default function WorkerBookingIssuePanel({
           variant="secondary"
           onPress={openIncident}
         />
-        <AppButton
-          title="Request cancellation"
-          variant="secondary"
-          onPress={() => openChangeRequest('cancel')}
-        />
+        {allowChangeRequests ? (
+          <AppButton
+            title="Request cancellation"
+            variant="secondary"
+            onPress={() => openChangeRequest('cancel')}
+          />
+        ) : null}
       </View>
 
-      <AppButton
-        title="Request reschedule"
-        variant="secondary"
-        onPress={() => openChangeRequest('reschedule')}
-      />
+      {allowChangeRequests ? (
+        <AppButton
+          title="Request reschedule"
+          variant="secondary"
+          onPress={() => openChangeRequest('reschedule')}
+        />
+      ) : null}
 
       <Modal
         visible={mode !== null}
