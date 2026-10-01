@@ -4,6 +4,12 @@ import type {
 
 import { supabase } from '../../lib/supabase'
 import {
+  deactivateActiveWorkerPushTokens,
+} from '../notifications/workerNotifications.service'
+import {
+  goOffline,
+} from '../worker/workerPresence.service'
+import {
   getCurrentWorkerApplication,
 } from '../../services/onboarding/workerApplication.service'
 import type {
@@ -728,6 +734,22 @@ export async function refreshWorkerSession(): Promise<Session | null> {
 }
 
 export async function signOutWorker(): Promise<void> {
+  try {
+    await goOffline()
+  } catch {
+    console.warn(
+      'Worker presence cleanup failed during sign out.',
+    )
+  }
+
+  try {
+    await deactivateActiveWorkerPushTokens()
+  } catch {
+    console.warn(
+      'Worker push-token cleanup failed during sign out.',
+    )
+  }
+
   const {
     error,
   } =

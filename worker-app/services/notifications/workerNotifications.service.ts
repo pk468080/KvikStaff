@@ -421,6 +421,35 @@ export async function getWorkerPushTokens(
   )
 }
 
+export async function deactivateActiveWorkerPushTokens(): Promise<void> {
+  const tokens =
+    await getWorkerPushTokens()
+
+  const activeTokenIds =
+    tokens
+      .filter(token => token.isActive)
+      .map(token => token.id)
+
+  const results =
+    await Promise.allSettled(
+      activeTokenIds.map(tokenId =>
+        deactivateWorkerPushTokenById(
+          tokenId,
+        ),
+      ),
+    )
+
+  if (
+    results.some(
+      result => result.status === 'rejected',
+    )
+  ) {
+    throw new Error(
+      'One or more worker push tokens could not be deactivated.',
+    )
+  }
+}
+
 export async function registerWorkerPushToken(
   token: string,
   platform?: WorkerPushPlatform | null,
