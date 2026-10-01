@@ -33,6 +33,13 @@ export type ReviewSubmissionInput = {
   reviewText?: string | null
 }
 
+export type CustomerReviewableOccurrence = {
+  id: string
+  worker_id: string | null
+  occurrence_index: number
+  status: string
+}
+
 export function normalizeReviewSubmission({
   rating,
   reviewText,
@@ -154,12 +161,7 @@ export async function getCustomerReviewForBooking(
 
 export async function getReviewableOccurrencesForBooking(
   bookingId: string,
-): Promise<Array<{
-  id: string
-  worker_id: string | null
-  occurrence_index: number
-  status: string
-}>> {
+): Promise<CustomerReviewableOccurrence[]> {
   const {
     data,
     error,
@@ -178,12 +180,7 @@ export async function getReviewableOccurrencesForBooking(
     throw error
   }
 
-  return (data ?? []) as Array<{
-    id: string
-    worker_id: string | null
-    occurrence_index: number
-    status: string
-  }>
+  return (data ?? []) as CustomerReviewableOccurrence[]
 }
 
 export async function resolveCompletedOccurrenceForReview(

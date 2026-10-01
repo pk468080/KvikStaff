@@ -29,10 +29,12 @@ import {
 
 import {
   getCustomerReviewForBooking,
+  getReviewableOccurrencesForBooking,
   getReviewEligibilityError,
   normalizeReviewSubmission,
   resolveCompletedOccurrenceForReview,
   submitCustomerBookingReview,
+  type CustomerReviewableOccurrence,
   type CustomerReview,
 } from '../../services/reviews/review.service'
 
@@ -116,6 +118,12 @@ export default function CompletedBookingScreen({
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [reviewOccurrenceId, setReviewOccurrenceId] = useState<string | null>(null)
   const [reviewWorkerId, setReviewWorkerId] = useState<string | null>(null)
+  const [reviewableOccurrences, setReviewableOccurrences] = useState<
+    CustomerReviewableOccurrence[]
+  >([])
+  const [occurrenceReviews, setOccurrenceReviews] = useState<
+    Record<string, CustomerReview | null>
+  >({})
 
   const loadBooking = useCallback(
     async (isRefresh = false) => {
@@ -134,17 +142,63 @@ export default function CompletedBookingScreen({
           )
         }
 
-        const nextReviewMeta = await resolveCompletedOccurrenceForReview(bookingId)
-        const nextReview = await getCustomerReviewForBooking(
-          bookingId,
-          nextReviewMeta.occurrenceId,
-        )
+        if (nextBooking.booking_type === 'recurring') {
+          const nextOccurrences =
+            await getReviewableOccurrencesForBooking(
+              bookingId,
+            )
+          const nextOccurrenceReviews: Record<
+            string,
+            CustomerReview | null
+          > = {}
 
-        setReview(nextReview)
-        setReviewOccurrenceId(nextReviewMeta.occurrenceId)
-        setReviewWorkerId(nextReviewMeta.workerId)
-        setReviewText(nextReview?.comment ?? '')
-        setReviewRating(nextReview?.rating ?? 5)
+          await Promise.all(
+            nextOccurrences.map(
+              async occurrence => {
+                nextOccurrenceReviews[occurrence.id] =
+                  await getCustomerReviewForBooking(
+                    bookingId,
+                    occurrence.id,
+                  )
+              },
+            ),
+          )
+
+          setReviewableOccurrences(
+            nextOccurrences,
+          )
+          setOccurrenceReviews(
+            nextOccurrenceReviews,
+          )
+          setReview(null)
+          setReviewOccurrenceId(null)
+          setReviewWorkerId(null)
+          setReviewText('')
+          setReviewRating(5)
+        } else {
+          const nextReviewMeta =
+            await resolveCompletedOccurrenceForReview(
+              bookingId,
+            )
+          const nextReview =
+            await getCustomerReviewForBooking(
+              bookingId,
+              nextReviewMeta.occurrenceId,
+            )
+
+          setReviewableOccurrences([])
+          setOccurrenceReviews({})
+          setReview(nextReview)
+          setReviewOccurrenceId(
+            nextReviewMeta.occurrenceId,
+          )
+          setReviewWorkerId(
+            nextReviewMeta.workerId,
+          )
+          setReviewText(nextReview?.comment ?? '')
+          setReviewRating(nextReview?.rating ?? 5)
+        }
+
         setReviewError(null)
         setBooking(nextBooking)
         setError(null)
@@ -172,15 +226,38 @@ export default function CompletedBookingScreen({
     hasExistingReview: Boolean(review),
   })
 
+  function selectOccurrenceForReview(
+    occurrence: CustomerReviewableOccurrence,
+  ) {
+    const nextReview =
+      occurrenceReviews[occurrence.id] ?? null
+
+    setReviewOccurrenceId(occurrence.id)
+    setReviewWorkerId(occurrence.worker_id)
+    setReview(nextReview)
+    setReviewText(nextReview?.comment ?? '')
+    setReviewRating(nextReview?.rating ?? 5)
+    setReviewError(null)
+  }
+
   const canSubmitReview =
     booking?.status === 'completed' &&
     Boolean(reviewWorkerId) &&
+    (booking.booking_type !== 'recurring' ||
+      Boolean(reviewOccurrenceId)) &&
     !review &&
     !reviewSubmitting &&
     !reviewEligibilityError
 
   async function handleSubmitReview() {
-    if (!booking || !reviewWorkerId || reviewSubmitting || review) {
+    if (
+      !booking ||
+      !reviewWorkerId ||
+      reviewSubmitting ||
+      review ||
+      (booking.booking_type === 'recurring' &&
+        !reviewOccurrenceId)
+    ) {
       return
     }
 
@@ -199,6 +276,18 @@ export default function CompletedBookingScreen({
         rating: normalized.rating,
         reviewText: normalized.reviewText,
       })
+
+      if (
+        booking.booking_type === 'recurring' &&
+        reviewOccurrenceId
+      ) {
+        setOccurrenceReviews(
+          current => ({
+            ...current,
+            [reviewOccurrenceId]: nextReview,
+          }),
+        )
+      }
 
       setReview(nextReview)
       setReviewText(nextReview.comment ?? '')
@@ -359,99 +448,257 @@ export default function CompletedBookingScreen({
           </Text>
         </Pressable>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            {review ? 'Your review' : 'Rate your experience'}
-          </Text>
+        {booking.booking_type === 'recurring' ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Occurrence reviews</Text>
+            <Text style={styles.reviewEligibilityText}>
+              Review each completed service occurrence separately.
+            </Text>
 
-          {review ? (
-            <View>
-              <View style={styles.reviewSummaryRow}>
-                {[1, 2, 3, 4, 5].map(star => (
-                  <Text
-                    key={star}
-                    style={[
-                      styles.starText,
-                      star <= review.rating ? styles.starFilled : null,
-                    ]}
+            {reviewableOccurrences.length === 0 ? (
+              <Text style={styles.occurrenceEmptyText}>
+                No completed occurrences are available for review yet.
+              </Text>
+            ) : (
+              reviewableOccurrences.map(occurrence => {
+                const occurrenceReview =
+                  occurrenceReviews[occurrence.id] ?? null
+                const occurrenceEligibilityError =
+                  getReviewEligibilityError({
+                    bookingStatus: booking.status,
+                    hasWorker: Boolean(occurrence.worker_id),
+                    hasExistingReview: Boolean(occurrenceReview),
+                  })
+                const isSelected =
+                  reviewOccurrenceId === occurrence.id
+
+                return (
+                  <View
+                    key={occurrence.id}
+                    style={styles.occurrenceReviewCard}
                   >
-                    {star <= review.rating ? '★' : '☆'}
-                  </Text>
-                ))}
-              </View>
+                    <View style={styles.occurrenceHeader}>
+                      <Text style={styles.occurrenceTitle}>
+                        Occurrence {occurrence.occurrence_index + 1}
+                      </Text>
+                      <Text style={styles.occurrenceStatus}>
+                        Completed
+                      </Text>
+                    </View>
 
-              {review.comment ? (
-                <Text style={styles.reviewText}>{review.comment}</Text>
-              ) : (
-                <Text style={styles.reviewTextMuted}>
-                  No written feedback was provided.
-                </Text>
-              )}
+                    {occurrenceReview ? (
+                      <View>
+                        <View style={styles.reviewSummaryRow}>
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Text
+                              key={star}
+                              style={[
+                                styles.starText,
+                                star <= occurrenceReview.rating
+                                  ? styles.starFilled
+                                  : null,
+                              ]}
+                            >
+                              {star <= occurrenceReview.rating ? '★' : '☆'}
+                            </Text>
+                          ))}
+                        </View>
 
-              <Text style={styles.reviewSubmittedBadge}>Reviewed</Text>
-            </View>
-          ) : (
-            <View>
-              {reviewEligibilityError ? (
-                <Text style={styles.reviewEligibilityText}>
-                  {reviewEligibilityError}
-                </Text>
-              ) : (
-                <>
-                  <View style={styles.reviewSummaryRow}>
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <TouchableOpacity
-                        key={star}
-                        activeOpacity={0.8}
-                        onPress={() => setReviewRating(star)}
-                        hitSlop={8}
-                      >
-                        <Text
-                          style={[
-                            styles.starText,
-                            star <= reviewRating ? styles.starFilled : null,
-                          ]}
-                        >
-                          {star <= reviewRating ? '★' : '☆'}
+                        {occurrenceReview.comment ? (
+                          <Text style={styles.reviewText}>
+                            {occurrenceReview.comment}
+                          </Text>
+                        ) : (
+                          <Text style={styles.reviewTextMuted}>
+                            No written feedback was provided.
+                          </Text>
+                        )}
+
+                        <Text style={styles.reviewSubmittedBadge}>
+                          Reviewed
                         </Text>
-                      </TouchableOpacity>
-                    ))}
+                      </View>
+                    ) : isSelected ? (
+                      occurrenceEligibilityError ? (
+                        <Text style={styles.reviewEligibilityText}>
+                          {occurrenceEligibilityError}
+                        </Text>
+                      ) : (
+                        <>
+                          <View style={styles.reviewSummaryRow}>
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <TouchableOpacity
+                                key={star}
+                                activeOpacity={0.8}
+                                onPress={() => setReviewRating(star)}
+                                hitSlop={8}
+                              >
+                                <Text
+                                  style={[
+                                    styles.starText,
+                                    star <= reviewRating
+                                      ? styles.starFilled
+                                      : null,
+                                  ]}
+                                >
+                                  {star <= reviewRating ? '★' : '☆'}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+
+                          <TextInput
+                            value={reviewText}
+                            onChangeText={setReviewText}
+                            placeholder="How was your experience?"
+                            placeholderTextColor="#7B8D98"
+                            multiline
+                            maxLength={2000}
+                            style={styles.reviewInput}
+                            textAlignVertical="top"
+                          />
+
+                          {reviewError ? (
+                            <Text style={styles.reviewError}>
+                              {reviewError}
+                            </Text>
+                          ) : null}
+
+                          <Pressable
+                            disabled={!canSubmitReview}
+                            onPress={() => {
+                              void handleSubmitReview()
+                            }}
+                            style={[
+                              styles.submitReviewButton,
+                              !canSubmitReview &&
+                                styles.submitReviewButtonDisabled,
+                            ]}
+                          >
+                            <Text style={styles.submitReviewButtonText}>
+                              {reviewSubmitting
+                                ? 'Submitting...'
+                                : 'Submit Review'}
+                            </Text>
+                          </Pressable>
+                        </>
+                      )
+                    ) : occurrenceEligibilityError ? (
+                      <Text style={styles.reviewEligibilityText}>
+                        {occurrenceEligibilityError}
+                      </Text>
+                    ) : (
+                      <Pressable
+                        onPress={() =>
+                          selectOccurrenceForReview(occurrence)
+                        }
+                        style={styles.occurrenceActionButton}
+                      >
+                        <Text style={styles.occurrenceActionButtonText}>
+                          Rate this service
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
+                )
+              })
+            )}
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>
+              {review ? 'Your review' : 'Rate your experience'}
+            </Text>
 
-                  <TextInput
-                    value={reviewText}
-                    onChangeText={setReviewText}
-                    placeholder="How was your experience?"
-                    placeholderTextColor="#7B8D98"
-                    multiline
-                    maxLength={2000}
-                    style={styles.reviewInput}
-                    textAlignVertical="top"
-                  />
-
-                  {reviewError ? (
-                    <Text style={styles.reviewError}>{reviewError}</Text>
-                  ) : null}
-
-                  <Pressable
-                    disabled={!canSubmitReview}
-                    onPress={() => {
-                      void handleSubmitReview()
-                    }}
-                    style={[
-                      styles.submitReviewButton,
-                      !canSubmitReview && styles.submitReviewButtonDisabled,
-                    ]}
-                  >
-                    <Text style={styles.submitReviewButtonText}>
-                      {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+            {review ? (
+              <View>
+                <View style={styles.reviewSummaryRow}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Text
+                      key={star}
+                      style={[
+                        styles.starText,
+                        star <= review.rating ? styles.starFilled : null,
+                      ]}
+                    >
+                      {star <= review.rating ? '★' : '☆'}
                     </Text>
-                  </Pressable>
-                </>
-              )}
-            </View>
-          )}
-        </View>
+                  ))}
+                </View>
+
+                {review.comment ? (
+                  <Text style={styles.reviewText}>{review.comment}</Text>
+                ) : (
+                  <Text style={styles.reviewTextMuted}>
+                    No written feedback was provided.
+                  </Text>
+                )}
+
+                <Text style={styles.reviewSubmittedBadge}>Reviewed</Text>
+              </View>
+            ) : (
+              <View>
+                {reviewEligibilityError ? (
+                  <Text style={styles.reviewEligibilityText}>
+                    {reviewEligibilityError}
+                  </Text>
+                ) : (
+                  <>
+                    <View style={styles.reviewSummaryRow}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <TouchableOpacity
+                          key={star}
+                          activeOpacity={0.8}
+                          onPress={() => setReviewRating(star)}
+                          hitSlop={8}
+                        >
+                          <Text
+                            style={[
+                              styles.starText,
+                              star <= reviewRating ? styles.starFilled : null,
+                            ]}
+                          >
+                            {star <= reviewRating ? '★' : '☆'}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    <TextInput
+                      value={reviewText}
+                      onChangeText={setReviewText}
+                      placeholder="How was your experience?"
+                      placeholderTextColor="#7B8D98"
+                      multiline
+                      maxLength={2000}
+                      style={styles.reviewInput}
+                      textAlignVertical="top"
+                    />
+
+                    {reviewError ? (
+                      <Text style={styles.reviewError}>{reviewError}</Text>
+                    ) : null}
+
+                    <Pressable
+                      disabled={!canSubmitReview}
+                      onPress={() => {
+                        void handleSubmitReview()
+                      }}
+                      style={[
+                        styles.submitReviewButton,
+                        !canSubmitReview && styles.submitReviewButtonDisabled,
+                      ]}
+                    >
+                      <Text style={styles.submitReviewButtonText}>
+                        {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.idCard}>
           <Text style={styles.idLabel}>BOOKING ID</Text>
@@ -664,6 +911,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     color: '#6B7F8D',
+  },
+  occurrenceEmptyText: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#6B7F8D',
+  },
+  occurrenceReviewCard: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#EDF2F5',
+  },
+  occurrenceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  occurrenceTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#29465A',
+  },
+  occurrenceStatus: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#27734A',
+  },
+  occurrenceActionButton: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#E8F7F7',
+  },
+  occurrenceActionButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#008A88',
   },
   reviewError: {
     marginTop: 10,
