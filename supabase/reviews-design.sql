@@ -1,99 +1,56 @@
--- Design artifact only. This file documents the migration that should be applied
--- by the project owner in the production Supabase project during the final release.
--- It is intentionally not executed here.
+-- Design artifact only: this reflects the currently existing reviews table contract
+-- used by the app code. It is not a migration and should not be executed directly.
+-- It documents the required runtime behavior and the constraints that must be
+-- preserved in the live Supabase project.
 
-CREATE TABLE public.reviews (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  booking_id uuid NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
-  occurrence_id uuid NULL REFERENCES public.booking_schedule_occurrences(id) ON DELETE CASCADE,
-  customer_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  worker_id uuid NOT NULL REFERENCES public.worker_profiles(id) ON DELETE RESTRICT,
-  rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  review_text text NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT reviews_booking_occurrence_scope
-    CHECK (
-      (occurrence_id IS NULL AND booking_id IS NOT NULL)
-      OR (occurrence_id IS NOT NULL AND booking_id IS NOT NULL)
-    )
-);
+-- Actual current table contract (from the generated TypeScript schema):
+-- public.reviews
+--   id: uuid
+--   booking_id: uuid not null
+--   comment: text nullable
+--   created_at: timestamptz not null
+--   customer_id: uuid not null
+--   moderated_at: timestamptz nullable
+--   moderated_by: uuid nullable
+--   moderation_reason: text nullable
+--   moderation_status: text not null
+--   occurrence_id: uuid nullable
+--   rating: integer not null
+--   worker_id: uuid not null
+--
+-- Relationship summary:
+--   reviews.booking_id -> bookings.id
+--   reviews.customer_id -> profiles.id
+--   reviews.occurrence_id -> booking_schedule_occurrences.id
+--   reviews.worker_id -> worker_profiles.id
+--   reviews.moderated_by -> profiles.id
+--
+-- The app expects the existing column name to remain comment and does not use
+-- review_text or updated_at on the live table.
 
-CREATE UNIQUE INDEX reviews_one_per_booking
-  ON public.reviews (booking_id)
-  WHERE occurrence_id IS NULL;
+/*
+-- The live table should preserve these invariants:
+-- 1. Each customer review belongs to the authenticated customer.
+-- 2. Reviews are scoped to the booking and optionally to a specific occurrence.
+-- 3. A completed booking can only be reviewed by its own customer.
+-- 4. A recurring booking must use the actual completed occurrence worker, not a
+--    client-supplied arbitrary worker_id.
+-- 5. One review per booking/occurrence scope is required.
+-- 6. Only completed bookings / completed occurrences are eligible.
+-- 7. Moderation state and moderator metadata are retained for admin review.
+--
+-- The production DB must continue to enforce this with DB-side constraints and RLS:
+--   - customer_id = auth.uid()
+--   - booking.customer_id = auth.uid()
+--   - booking.status = 'completed'
+--   - occurrence.status = 'completed' for recurring bookings
+--   - occurrence.worker_id = reviews.worker_id
+--   - unique per booking when occurrence_id IS NULL
+--   - unique per occurrence when occurrence_id IS NOT NULL
+--   - selective customer read policies; no cross-customer review access
+-- */
 
-CREATE UNIQUE INDEX reviews_one_per_occurrence
-  ON public.reviews (occurrence_id)
-  WHERE occurrence_id IS NOT NULL;
-
-CREATE INDEX reviews_customer_id_idx ON public.reviews (customer_id);
-CREATE INDEX reviews_worker_id_idx ON public.reviews (worker_id);
-
-CREATE OR REPLACE FUNCTION public.set_reviews_updated_at()
-RETURNS trigger
-LANGUAGE plpgsql AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER reviews_set_updated_at
-BEFORE UPDATE ON public.reviews
-FOR EACH ROW
-EXECUTE FUNCTION public.set_reviews_updated_at();
-
-ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Customers can read their own reviews"
-ON public.reviews
-FOR SELECT
-USING (auth.uid() = customer_id);
-
-CREATE POLICY "Customers can insert their own review for their own completed booking"
-ON public.reviews
-FOR INSERT
-WITH CHECK (
-  auth.uid() = customer_id
-  AND EXISTS (
-    SELECT 1 FROM public.bookings b
-    WHERE b.id = reviews.booking_id
-      AND b.customer_id = auth.uid()
-      AND b.status = 'completed'
-  )
-  AND (
-    reviews.occurrence_id IS NULL
-    OR EXISTS (
-      SELECT 1 FROM public.booking_schedule_occurrences o
-      WHERE o.id = reviews.occurrence_id
-        AND o.booking_id = reviews.booking_id
-        AND o.status = 'completed'
-        AND o.worker_id = reviews.worker_id
-    )
-  )
-  AND NOT EXISTS (
-    SELECT 1 FROM public.reviews existing
-    WHERE existing.booking_id = reviews.booking_id
-      AND (
-        reviews.occurrence_id IS NULL
-          AND existing.occurrence_id IS NULL
-        OR reviews.occurrence_id IS NOT NULL
-          AND existing.occurrence_id = reviews.occurrence_id
-      )
-  )
-);
-
-CREATE POLICY "Customers can update only their own reviews"
-ON public.reviews
-FOR UPDATE
-USING (auth.uid() = customer_id)
-WITH CHECK (auth.uid() = customer_id);
-
-CREATE POLICY "Customers can delete only their own reviews"
-ON public.reviews
-FOR DELETE
-USING (auth.uid() = customer_id);
-
--- Optional public read policy for aggregated worker/service metrics can be added
--- later without exposing customer private review content.
+-- NOTE: this file intentionally avoids redefining the table in a way that would
+-- conflict with the live schema. A future migration, if required, must be based
+-- on the actual existing table contract and should not rename comment to
+-- review_text or invent a new updated_at column without the production schema.

@@ -6,8 +6,9 @@ import {
 import 'react-native-url-polyfill/auto'
 
 if (
-  typeof localStorage !== 'undefined' &&
-  !process.env.JEST_WORKER_ID
+  !process.env.JEST_WORKER_ID &&
+  Platform.OS !== 'web' &&
+  typeof globalThis.localStorage === 'undefined'
 ) {
   require('expo-sqlite/localStorage/install')
 }

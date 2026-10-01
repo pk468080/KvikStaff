@@ -8,6 +8,13 @@ export type ReviewEligibilityInput = {
   hasExistingReview: boolean
 }
 
+export type ReviewOccurrenceValidationInput = {
+  bookingStatus: string | null
+  occurrenceStatus: string | null
+  occurrenceWorkerId: string | null
+  expectedWorkerId?: string | null
+}
+
 export type CustomerReview = {
   id: string
   booking_id: string
@@ -84,6 +91,34 @@ export function getReviewEligibilityError({
   return null
 }
 
+export function validateReviewOccurrenceTarget({
+  bookingStatus,
+  occurrenceStatus,
+  occurrenceWorkerId,
+  expectedWorkerId,
+}: ReviewOccurrenceValidationInput): string | null {
+  if (bookingStatus !== 'completed') {
+    return 'This booking is not eligible for a review.'
+  }
+
+  if (occurrenceStatus !== 'completed') {
+    return 'This booking is not eligible for a review.'
+  }
+
+  if (!occurrenceWorkerId) {
+    return 'This booking does not have an assigned worker to review.'
+  }
+
+  if (
+    expectedWorkerId &&
+    occurrenceWorkerId !== expectedWorkerId
+  ) {
+    return 'This worker did not complete this occurrence.'
+  }
+
+  return null
+}
+
 export async function getCustomerReviewForBooking(
   bookingId: string,
   occurrenceId?: string | null,
@@ -117,8 +152,43 @@ export async function getCustomerReviewForBooking(
   return data as CustomerReview
 }
 
+export async function getReviewableOccurrencesForBooking(
+  bookingId: string,
+): Promise<Array<{
+  id: string
+  worker_id: string | null
+  occurrence_index: number
+  status: string
+}>> {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from('booking_schedule_occurrences')
+    .select(
+      'id, worker_id, status, occurrence_index',
+    )
+    .eq('booking_id', bookingId)
+    .eq('status', 'completed')
+    .order('occurrence_index', {
+      ascending: true,
+    })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as Array<{
+    id: string
+    worker_id: string | null
+    occurrence_index: number
+    status: string
+  }>
+}
+
 export async function resolveCompletedOccurrenceForReview(
   bookingId: string,
+  occurrenceId?: string | null,
 ): Promise<{
   occurrenceId: string | null
   workerId: string | null
@@ -159,29 +229,43 @@ export async function resolveCompletedOccurrenceForReview(
     }
   }
 
-  const {
-    data: occurrence,
-    error: occurrenceError,
-  } = await supabase
-    .from('booking_schedule_occurrences')
-    .select(
-      'id, worker_id, status, occurrence_index',
-    )
-    .eq('booking_id', bookingId)
-    .eq('status', 'completed')
-    .order('occurrence_index', {
-      ascending: false,
-    })
-    .limit(1)
-    .maybeSingle()
+  if (occurrenceId) {
+    const {
+      data: occurrence,
+      error: occurrenceError,
+    } = await supabase
+      .from('booking_schedule_occurrences')
+      .select(
+        'id, worker_id, status, occurrence_index',
+      )
+      .eq('id', occurrenceId)
+      .eq('booking_id', bookingId)
+      .maybeSingle()
 
-  if (occurrenceError) {
-    throw occurrenceError
+    if (occurrenceError) {
+      throw occurrenceError
+    }
+
+    if (!occurrence || occurrence.status !== 'completed') {
+      return {
+        occurrenceId: null,
+        workerId: null,
+      }
+    }
+
+    return {
+      occurrenceId: occurrence.id,
+      workerId: occurrence.worker_id ?? booking.worker_id ?? null,
+    }
   }
 
+  const occurrences = await getReviewableOccurrencesForBooking(bookingId)
+
+  const nextOccurrence = occurrences[0]
+
   return {
-    occurrenceId: occurrence?.id ?? null,
-    workerId: occurrence?.worker_id ?? booking.worker_id ?? null,
+    occurrenceId: nextOccurrence?.id ?? null,
+    workerId: nextOccurrence?.worker_id ?? booking.worker_id ?? null,
   }
 }
 
@@ -243,32 +327,15 @@ export async function submitCustomerBookingReview({
 
   if (booking.fulfillment_type === 'recurring') {
     if (!resolvedOccurrenceId) {
-      const {
-        data: completedOccurrence,
-        error: occurrenceError,
-      } = await supabase
-        .from('booking_schedule_occurrences')
-        .select(
-          'id, worker_id, status, occurrence_index',
-        )
-        .eq('booking_id', bookingId)
-        .eq('status', 'completed')
-        .order('occurrence_index', {
-          ascending: false,
-        })
-        .limit(1)
-        .maybeSingle()
+      const occurrences = await getReviewableOccurrencesForBooking(bookingId)
 
-      if (occurrenceError) {
-        throw occurrenceError
-      }
-
-      if (!completedOccurrence) {
+      if (occurrences.length === 0) {
         throw new Error(
           'This booking is not eligible for a review.',
         )
       }
 
+      const completedOccurrence = occurrences[0]
       resolvedOccurrenceId = completedOccurrence.id
       resolvedWorkerId = completedOccurrence.worker_id ?? resolvedWorkerId
     } else {
@@ -281,6 +348,7 @@ export async function submitCustomerBookingReview({
           'id, worker_id, status',
         )
         .eq('id', resolvedOccurrenceId)
+        .eq('booking_id', bookingId)
         .maybeSingle()
 
       if (occurrenceError) {
@@ -294,6 +362,36 @@ export async function submitCustomerBookingReview({
       }
 
       resolvedWorkerId = occurrence.worker_id ?? resolvedWorkerId
+    }
+  }
+
+  if (
+    booking.fulfillment_type === 'recurring' &&
+    resolvedOccurrenceId
+  ) {
+    const occurrenceError = validateReviewOccurrenceTarget({
+      bookingStatus: booking.status,
+      occurrenceStatus: booking.fulfillment_type === 'recurring'
+        ? (await supabase
+            .from('booking_schedule_occurrences')
+            .select('status, worker_id')
+            .eq('id', resolvedOccurrenceId)
+            .eq('booking_id', bookingId)
+            .maybeSingle()).data?.status ?? null
+        : null,
+      occurrenceWorkerId: booking.fulfillment_type === 'recurring'
+        ? (await supabase
+            .from('booking_schedule_occurrences')
+            .select('status, worker_id')
+            .eq('id', resolvedOccurrenceId)
+            .eq('booking_id', bookingId)
+            .maybeSingle()).data?.worker_id ?? null
+        : null,
+      expectedWorkerId: resolvedWorkerId,
+    })
+
+    if (occurrenceError) {
+      throw new Error(occurrenceError)
     }
   }
 
