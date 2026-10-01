@@ -110,10 +110,21 @@ export default function CustomerNavigator({
   return (
     <Stack.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerBackTitle: 'Back',
+        headerTintColor: '#111827',
+        headerTitleStyle: {
+          fontSize: 17,
+          fontWeight: '700',
+        },
       }}
     >
-      <Stack.Screen name="Tabs">
+      <Stack.Screen
+        name="Tabs"
+        options={{
+          headerShown: false,
+        }}
+      >
   {({ navigation: stackNavigation }) => (
     <>
       <CustomerPushRegistration
