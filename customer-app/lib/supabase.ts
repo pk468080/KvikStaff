@@ -4,7 +4,13 @@ import {
 } from 'react-native'
 
 import 'react-native-url-polyfill/auto'
-import 'expo-sqlite/localStorage/install'
+
+if (
+  typeof localStorage !== 'undefined' &&
+  !process.env.JEST_WORKER_ID
+) {
+  require('expo-sqlite/localStorage/install')
+}
 
 import {
   createClient,
@@ -14,23 +20,32 @@ import type {
   Database,
 } from '../types/database'
 
+const isTestEnvironment = Boolean(process.env.JEST_WORKER_ID)
+
 const supabaseUrl =
-  process.env.EXPO_PUBLIC_SUPABASE_URL
+  process.env.EXPO_PUBLIC_SUPABASE_URL ??
+  (isTestEnvironment ? 'https://example.supabase.co' : undefined)
 
 const supabasePublishableKey =
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  (isTestEnvironment ? 'test-publishable-key' : undefined)
 
-if (!supabaseUrl) {
+if (!supabaseUrl && !isTestEnvironment) {
   throw new Error(
     'Missing EXPO_PUBLIC_SUPABASE_URL',
   )
 }
 
-if (!supabasePublishableKey) {
+if (!supabasePublishableKey && !isTestEnvironment) {
   throw new Error(
     'Missing EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   )
 }
+
+const storage =
+  typeof localStorage !== 'undefined'
+    ? localStorage
+    : undefined
 
 export const supabase =
   createClient<Database>(
@@ -38,7 +53,7 @@ export const supabase =
     supabasePublishableKey,
     {
       auth: {
-        storage: localStorage,
+        storage,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
@@ -54,7 +69,10 @@ export const supabase =
  *
  * This listener is intentionally registered once.
  */
-if (Platform.OS !== 'web') {
+if (
+  Platform.OS !== 'web' &&
+  !process.env.JEST_WORKER_ID
+) {
   AppState.addEventListener(
     'change',
     nextAppState => {

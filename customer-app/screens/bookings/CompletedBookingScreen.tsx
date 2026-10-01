@@ -6,12 +6,15 @@ import {
 
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native'
 
@@ -23,6 +26,15 @@ import {
   getCustomerBooking,
   type CustomerBooking,
 } from '../../services/booking/bookingTracking.service'
+
+import {
+  getCustomerReviewForBooking,
+  getReviewEligibilityError,
+  normalizeReviewSubmission,
+  resolveCompletedOccurrenceForReview,
+  submitCustomerBookingReview,
+  type CustomerReview,
+} from '../../services/reviews/review.service'
 
 type CompletedBookingScreenProps = {
   bookingId: string
@@ -95,6 +107,14 @@ export default function CompletedBookingScreen({
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [review, setReview] = useState<CustomerReview | null>(null)
+  const [reviewText, setReviewText] = useState('')
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [reviewOccurrenceId, setReviewOccurrenceId] = useState<string | null>(null)
+  const [reviewWorkerId, setReviewWorkerId] = useState<string | null>(null)
+
   const loadBooking = useCallback(
     async (isRefresh = false) => {
       if (isRefresh) {
@@ -112,6 +132,18 @@ export default function CompletedBookingScreen({
           )
         }
 
+        const nextReviewMeta = await resolveCompletedOccurrenceForReview(bookingId)
+        const nextReview = await getCustomerReviewForBooking(
+          bookingId,
+          nextReviewMeta.occurrenceId,
+        )
+
+        setReview(nextReview)
+        setReviewOccurrenceId(nextReviewMeta.occurrenceId)
+        setReviewWorkerId(nextReviewMeta.workerId)
+        setReviewText(nextReview?.comment ?? '')
+        setReviewRating(nextReview?.rating ?? 5)
+        setReviewError(null)
         setBooking(nextBooking)
         setError(null)
       } catch (cause) {
@@ -131,6 +163,59 @@ export default function CompletedBookingScreen({
   useEffect(() => {
     void loadBooking()
   }, [loadBooking])
+
+  const reviewEligibilityError = getReviewEligibilityError({
+    bookingStatus: booking?.status ?? null,
+    hasWorker: Boolean(reviewWorkerId),
+    hasExistingReview: Boolean(review),
+  })
+
+  const canSubmitReview =
+    booking?.status === 'completed' &&
+    Boolean(reviewWorkerId) &&
+    !review &&
+    !reviewSubmitting &&
+    !reviewEligibilityError
+
+  async function handleSubmitReview() {
+    if (!booking || !reviewWorkerId || reviewSubmitting || review) {
+      return
+    }
+
+    try {
+      setReviewSubmitting(true)
+      setReviewError(null)
+
+      const normalized = normalizeReviewSubmission({
+        rating: reviewRating,
+        reviewText,
+      })
+
+      const nextReview = await submitCustomerBookingReview({
+        bookingId: booking.id,
+        occurrenceId: reviewOccurrenceId,
+        rating: normalized.rating,
+        reviewText: normalized.reviewText,
+      })
+
+      setReview(nextReview)
+      setReviewText(nextReview.comment ?? '')
+      setReviewRating(nextReview.rating)
+      Alert.alert(
+        'Review submitted',
+        'Thanks for sharing your experience.',
+      )
+    } catch (cause) {
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : 'Unable to submit your review.'
+
+      setReviewError(message)
+    } finally {
+      setReviewSubmitting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -170,8 +255,6 @@ export default function CompletedBookingScreen({
       </ScreenContainer>
     )
   }
-
-
 
   return (
     <ScreenContainer>
@@ -263,6 +346,100 @@ export default function CompletedBookingScreen({
             label="Completed at"
             value={formatDateTime(booking.completed_at)}
           />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>
+            {review ? 'Your review' : 'Rate your experience'}
+          </Text>
+
+          {review ? (
+            <View>
+              <View style={styles.reviewSummaryRow}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <Text
+                    key={star}
+                    style={[
+                      styles.starText,
+                      star <= review.rating ? styles.starFilled : null,
+                    ]}
+                  >
+                    {star <= review.rating ? '★' : '☆'}
+                  </Text>
+                ))}
+              </View>
+
+              {review.comment ? (
+                <Text style={styles.reviewText}>{review.comment}</Text>
+              ) : (
+                <Text style={styles.reviewTextMuted}>
+                  No written feedback was provided.
+                </Text>
+              )}
+
+              <Text style={styles.reviewSubmittedBadge}>Reviewed</Text>
+            </View>
+          ) : (
+            <View>
+              {reviewEligibilityError ? (
+                <Text style={styles.reviewEligibilityText}>
+                  {reviewEligibilityError}
+                </Text>
+              ) : (
+                <>
+                  <View style={styles.reviewSummaryRow}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <TouchableOpacity
+                        key={star}
+                        activeOpacity={0.8}
+                        onPress={() => setReviewRating(star)}
+                        hitSlop={8}
+                      >
+                        <Text
+                          style={[
+                            styles.starText,
+                            star <= reviewRating ? styles.starFilled : null,
+                          ]}
+                        >
+                          {star <= reviewRating ? '★' : '☆'}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <TextInput
+                    value={reviewText}
+                    onChangeText={setReviewText}
+                    placeholder="How was your experience?"
+                    placeholderTextColor="#7B8D98"
+                    multiline
+                    maxLength={2000}
+                    style={styles.reviewInput}
+                    textAlignVertical="top"
+                  />
+
+                  {reviewError ? (
+                    <Text style={styles.reviewError}>{reviewError}</Text>
+                  ) : null}
+
+                  <Pressable
+                    disabled={!canSubmitReview}
+                    onPress={() => {
+                      void handleSubmitReview()
+                    }}
+                    style={[
+                      styles.submitReviewButton,
+                      !canSubmitReview && styles.submitReviewButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.submitReviewButtonText}>
+                      {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                    </Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          )}
         </View>
 
         <View style={styles.idCard}>
@@ -425,6 +602,79 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '700',
     color: '#29465A',
+  },
+  reviewSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  starText: {
+    fontSize: 30,
+    marginRight: 4,
+    color: '#D6DEE4',
+  },
+  starFilled: {
+    color: '#F5B301',
+  },
+  reviewInput: {
+    minHeight: 120,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DDE7ED',
+    backgroundColor: '#F7FBFD',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#17354A',
+  },
+  reviewText: {
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#29465A',
+  },
+  reviewTextMuted: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#6B7F8D',
+  },
+  reviewSubmittedBadge: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#EAF7EF',
+    color: '#27734A',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  reviewEligibilityText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#6B7F8D',
+  },
+  reviewError: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#B42318',
+  },
+  submitReviewButton: {
+    marginTop: 14,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: '#00A7A7',
+  },
+  submitReviewButtonDisabled: {
+    opacity: 0.45,
+  },
+  submitReviewButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
   idCard: {
     marginTop: 14,
