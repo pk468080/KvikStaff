@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 import {
   getCustomerBookings,
   type BookingStatus,
@@ -186,9 +187,15 @@ function EmptyState({
   return (
     <View style={styles.emptyCard}>
       <View style={styles.emptyIcon}>
-        <Text style={styles.emptyIconText}>
-          {filter === 'completed' ? '✓' : '＋'}
-        </Text>
+        {filter === 'completed' ? (
+          <Text style={styles.emptyIconText}>✓</Text>
+        ) : (
+          <CustomerIcon
+            name="plus"
+            size={22}
+            color="#007E80"
+          />
+        )}
       </View>
 
       <Text style={styles.emptyTitle}>

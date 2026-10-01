@@ -3,6 +3,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import CustomerIcon from '../ui/CustomerIcon'
 
 import type {
   BookingStatus,
@@ -249,11 +250,13 @@ export default function ActiveBookingHomeCard({
           </Text>
         </View>
 
-        <Text
-          style={styles.chevron}
-        >
-          ›
-        </Text>
+        <View style={styles.chevron}>
+          <CustomerIcon
+            name="chevron-right"
+            size={16}
+            color="#8AA1AC"
+          />
+        </View>
       </View>
 
       <View
@@ -331,16 +334,15 @@ export default function ActiveBookingHomeCard({
           )}
         </Text>
 
-        <View
-          style={styles.trackButton}
-        >
-          <Text
-            style={
-              styles.trackButtonText
-            }
-          >
-            Track booking →
+        <View style={styles.trackButton}>
+          <Text style={styles.trackButtonText}>
+            Track booking
           </Text>
+          <CustomerIcon
+            name="arrow-right"
+            size={12}
+            color="#FFFFFF"
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -519,9 +521,10 @@ const styles = {
 
   chevron: {
     marginLeft: 8,
-    fontSize: 27,
-    lineHeight: 28,
-    color: '#8AA1AC',
+    width: 18,
+    height: 28,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 
   timeline: {
@@ -610,6 +613,8 @@ const styles = {
   },
 
   trackButton: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     paddingHorizontal: 11,
     paddingVertical: 8,
     borderRadius: 10,
@@ -620,5 +625,6 @@ const styles = {
     fontSize: 10,
     fontWeight: '800' as const,
     color: '#FFFFFF',
+    marginRight: 5,
   },
 }

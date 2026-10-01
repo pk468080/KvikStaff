@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import CustomerIcon from '../ui/CustomerIcon'
 
 import DateTimePicker, {
   type DateTimePickerEvent,
@@ -137,9 +138,11 @@ export default function SingleDatePicker({
           </Text>
         </View>
 
-        <Text style={styles.chevron}>
-          ›
-        </Text>
+        <CustomerIcon
+          name="chevron-right"
+          size={15}
+          color="#78909C"
+        />
       </TouchableOpacity>
 
       {visible &&

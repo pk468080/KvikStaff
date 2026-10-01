@@ -12,6 +12,7 @@ import type {
   BookingType,
 } from '../../types/booking'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 import BookingPriceSummary from '../../components/booking/BookingPriceSummary'
 import BookingSection from '../../components/booking/BookingSection'
 import RecurringOccurrencePreview from '../../components/booking/RecurringOccurrencePreview'
@@ -515,13 +516,11 @@ export default function BookingDetailsScreen({
                 styles.locationIcon
               }
             >
-              <Text
-                style={
-                  styles.locationIconText
-                }
-              >
-                ⌖
-              </Text>
+              <CustomerIcon
+                name="location"
+                size={18}
+                color="#007E80"
+              />
             </View>
 
             <View

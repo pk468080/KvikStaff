@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 import {
   deleteCustomerAddress,
   getCustomerSavedAddresses,
@@ -184,13 +185,11 @@ export default function SavedAddressesScreen() {
             <View
               style={styles.emptyIcon}
             >
-              <Text
-                style={
-                  styles.emptyIconText
-                }
-              >
-                ⌖
-              </Text>
+              <CustomerIcon
+                name="location"
+                size={24}
+                color="#007E80"
+              />
             </View>
 
             <Text
@@ -225,11 +224,11 @@ export default function SavedAddressesScreen() {
             <View
               style={styles.icon}
             >
-              <Text
-                style={styles.iconText}
-              >
-                ⌖
-              </Text>
+              <CustomerIcon
+                name="location"
+                size={18}
+                color="#007E80"
+              />
             </View>
 
             <View

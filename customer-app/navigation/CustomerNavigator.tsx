@@ -15,6 +15,7 @@ import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack'
 import CustomerPushRegistration from '../components/runtime/CustomerPushRegistration'
+import CustomerIcon from '../components/ui/CustomerIcon'
 import RescheduleBookingScreen from '../screens/bookings/RescheduleBookingScreen'
 import BookingDetailsScreen from '../screens/bookings/BookingDetailsScreen'
 import BookingScreen from '../screens/bookings/BookingScreen'
@@ -174,14 +175,11 @@ export default function CustomerNavigator({
               name="Home"
               options={{
                 tabBarIcon: ({ color }) => (
-                  <Text
-                    style={[
-                      styles.tabIcon,
-                      { color },
-                    ]}
-                  >
-                    ⌂
-                  </Text>
+                  <CustomerIcon
+                    name="home"
+                    size={21}
+                    color={color}
+                  />
                 ),
               }}
             >
@@ -221,14 +219,11 @@ export default function CustomerNavigator({
               name="My Bookings"
               options={{
                 tabBarIcon: ({ color }) => (
-                  <Text
-                    style={[
-                      styles.tabIcon,
-                      { color },
-                    ]}
-                  >
-                    ▤
-                  </Text>
+                  <CustomerIcon
+                    name="list"
+                    size={21}
+                    color={color}
+                  />
                 ),
               }}
             >
@@ -248,14 +243,11 @@ export default function CustomerNavigator({
               name="My Profile"
               options={{
                 tabBarIcon: ({ color }) => (
-                  <Text
-                    style={[
-                      styles.tabIcon,
-                      { color },
-                    ]}
-                  >
-                    ◯
-                  </Text>
+                  <CustomerIcon
+                    name="profile"
+                    size={21}
+                    color={color}
+                  />
                 ),
               }}
             >

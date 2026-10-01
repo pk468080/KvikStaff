@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity } from 'react-native'
 
 import { formatDateDisplay } from '../../lib/bookingUtils'
+import CustomerIcon from '../ui/CustomerIcon'
 
 interface ExcludedDateChipProps {
   date: Date
@@ -15,7 +16,13 @@ export default function ExcludedDateChip({ date, onRemove }: ExcludedDateChipPro
       disabled={!onRemove}
     >
       <Text style={styles.text}>{formatDateDisplay(date)}</Text>
-      {onRemove && <Text style={styles.removeIcon}>✕</Text>}
+      {onRemove && (
+        <CustomerIcon
+          name="close"
+          size={14}
+          color="#6B7F8D"
+        />
+      )}
     </TouchableOpacity>
   )
 }

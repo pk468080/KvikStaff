@@ -17,6 +17,7 @@ import {
   deactivateCurrentCustomerPushTokens,
 } from '../../services/notifications/customerNotifications.service'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 import {
   getLatestCustomerAddress,
 } from '../../services/addresses/customerAddress.service'
@@ -235,7 +236,13 @@ export default function MyProfileScreen({
           />
 
           <ProfileAction
-            icon="⌖"
+            icon={
+              <CustomerIcon
+                name="location"
+                size={18}
+                color="#007E80"
+              />
+            }
             title="Saved Addresses"
             subtitle={
               address ??
@@ -353,7 +360,7 @@ function ProfileAction({
   isLast = false,
   destructive = false,
 }: {
-  icon: string
+  icon: ReactNode
   title: string
   subtitle: string
   onPress: () => void
@@ -378,15 +385,17 @@ function ProfileAction({
             styles.actionIconDanger,
         ]}
       >
-        <Text
-          style={[
-            styles.actionIconText,
-            destructive &&
-              styles.actionIconTextDanger,
-          ]}
-        >
-          {icon}
-        </Text>
+        {typeof icon === 'string' ? (
+          <Text
+            style={[
+              styles.actionIconText,
+              destructive &&
+                styles.actionIconTextDanger,
+            ]}
+          >
+            {icon}
+          </Text>
+        ) : icon}
       </View>
 
       <View
@@ -410,11 +419,11 @@ function ProfileAction({
         </Text>
       </View>
 
-      <Text
-        style={styles.chevron}
-      >
-        ›
-      </Text>
+      <CustomerIcon
+        name="chevron-right"
+        size={15}
+        color="#9AA9B1"
+      />
     </Pressable>
   )
 }

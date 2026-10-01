@@ -15,6 +15,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 import {
   createCustomerSupportTicket,
   type CustomerSupportCategory,
@@ -148,11 +149,11 @@ export default function SupportScreen({
               View My Support Requests
             </Text>
 
-            <Text
-              style={styles.requestsArrow}
-            >
-              ›
-            </Text>
+            <CustomerIcon
+              name="chevron-right"
+              size={15}
+              color="#008C8C"
+            />
           </Pressable>
 
           {error ? (

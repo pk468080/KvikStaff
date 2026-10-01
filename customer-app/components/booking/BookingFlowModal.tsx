@@ -9,6 +9,7 @@ import {
 import {
   SafeAreaView,
 } from 'react-native-safe-area-context'
+import CustomerIcon from '../ui/CustomerIcon'
 
 import DateRangePicker from './DateRangePicker'
 import WeekdaySelector from './WeekdaySelector'
@@ -1517,13 +1518,11 @@ export default function BookingFlowModal({
             }
             onPress={onBack}
           >
-            <Text
-              style={
-                styles.headerActionText
-              }
-            >
-              ‹
-            </Text>
+            <CustomerIcon
+              name="chevron-left"
+              size={22}
+              color="#17354A"
+            />
           </TouchableOpacity>
 
           <View
@@ -1558,13 +1557,11 @@ export default function BookingFlowModal({
             }
             onPress={onClose}
           >
-            <Text
-              style={
-                styles.headerCloseText
-              }
-            >
-              ×
-            </Text>
+            <CustomerIcon
+              name="close"
+              size={18}
+              color="#17354A"
+            />
           </TouchableOpacity>
         </View>
 
@@ -1703,13 +1700,11 @@ export default function BookingFlowModal({
                 : 'Continue'}
             </Text>
 
-            <Text
-              style={
-                styles.primaryButtonArrow
-              }
-            >
-              →
-            </Text>
+            <CustomerIcon
+              name="arrow-right"
+              size={16}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
         </View>
       </SafeAreaView>

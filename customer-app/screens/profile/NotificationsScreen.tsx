@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 import { supabase } from '../../lib/supabase'
 import {
   markCustomerNotificationRead,
@@ -316,11 +317,11 @@ export default function NotificationsScreen({
             </View>
 
             {item.bookingId ? (
-              <Text
-                style={styles.chevron}
-              >
-                ›
-              </Text>
+              <CustomerIcon
+                name="chevron-right"
+                size={15}
+                color="#9AA9B1"
+              />
             ) : null}
           </Pressable>
         )}

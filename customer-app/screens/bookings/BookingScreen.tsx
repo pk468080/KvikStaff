@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 
 import ServiceAreaStatusCard from '../../components/booking/ServiceAreaStatusCard'
 import BookingSection from '../../components/booking/BookingSection'
@@ -1511,13 +1512,11 @@ export default function BookingScreen({
               styles.locationIcon
             }
           >
-            <Text
-              style={
-                styles.locationIconText
-              }
-            >
-              •
-            </Text>
+            <CustomerIcon
+              name="location"
+              size={18}
+              color="#007E80"
+            />
           </View>
 
           <View

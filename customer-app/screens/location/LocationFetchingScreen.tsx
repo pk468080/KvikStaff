@@ -8,6 +8,7 @@ import {
 import * as Location from 'expo-location'
 
 import { AppButton } from '../../components/ui/AppButton'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 
 type LocationFetchingScreenProps = {
@@ -115,9 +116,11 @@ export default function LocationFetchingScreen({
       <View style={styles.container}>
         <View style={styles.content}>
           <View style={styles.icon}>
-            <Text style={styles.iconText}>
-              ⌖
-            </Text>
+            <CustomerIcon
+              name="location"
+              size={28}
+              color="#007E80"
+            />
           </View>
 
           <Text style={styles.title}>

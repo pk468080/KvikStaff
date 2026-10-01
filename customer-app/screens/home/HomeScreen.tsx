@@ -20,6 +20,7 @@ import {
 import * as Location from 'expo-location'
 import { useFocusEffect } from '@react-navigation/native'
 import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
+import CustomerIcon from '../../components/ui/CustomerIcon'
 
 import {
   getCustomerBookings,
@@ -713,9 +714,11 @@ const [
             }
           >
             <View style={styles.locationIcon}>
-              <Text style={styles.locationIconText}>
-                ⌖
-              </Text>
+              <CustomerIcon
+                name="location"
+                size={18}
+                color={COLORS.primaryDark}
+              />
             </View>
 
             <View style={styles.locationTextWrap}>
@@ -732,9 +735,11 @@ const [
             </View>
 
             <View style={styles.locationChevronWrap}>
-              <Text style={styles.locationChevron}>
-                ›
-              </Text>
+              <CustomerIcon
+                name="chevron-right"
+                size={15}
+                color={COLORS.primaryDark}
+              />
             </View>
           </TouchableOpacity>
 
@@ -1152,9 +1157,11 @@ const [
                         <Text style={styles.promotionCtaText}>
                           {item.ctaText}
                         </Text>
-                        <Text style={styles.promotionCtaArrow}>
-                          →
-                        </Text>
+                        <CustomerIcon
+                          name="arrow-right"
+                          size={14}
+                          color="#FFFFFF"
+                        />
                       </View>
                     ) : null}
                   </View>
@@ -1166,9 +1173,11 @@ const [
 
         <View style={styles.servicesToolbar}>
           <View style={styles.serviceSearchField}>
-            <Text style={styles.serviceSearchIcon}>
-              ⌕
-            </Text>
+            <CustomerIcon
+              name="search"
+              size={17}
+              color="#78909C"
+            />
 
             <TextInput
               value={serviceQuery}
@@ -1187,9 +1196,11 @@ const [
                 onPress={() => setServiceQuery('')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.serviceSearchClearText}>
-                  ×
-                </Text>
+                <CustomerIcon
+                  name="close"
+                  size={16}
+                  color={COLORS.inkSoft}
+                />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -1357,9 +1368,11 @@ const [
         ) : filteredServices.length === 0 ? (
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
-              <Text style={styles.emptyIconText}>
-                ⌕
-              </Text>
+              <CustomerIcon
+                name="search"
+                size={24}
+                color="#78909C"
+              />
             </View>
 
             <Text style={styles.emptyTitle}>
@@ -1478,9 +1491,11 @@ const [
             </Text>
 
             <View style={styles.searchField}>
-              <Text style={styles.searchFieldIcon}>
-                ⌕
-              </Text>
+              <CustomerIcon
+                name="search"
+                size={18}
+                color="#78909C"
+              />
 
               <TextInput
                 value={locationQuery}
@@ -1531,9 +1546,11 @@ const [
                   <Text style={styles.primaryButtonText}>
                     Search location
                   </Text>
-                  <Text style={styles.primaryButtonArrow}>
-                    →
-                  </Text>
+                  <CustomerIcon
+                    name="arrow-right"
+                    size={16}
+                    color="#FFFFFF"
+                  />
                 </>
               )}
             </TouchableOpacity>
@@ -1547,9 +1564,11 @@ const [
               activeOpacity={0.88}
             >
               <View style={styles.currentLocationIcon}>
-                <Text style={styles.currentLocationIconText}>
-                  ⌖
-                </Text>
+                <CustomerIcon
+                  name="location"
+                  size={18}
+                  color={COLORS.primaryDark}
+                />
               </View>
 
               <Text style={styles.currentLocationButtonText}>
@@ -1710,15 +1729,11 @@ function ServiceCard({
             }}
             activeOpacity={0.82}
           >
-            <Text
-              style={
-                styles.favoriteButtonText
-              }
-            >
-              {isFavourite
-                ? '♥'
-                : '♡'}
-            </Text>
+            <CustomerIcon
+              name="heart"
+              size={18}
+              color={COLORS.primaryDark}
+            />
           </TouchableOpacity>
         ) : null}
       </View>
