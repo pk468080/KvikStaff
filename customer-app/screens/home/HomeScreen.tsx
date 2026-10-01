@@ -1695,7 +1695,7 @@ function ServiceCard({
             <Text
               style={styles.book}
             >
-              Book
+              Book Now
             </Text>
           </View>
         </View>
