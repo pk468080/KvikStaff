@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { adminAction } from '../lib/adminAction'
 import { supabase } from '../lib/supabase'
 
 type Stats = {
@@ -86,24 +87,92 @@ export default function Dashboard() {
           .eq('status', 'completed'),
 
         supabase
-          .from('payments')
-          .select('amount')
-          .eq('status', 'paid'),
+  .from('payments')
+  .select(
+    'id, amount, status',
+  ),
       ])
 
-      if (bookingsResult.error) throw bookingsResult.error
-      if (workersResult.error) throw workersResult.error
-      if (customersResult.error) throw customersResult.error
-      if (activeResult.error) throw activeResult.error
-      if (completedResult.error) throw completedResult.error
-      if (revenueResult.error) throw revenueResult.error
+      if (bookingsResult.error) {
+  throw bookingsResult.error
+}
 
-      const revenue =
-        (revenueResult.data || []).reduce(
-          (total, payment) =>
-            total + Number(payment.amount || 0),
-          0
-        )
+if (workersResult.error) {
+  throw workersResult.error
+}
+
+if (customersResult.error) {
+  throw customersResult.error
+}
+
+if (activeResult.error) {
+  throw activeResult.error
+}
+
+if (completedResult.error) {
+  throw completedResult.error
+}
+
+if (revenueResult.error) {
+  throw revenueResult.error
+}
+
+if (refundsResult.error) {
+  throw refundsResult.error
+}
+
+      const grossPaid =
+  (
+    revenueResult.data || []
+  )
+    .filter(
+      payment =>
+        payment.status ===
+          'paid' ||
+        payment.status ===
+          'partially_refunded' ||
+        payment.status ===
+          'refunded',
+    )
+    .reduce(
+      (
+        total,
+        payment,
+      ) =>
+        total +
+        Number(
+          payment.amount || 0,
+        ),
+      0,
+    )
+
+const successfulRefunds =
+  (
+    refundsResult.data || []
+  )
+    .filter(
+      refund =>
+        refund.status ===
+        'succeeded',
+    )
+    .reduce(
+      (
+        total,
+        refund,
+      ) =>
+        total +
+        Number(
+          refund.amount || 0,
+        ),
+      0,
+    )
+
+const netCollected =
+  Math.max(
+    0,
+    grossPaid -
+      successfulRefunds,
+  )
 
       setStats({
         bookings: bookingsResult.count || 0,
@@ -111,7 +180,8 @@ export default function Dashboard() {
         customers: customersResult.count || 0,
         activeBookings: activeResult.count || 0,
         completedBookings: completedResult.count || 0,
-        revenue,
+       revenue:
+  netCollected,
       })
     } catch (err) {
       console.error(
@@ -222,11 +292,11 @@ export default function Dashboard() {
         />
 
         <StatCard
-          title="Revenue"
+          title="Net collected"
           value={`₹${stats.revenue.toLocaleString('en-IN')}`}
           icon="₹"
           loading={loading}
-          description="Paid transactions"
+          description="Payments minus completed refunds"
           revenue
         />
 
@@ -387,11 +457,10 @@ export default function Dashboard() {
                 REVENUE
               </span>
 
-              <h2>Paid revenue</h2>
-
+<h2>Net collected</h2>
               <p>
-                Total successfully paid transactions.
-              </p>
+  Successful payments minus completed refunds.
+</p>
             </div>
           </div>
 
@@ -402,13 +471,13 @@ export default function Dashboard() {
           </div>
 
           <div className="revenue-footer">
-            <span>
-              Payment status
-            </span>
+           <span>
+  Collection status
+</span>
 
-            <strong>
-              Paid
-            </strong>
+<strong>
+  Net
+</strong>
           </div>
 
         </div>
