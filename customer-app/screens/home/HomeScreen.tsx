@@ -1559,6 +1559,9 @@ function ServiceCard({
               styles.cardImage,
               isGrid &&
                 styles.gridCardImage,
+              variant ===
+                'featured' &&
+                styles.featuredCardImage,
             ]}
             resizeMode={
               isGrid
@@ -1572,6 +1575,9 @@ function ServiceCard({
               styles.cardImageFallback,
               isGrid &&
                 styles.gridCardImageFallback,
+              variant ===
+                'featured' &&
+                styles.featuredCardImageFallback,
             ]}
           >
             <Text
@@ -2223,6 +2229,17 @@ gridCardImageFallback: {
   backgroundColor: COLORS.primarySoft,
 },
 
+  featuredCardImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#F3F8F9',
+  },
+
+  featuredCardImageFallback: {
+    width: '100%',
+    height: '100%',
+  },
+
   cardImage: {
     width: '100%',
     height: undefined,
@@ -2575,7 +2592,13 @@ gridCardContent: {
     width: '100%',
   },
 
-  featuredCardImageWrap: {},
+  featuredCardImageWrap: {
+    width: '100%',
+    aspectRatio: 1.35,
+    backgroundColor: '#F3F8F9',
+    position: 'relative',
+    overflow: 'hidden',
+  },
 
   servicesToolbar: {
     marginBottom: 19,
