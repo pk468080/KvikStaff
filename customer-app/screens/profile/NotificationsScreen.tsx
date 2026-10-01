@@ -14,6 +14,9 @@ import {
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import { supabase } from '../../lib/supabase'
+import {
+  markCustomerNotificationRead,
+} from '../../services/notifications/customerNotifications.service'
 
 type CustomerNotification = {
   id: string
@@ -141,30 +144,23 @@ export default function NotificationsScreen({
   ) {
     if (!notification.isRead) {
       try {
-        const { error } =
-          await supabase.rpc(
-            'mark_notification_read',
-            {
-              p_notification_id:
-                notification.id,
-            },
-          )
+        await markCustomerNotificationRead(
+          notification.id,
+        )
 
-        if (!error) {
-          setNotifications(
-            current =>
-              current.map(
-                item =>
-                  item.id ===
-                  notification.id
-                    ? {
-                        ...item,
-                        isRead: true,
-                      }
-                    : item,
-              ),
-          )
-        }
+        setNotifications(
+          current =>
+            current.map(
+              item =>
+                item.id ===
+                notification.id
+                  ? {
+                      ...item,
+                      isRead: true,
+                    }
+                  : item,
+            ),
+        )
       } catch {
         // The notification can still be opened
         // even when marking it read fails.

@@ -11,8 +11,12 @@ import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 
 import {
+  markCustomerNotificationRead,
   registerCustomerPushToken,
 } from '../../services/notifications/customerNotifications.service'
+import {
+  handleCustomerNotificationResponse,
+} from '../../services/notifications/customerNotificationResponse'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -226,41 +230,20 @@ export default function CustomerPushRegistration({
 
     function handleNotificationResponse(
       response: Notifications.NotificationResponse,
-    ) {
+    ): void {
       const data =
         response.notification
           .request.content.data
 
-      const notificationId =
-        typeof data?.notification_id ===
-        'string'
-          ? data.notification_id
-          : null
-
-      if (
-        notificationId &&
-        handledNotificationId.current ===
-          notificationId
-      ) {
-        return
-      }
-
-      if (notificationId) {
-        handledNotificationId.current =
-          notificationId
-      }
-
-      const bookingId =
-        typeof data?.booking_id ===
-        'string'
-          ? data.booking_id
-          : null
-
-      if (bookingId) {
-        latestOnOpenBookingRef.current(
-          bookingId,
-        )
-      }
+      void handleCustomerNotificationResponse(
+        data,
+        handledNotificationId,
+        markCustomerNotificationRead,
+        bookingId =>
+          latestOnOpenBookingRef.current(
+            bookingId,
+          ),
+      )
     }
 
     const responseSubscription =

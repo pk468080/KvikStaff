@@ -93,6 +93,32 @@ export function formatUnreadNotificationCount(
     : String(safeCount)
 }
 
+export async function markCustomerNotificationRead(
+  notificationId: string,
+): Promise<void> {
+  const normalizedId =
+    notificationId.trim()
+
+  if (!normalizedId) {
+    throw new Error(
+      'A notification id is required.',
+    )
+  }
+
+  const { error } =
+    await supabase.rpc(
+      'mark_notification_read',
+      {
+        p_notification_id:
+          normalizedId,
+      },
+    )
+
+  if (error) {
+    throw error
+  }
+}
+
 export async function getUnreadCustomerNotificationCount(): Promise<number> {
   const customerId =
     await getCurrentCustomerId()
