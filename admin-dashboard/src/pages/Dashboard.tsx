@@ -40,6 +40,7 @@ export default function Dashboard() {
         activeResult,
         completedResult,
         revenueResult,
+        refundsResult,
       ] = await Promise.all([
         supabase
           .from('bookings')
@@ -87,10 +88,12 @@ export default function Dashboard() {
           .eq('status', 'completed'),
 
         supabase
-  .from('payments')
-  .select(
-    'id, amount, status',
-  ),
+          .from('payments')
+          .select('id, amount, status'),
+
+        supabase
+          .from('refunds')
+          .select('amount, status'),
       ])
 
       if (bookingsResult.error) {
