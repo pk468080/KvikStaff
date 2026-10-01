@@ -1,6 +1,9 @@
 import {
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs'
+import type {
+  NavigatorScreenParams,
+} from '@react-navigation/native'
 import {
   StyleSheet,
   Text,
@@ -21,6 +24,9 @@ import HomeScreen from '../screens/home/HomeScreen'
 import PaymentScreen from '../screens/payment/PaymentScreen'
 import InvoiceReceiptScreen from '../screens/bookings/InvoiceReceiptScreen'
 import CustomerProfileNavigator from './CustomerProfileNavigator'
+import type {
+  CustomerProfileStackParamList,
+} from './CustomerProfileNavigator'
 
 import {
   getOrCreateCustomerAddress,
@@ -62,7 +68,7 @@ type CustomerNavigatorProps = {
 }
 
 export type CustomerStackParamList = {
-  Tabs: undefined
+  Tabs: NavigatorScreenParams<CustomerTabParamList>
 
   Booking: {
     service: HomeService
@@ -96,7 +102,14 @@ export type CustomerStackParamList = {
   }
 }
 
-const Tab = createBottomTabNavigator()
+export type CustomerTabParamList = {
+  Home: undefined
+  'My Bookings': undefined
+  'My Profile': NavigatorScreenParams<CustomerProfileStackParamList>
+}
+
+const Tab =
+  createBottomTabNavigator<CustomerTabParamList>()
 const Stack =
   createNativeStackNavigator<CustomerStackParamList>()
 
@@ -635,6 +648,17 @@ export default function CustomerNavigator({
           <CustomerBookingRouter
             bookingId={
               route.params.bookingId
+            }
+            onOpenSupport={() =>
+              navigation.navigate(
+                'Tabs',
+                {
+                  screen: 'My Profile',
+                  params: {
+                    screen: 'Support',
+                  },
+                },
+              )
             }
             onViewInvoice={bookingId => {
               navigation.navigate(

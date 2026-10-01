@@ -24,6 +24,7 @@ import RecurringBookingScreen from './RecurringBookingScreen'
 
 type CustomerBookingRouterProps = {
   bookingId: string
+  onOpenSupport: () => void
   onViewInvoice: (bookingId: string) => void
   onReschedule: (
     bookingId: string,
@@ -39,6 +40,7 @@ type BookingView =
 
 export default function CustomerBookingRouter({
   bookingId,
+  onOpenSupport,
   onViewInvoice,
   onReschedule,
 }: CustomerBookingRouterProps) {
@@ -173,6 +175,7 @@ export default function CustomerBookingRouter({
   return (
     <ActiveBookingScreen
       bookingId={bookingId}
+      onOpenSupport={onOpenSupport}
       onReschedule={onReschedule}
     />
   )

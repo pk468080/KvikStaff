@@ -54,6 +54,8 @@ type BookingMapLocation = {
 type ActiveBookingScreenProps = {
   bookingId: string
 
+  onOpenSupport: () => void
+
   onReschedule: (
     bookingId: string,
     currentStart: string,
@@ -293,6 +295,7 @@ function getTrackingLabel(
 
 export default function ActiveBookingScreen({
   bookingId,
+  onOpenSupport,
   onReschedule,
 }: ActiveBookingScreenProps) {
   const [
@@ -715,11 +718,28 @@ const [
       return
     }
 
+    if (currentBooking.worker_id) {
+      Alert.alert(
+        'Cancellation requires support',
+        'This booking has an assigned worker and cannot be cancelled directly. Support can help with the cancellation request.',
+        [
+          {
+            text: 'Keep booking',
+            style: 'cancel',
+          },
+          {
+            text: 'Contact support',
+            onPress: onOpenSupport,
+          },
+        ],
+      )
+
+      return
+    }
+
     Alert.alert(
       'Cancel booking?',
-      currentBooking.worker_id
-        ? 'This booking has an assigned worker and requires support/admin cancellation.'
-        : 'The cancellation policy will be applied. Any eligible refund will be initiated automatically and its status will appear on this screen.',
+      'The cancellation policy will be applied. Any eligible refund will be initiated automatically and its status will appear on this screen.',
       [
         {
           text: 'Keep booking',
@@ -1595,6 +1615,35 @@ const [
                   Worker assigned
                 </Text>
 
+                <View
+                  style={
+                    styles.assignedCancellationNotice
+                  }
+                >
+                  <Text
+                    style={
+                      styles.assignedCancellationText
+                    }
+                  >
+                    Assigned bookings cannot be cancelled directly. Contact support for help with cancellation.
+                  </Text>
+
+                  <Pressable
+                    style={
+                      styles.supportButton
+                    }
+                    onPress={onOpenSupport}
+                  >
+                    <Text
+                      style={
+                        styles.supportButtonText
+                      }
+                    >
+                      Contact support
+                    </Text>
+                  </Pressable>
+                </View>
+
                 
 
                 {tracking ? (
@@ -2290,6 +2339,33 @@ const styles =
       fontSize: 17,
       fontWeight: '700',
       color: '#062F52',
+    },
+
+    assignedCancellationNotice: {
+      marginTop: 14,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: '#FFF7ED',
+      borderWidth: 1,
+      borderColor: '#F7C68B',
+    },
+
+    assignedCancellationText: {
+      color: '#8A4A10',
+      lineHeight: 19,
+    },
+
+    supportButton: {
+      marginTop: 12,
+      padding: 12,
+      borderRadius: 10,
+      backgroundColor: '#E8F7F7',
+      alignItems: 'center',
+    },
+
+    supportButtonText: {
+      color: '#008A88',
+      fontWeight: '800',
     },
 
     workerId: {
