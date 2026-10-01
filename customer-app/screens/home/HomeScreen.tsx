@@ -951,7 +951,6 @@ const [
                     </Text>
                   </View>
 
-                  <ArrowIcon />
                 </TouchableOpacity>
               )}
             />
@@ -1704,20 +1703,6 @@ function ServiceCard({
   )
 }
 
-function ArrowIcon() {
-  return (
-    <View
-      style={styles.arrowIcon}
-      accessible={false}
-      importantForAccessibility="no"
-    >
-      <View style={styles.arrowLine} />
-      <View style={styles.arrowHeadTop} />
-      <View style={styles.arrowHeadBottom} />
-    </View>
-  )
-}
-
 function getServiceInitials(name: string): string {
   const words = name
     .trim()
@@ -2423,48 +2408,6 @@ gridCardContent: {
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-
-  arrowIcon: {
-    width: 16,
-    height: 16,
-    marginLeft: 6,
-    position: 'relative',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-
-  arrowLine: {
-    position: 'absolute',
-    left: 1,
-    right: 1,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: COLORS.primaryDark,
-  },
-
-  arrowHeadTop: {
-    position: 'absolute',
-    right: 1,
-    top: 2,
-    width: 7,
-    height: 7,
-    borderTopWidth: 2,
-    borderRightWidth: 2,
-    borderColor: COLORS.primaryDark,
-    transform: [{ rotate: '45deg' }],
-  },
-
-  arrowHeadBottom: {
-    position: 'absolute',
-    right: 1,
-    bottom: 2,
-    width: 7,
-    height: 7,
-    borderTopWidth: 2,
-    borderRightWidth: 2,
-    borderColor: COLORS.primaryDark,
-    transform: [{ rotate: '135deg' }],
   },
 
   rebookImage: {
