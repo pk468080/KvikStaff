@@ -27,6 +27,7 @@ import WorkerLiveBookingMap, {
 import WorkerBookingOtpPanel from '../../components/bookings/WorkerBookingOtpPanel'
 
 import BookingChatPanel from '../../components/bookings/BookingChatPanel'
+import WorkerBookingIssuePanel from '../../components/bookings/WorkerBookingIssuePanel'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 
@@ -1637,6 +1638,17 @@ export default function ActiveBookingScreen({
             </Text>
           </View>
         </View>
+
+        {booking.workerId &&
+        booking.status !== 'completed' &&
+        booking.status !== 'cancelled' &&
+        booking.status !== 'expired' ? (
+          <WorkerBookingIssuePanel
+            bookingId={booking.id}
+            scheduledStart={booking.scheduledStart}
+            scheduledEnd={booking.scheduledEnd}
+          />
+        ) : null}
 
         {locationError &&
         liveTracking ? (

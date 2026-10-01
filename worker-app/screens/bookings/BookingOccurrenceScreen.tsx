@@ -27,6 +27,7 @@ import WorkerLiveBookingMap, {
 } from '../../components/bookings/WorkerLiveBookingMap'
 
 import BookingChatPanel from '../../components/bookings/BookingChatPanel'
+import WorkerBookingIssuePanel from '../../components/bookings/WorkerBookingIssuePanel'
 
 import {
   ScreenContainer,
@@ -1391,6 +1392,17 @@ export default function BookingOccurrenceScreen({
               />
             </Pressable>
           </View>
+        ) : null}
+
+        {occurrence.workerId &&
+        occurrence.status !== 'completed' &&
+        occurrence.status !== 'cancelled' ? (
+          <WorkerBookingIssuePanel
+            bookingId={occurrence.bookingId}
+            occurrenceId={occurrence.id}
+            scheduledStart={occurrence.scheduledStart}
+            scheduledEnd={occurrence.scheduledEnd}
+          />
         ) : null}
 
         {startOtpRequired || endOtpRequired ? (

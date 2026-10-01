@@ -600,6 +600,50 @@ export type Database = {
     }
     Returns: Json
   }
+
+  worker_report_booking_incident: {
+    Args: {
+      p_booking_id: string
+      p_incident_type: string
+      p_description: string
+      p_occurrence_id?: string | null
+    }
+    Returns: Json
+  }
+
+  worker_list_booking_incidents: {
+    Args: {
+      p_booking_id: string
+      p_limit: number
+    }
+    Returns: Json
+  }
+
+  worker_get_incident_summary: {
+    Args: {
+      p_booking_id: string
+    }
+    Returns: Json
+  }
+
+  worker_create_booking_change_request: {
+    Args: {
+      p_booking_id: string
+      p_request_type: string
+      p_reason: string
+      p_requested_start?: string | null
+      p_requested_end?: string | null
+      p_occurrence_id?: string | null
+    }
+    Returns: Json
+  }
+
+  worker_withdraw_booking_change_request: {
+    Args: {
+      p_request_id: string
+    }
+    Returns: Json
+  }
 }
 
     Enums: {
