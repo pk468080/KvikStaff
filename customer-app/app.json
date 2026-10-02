@@ -15,10 +15,18 @@
     },
     "web": {},
     "plugins": [
-  "expo-sqlite",
-  "@react-native-community/datetimepicker",
-  "expo-notifications"
-],
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      "expo-notifications",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "tempstaff"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "ffb7571c-8602-4e99-a378-8dd7b43fc4f8"

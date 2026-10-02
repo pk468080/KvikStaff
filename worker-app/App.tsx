@@ -4,10 +4,10 @@ import {
 
 import RootNavigator from './navigation/RootNavigator'
 
-export default function App() {
+export default Sentry.wrap(function App() {
   return (
     <WorkerRuntimeProvider>
       <RootNavigator />
     </WorkerRuntimeProvider>
   )
-}
+});

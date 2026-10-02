@@ -16,21 +16,29 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "tempstaff"
+        }
       ]
     ],
     "ios": {
       "bundleIdentifier": "com.princerajput.workerapp"
     },
     "android": {
-  "package": "com.princerajput.workerapp",
-  "permissions": [
-    "ACCESS_COARSE_LOCATION",
-    "ACCESS_FINE_LOCATION",
-    "ACCESS_BACKGROUND_LOCATION",
-    "FOREGROUND_SERVICE",
-    "FOREGROUND_SERVICE_LOCATION"
-  ]
-},
+      "package": "com.princerajput.workerapp",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
     "extra": {
       "eas": {
         "projectId": "caf2c89e-2337-40c2-b962-dd34c394c174"

@@ -5,7 +5,7 @@ import {
 import ErrorBoundary from './components/ErrorBoundary'
 import RootNavigator from './navigation/RootNavigator'
 
-export default function App() {
+export default Sentry.wrap(function App() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
@@ -13,4 +13,4 @@ export default function App() {
       </ErrorBoundary>
     </SafeAreaProvider>
   )
-}
+});

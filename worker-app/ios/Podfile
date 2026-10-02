@@ -24,6 +24,8 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '16.4'
 
 prepare_react_native_project!
 
+use_modular_headers!
+
 target 'workerapp' do
   use_expo_modules!
 
