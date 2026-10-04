@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/react-native'
+
 import {
   SafeAreaProvider,
 } from 'react-native-safe-area-context'
@@ -5,7 +7,38 @@ import {
 import ErrorBoundary from './components/ErrorBoundary'
 import RootNavigator from './navigation/RootNavigator'
 
-export default Sentry.wrap(function App() {
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim()
+
+Sentry.init({
+  dsn: sentryDsn,
+  enabled: Boolean(sentryDsn),
+
+  environment: __DEV__
+    ? 'development'
+    : 'production',
+
+  debug: __DEV__,
+
+  sendDefaultPii: false,
+
+  tracesSampleRate: __DEV__
+    ? 1.0
+    : 0.1,
+
+  enableLogs: true,
+
+  replaysSessionSampleRate: __DEV__
+    ? 1.0
+    : 0.1,
+
+  replaysOnErrorSampleRate: 1.0,
+
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+  ],
+})
+
+function App() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
@@ -13,4 +46,6 @@ export default Sentry.wrap(function App() {
       </ErrorBoundary>
     </SafeAreaProvider>
   )
-});
+}
+
+export default Sentry.wrap(App)
