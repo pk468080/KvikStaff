@@ -83,7 +83,7 @@ async def create_recurring_booking(
     ),
 ) -> dict[str, Any]:
     return await service.create_recurring_booking(
-        request=request,
+        request=request,       
         customer_id=UUID(
             current_user.id
         ),
