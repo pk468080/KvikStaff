@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type CustomerAddressInput = {
   latitude: number
@@ -16,26 +16,17 @@ export type CustomerSavedAddress = {
   createdAt?: string
 }
 
-async function getAuthenticatedUserId() {
-  const {
-    data: sessionData,
-    error: sessionError,
-  } = await supabase.auth.getSession()
+type CustomerAddressApiResponse = {
+  id: string
+  label: string | null
+  address_line: string
+  latitude: number
+  longitude: number
+  created_at: string
+}
 
-  if (sessionError) {
-    throw sessionError
-  }
-
-  const userId =
-    sessionData.session?.user.id
-
-  if (!userId) {
-    throw new Error(
-      'A customer authentication session is required.',
-    )
-  }
-
-  return userId
+type CustomerAddressCreateApiResponse = {
+  address: CustomerAddressApiResponse
 }
 
 function validateCoordinates(
@@ -63,12 +54,22 @@ function validateCoordinates(
   }
 }
 
+function mapAddress(
+  row: CustomerAddressApiResponse,
+): CustomerSavedAddress {
+  return {
+    id: row.id,
+    label: row.label,
+    addressLine: row.address_line,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    createdAt: row.created_at,
+  }
+}
+
 export async function getOrCreateCustomerAddress(
   input: CustomerAddressInput,
 ): Promise<string> {
-  const userId =
-    await getAuthenticatedUserId()
-
   const address =
     input.address.trim()
 
@@ -83,91 +84,42 @@ export async function getOrCreateCustomerAddress(
     input.longitude,
   )
 
-  const {
-    data: existingAddress,
-    error: lookupError,
-  } = await supabase
-    .from('addresses')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('address_line', address)
-    .eq('latitude', input.latitude)
-    .eq('longitude', input.longitude)
-    .limit(1)
-    .maybeSingle()
+  const response =
+    await apiRequest<CustomerAddressCreateApiResponse>(
+      '/addresses',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          latitude:
+            input.latitude,
+          longitude:
+            input.longitude,
+          address,
+          label:
+            input.label?.trim() || null,
+        }),
+      },
+    )
 
-  if (lookupError) {
-    throw lookupError
-  }
-
-  if (existingAddress?.id) {
-    return existingAddress.id
-  }
-
-  const {
-    data: createdAddress,
-    error: createError,
-  } = await supabase
-    .from('addresses')
-    .insert({
-  user_id: userId,
-  label:
-    input.label?.trim() || null,
-  address_line: address,
-  latitude: input.latitude,
-  longitude: input.longitude,
-  location: null,
-})
-    .select('id')
-    .single()
-
-  if (createError) {
-    throw createError
-  }
-
-  if (!createdAddress?.id) {
+  if (!response?.address?.id) {
     throw new Error(
       'The customer address was not created.',
     )
   }
 
-  return createdAddress.id
+  return response.address.id
 }
 
 export async function getCustomerSavedAddresses(): Promise<
   CustomerSavedAddress[]
 > {
-  const userId =
-    await getAuthenticatedUserId()
+  const response =
+    await apiRequest<
+      CustomerAddressApiResponse[]
+    >('/addresses')
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('addresses')
-    .select(
-      'id, label, address_line, latitude, longitude, created_at',
-    )
-    .eq('user_id', userId)
-    .order('created_at', {
-      ascending: false,
-    })
-
-  if (error) {
-    throw error
-  }
-
-  return (data ?? []).map(
-    row => ({
-      id: row.id,
-      label: row.label,
-      addressLine:
-        row.address_line,
-      latitude: row.latitude,
-      longitude: row.longitude,
-      createdAt:
-        row.created_at,
-    }),
+  return (response ?? []).map(
+    mapAddress,
   )
 }
 
@@ -183,24 +135,18 @@ export async function getLatestCustomerAddress(): Promise<
 export async function deleteCustomerAddress(
   addressId: string,
 ): Promise<void> {
-  const userId =
-    await getAuthenticatedUserId()
-
   if (!addressId) {
     throw new Error(
       'An address is required.',
     )
   }
 
-  const {
-    error,
-  } = await supabase
-    .from('addresses')
-    .delete()
-    .eq('id', addressId)
-    .eq('user_id', userId)
-
-  if (error) {
-    throw error
-  }
+  await apiRequest<void>(
+    `/addresses/${encodeURIComponent(
+      addressId,
+    )}`,
+    {
+      method: 'DELETE',
+    },
+  )
 }
