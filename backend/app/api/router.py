@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.addresses import router as addresses_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.availability import router as availability_router
 from app.api.v1.health import router as health_router
@@ -28,4 +29,10 @@ api_router.include_router(
     services_router,
     prefix="/services",
     tags=["services"],
+)
+
+api_router.include_router(
+    addresses_router,
+    prefix="/addresses",
+    tags=["addresses"],
 )
