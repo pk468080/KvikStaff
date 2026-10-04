@@ -519,8 +519,11 @@ export async function getCurrentSession() {
     throw error
   }
 
+  
+
   return session
 }
+  
 
 export async function signOut() {
   const { error } =
