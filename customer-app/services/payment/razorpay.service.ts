@@ -37,7 +37,7 @@ type BookingPaymentDetailsApiResponse = {
   bookingId: string
   amount: number | string
   currency: string
-  occurrenceCount: number
+  occurrenceCount: number | string
   totalWorkingHours: number | string
 }
 
@@ -85,6 +85,11 @@ export async function getBookingPaymentDetails(
       result.totalWorkingHours,
     )
 
+  const occurrenceCount =
+    Number(
+      result.occurrenceCount,
+    )
+
   if (
     amount <= 0
   ) {
@@ -104,9 +109,9 @@ export async function getBookingPaymentDetails(
 
   if (
     !Number.isInteger(
-      Number(result.occurrenceCount),
+      occurrenceCount,
     ) ||
-    Number(result.occurrenceCount) <= 0
+    occurrenceCount <= 0
   ) {
     throw new Error(
       'The booking occurrence count is invalid.',
@@ -127,8 +132,7 @@ export async function getBookingPaymentDetails(
     amount,
     currency:
       result.currency,
-    occurrenceCount:
-      Number(result.occurrenceCount),
+    occurrenceCount,
     totalWorkingHours,
   }
 }
@@ -282,13 +286,14 @@ export async function createRazorpayOrder(
     )
   }
 
-  if (
-    Math.round(
-      amount / 100 * 100,
-    ) !==
+  const expectedAmountPaise =
     Math.round(
       expectedAmount * 100,
     )
+
+  if (
+    amount !==
+    expectedAmountPaise
   ) {
     throw new Error(
       'The payment order does not match the booking amount.',
@@ -323,6 +328,16 @@ export async function verifyRazorpayPayment(
     )
   }
 
+  if (
+    !checkout.razorpay_order_id ||
+    !checkout.razorpay_payment_id ||
+    !checkout.razorpay_signature
+  ) {
+    throw new Error(
+      'Razorpay returned incomplete payment verification data.',
+    )
+  }
+
   const result =
     await apiRequest<
       Record<string, unknown>
@@ -354,7 +369,7 @@ export async function verifyRazorpayPayment(
   ) {
     const serverError =
       typeof result?.error ===
-      'object' &&
+        'object' &&
       result.error !== null &&
       typeof (
         result.error as {
