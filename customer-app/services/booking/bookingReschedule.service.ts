@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type CustomerRescheduleResult = {
   success: boolean
@@ -24,24 +24,14 @@ export async function rescheduleCustomerBooking(
     throw new Error('New booking time is required.')
   }
 
-  const { data, error } = await supabase.rpc(
-    'reschedule_customer_booking',
+  return apiRequest<CustomerRescheduleResult>(
+    `/bookings/${bookingId}/reschedule`,
     {
-      p_booking_id: bookingId,
-      p_new_start: newStart,
-      p_new_end: newEnd,
+      method: 'POST',
+      body: JSON.stringify({
+        new_start: newStart,
+        new_end: newEnd,
+      }),
     },
   )
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  const result = data as CustomerRescheduleResult | null
-
-  if (!result?.success) {
-    throw new Error('Unable to reschedule the booking.')
-  }
-
-  return result
 }

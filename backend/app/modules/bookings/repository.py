@@ -141,14 +141,8 @@ class BookingsRepository:
                         CAST(:schedule_end_date AS date),
                         CAST(:daily_start_time AS time),
                         CAST(:daily_end_time AS time),
-                        CAST(
-                            :selected_weekdays
-                            AS smallint[]
-                        ),
-                        CAST(
-                            :off_dates
-                            AS date[]
-                        ),
+                        CAST(:selected_weekdays AS smallint[]),
+                        CAST(:off_dates AS date[]),
                         :notes
                     ) AS result
                     """
@@ -175,10 +169,160 @@ class BookingsRepository:
                     "selected_weekdays": (
                         selected_weekdays_literal
                     ),
-                    "off_dates": (
-                        off_dates_literal
-                    ),
+                    "off_dates": off_dates_literal,
                     "notes": notes,
+                },
+            )
+
+            value = result.scalar_one()
+
+        return self._to_dict(value)
+
+    async def cancel_customer_booking(
+        self,
+        customer_id: UUID,
+        booking_id: UUID,
+        reason: str,
+    ) -> dict[str, Any]:
+        async with self.db.begin():
+            await self._set_customer_auth_context(
+                customer_id
+            )
+
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT public.cancel_customer_booking(
+                        CAST(:booking_id AS uuid),
+                        :reason
+                    ) AS result
+                    """
+                ),
+                {
+                    "booking_id": str(booking_id),
+                    "reason": reason,
+                },
+            )
+
+            value = result.scalar_one()
+
+        return self._to_dict(value)
+
+    async def cancel_customer_booking_series(
+        self,
+        customer_id: UUID,
+        booking_id: UUID,
+        reason: str,
+    ) -> dict[str, Any]:
+        async with self.db.begin():
+            await self._set_customer_auth_context(
+                customer_id
+            )
+
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT public.cancel_customer_booking_series(
+                        CAST(:booking_id AS uuid),
+                        :reason
+                    ) AS result
+                    """
+                ),
+                {
+                    "booking_id": str(booking_id),
+                    "reason": reason,
+                },
+            )
+
+            value = result.scalar_one()
+
+        return self._to_dict(value)
+
+    async def cancel_customer_booking_occurrence(
+        self,
+        customer_id: UUID,
+        occurrence_id: UUID,
+        reason: str,
+    ) -> dict[str, Any]:
+        async with self.db.begin():
+            await self._set_customer_auth_context(
+                customer_id
+            )
+
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT public.cancel_customer_booking_occurrence(
+                        CAST(:occurrence_id AS uuid),
+                        :reason
+                    ) AS result
+                    """
+                ),
+                {
+                    "occurrence_id": str(
+                        occurrence_id
+                    ),
+                    "reason": reason,
+                },
+            )
+
+            value = result.scalar_one()
+
+        return self._to_dict(value)
+
+    async def get_customer_booking_refunds(
+        self,
+        customer_id: UUID,
+        booking_id: UUID,
+    ) -> list[dict[str, Any]]:
+        async with self.db.begin():
+            await self._set_customer_auth_context(
+                customer_id
+            )
+
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT private.get_customer_booking_refunds(
+                        CAST(:booking_id AS uuid)
+                    ) AS result
+                    """
+                ),
+                {
+                    "booking_id": str(booking_id),
+                },
+            )
+
+            value = result.scalar_one()
+
+        return self._to_list(value)
+
+    async def reschedule_customer_booking(
+        self,
+        customer_id: UUID,
+        booking_id: UUID,
+        new_start: datetime,
+        new_end: datetime,
+    ) -> dict[str, Any]:
+        async with self.db.begin():
+            await self._set_customer_auth_context(
+                customer_id
+            )
+
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT public.reschedule_customer_booking(
+                        CAST(:booking_id AS uuid),
+                        CAST(:new_start AS timestamptz),
+                        CAST(:new_end AS timestamptz)
+                    ) AS result
+                    """
+                ),
+                {
+                    "booking_id": str(booking_id),
+                    "new_start": new_start,
+                    "new_end": new_end,
                 },
             )
 
@@ -203,4 +347,31 @@ class BookingsRepository:
 
         raise ValueError(
             "Booking function returned an invalid result."
+        )
+
+    @staticmethod
+    def _to_list(
+        value: Any,
+    ) -> list[dict[str, Any]]:
+        if isinstance(value, list):
+            return [
+                item
+                for item in value
+                if isinstance(item, dict)
+            ]
+
+        if isinstance(value, str):
+            import json
+
+            parsed = json.loads(value)
+
+            if isinstance(parsed, list):
+                return [
+                    item
+                    for item in parsed
+                    if isinstance(item, dict)
+                ]
+
+        raise ValueError(
+            "Booking refund function returned an invalid result."
         )

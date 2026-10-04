@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type CustomerRefundRecord = {
   id: string
@@ -49,52 +49,64 @@ export type CustomerCancellationResult = {
     gross_amount?: number
   }
   refund_amount?: number
-refund_id?: string | null}
+  refund_id?: string | null
+}
 
 export async function cancelCustomerBooking(
-
   bookingId: string,
   bookingType?: string | null,
 ): Promise<CustomerCancellationResult> {
-  const functionName =
-    bookingType === 'recurring'
-      ? 'cancel_customer_booking_series'
-      : 'cancel_customer_booking'
+  if (!bookingId) {
+    throw new Error('Booking ID is required.')
+  }
 
-  const { data, error } = await supabase.rpc(
-    functionName,
+  const endpoint =
+    bookingType === 'recurring'
+      ? `/bookings/${bookingId}/cancel-series`
+      : `/bookings/${bookingId}/cancel`
+
+  return apiRequest<CustomerCancellationResult>(
+    endpoint,
     {
-      p_booking_id: bookingId,
-      p_reason: 'Customer cancellation',
+      method: 'POST',
+      body: JSON.stringify({
+        reason: 'Customer cancellation',
+      }),
     },
   )
+}
 
-  if (error) {
-    throw new Error(error.message)
+export async function cancelCustomerBookingOccurrence(
+  occurrenceId: string,
+): Promise<CustomerCancellationResult> {
+  if (!occurrenceId) {
+    throw new Error('Occurrence ID is required.')
   }
 
-  const result = data as CustomerCancellationResult | null
-
-  if (!result?.success) {
-    throw new Error('Unable to cancel the booking.')
-  }
-
-  return result
+  return apiRequest<CustomerCancellationResult>(
+    `/bookings/occurrences/${occurrenceId}/cancel`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        reason: 'Customer cancellation',
+      }),
+    },
+  )
 }
 
 export async function getCustomerBookingRefunds(
   bookingId: string,
 ): Promise<CustomerRefundRecord[]> {
-  const { data, error } = await supabase.rpc(
-    'get_customer_booking_refunds',
+  if (!bookingId) {
+    throw new Error('Booking ID is required.')
+  }
+
+  const data = await apiRequest<unknown>(
+    `/bookings/${bookingId}/refunds`,
     {
-      p_booking_id: bookingId,
+      method: 'GET',
     },
   )
-
-  if (error) {
-    throw new Error(error.message)
-  }
 
   if (!Array.isArray(data)) {
     throw new Error(

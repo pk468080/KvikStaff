@@ -13,6 +13,15 @@ def _require_timezone(value: datetime) -> datetime:
     return value
 
 
+def _normalize_notes(value: str | None) -> str | None:
+    if value is None:
+        return None
+
+    value = value.strip()
+
+    return value or None
+
+
 class InstantBookingCreateRequest(BaseModel):
     service_variant_id: UUID
     address_id: UUID
@@ -47,18 +56,9 @@ class InstantBookingCreateRequest(BaseModel):
 
         return value
 
-    @field_validator("notes")
-    @classmethod
-    def normalize_notes(
-        cls,
-        value: str | None,
-    ) -> str | None:
-        if value is None:
-            return None
-
-        value = value.strip()
-
-        return value or None
+    _normalize_notes = field_validator("notes")(
+        _normalize_notes
+    )
 
 
 class MultiOccurrenceBookingCreateRequest(BaseModel):
@@ -117,7 +117,7 @@ class MultiOccurrenceBookingCreateRequest(BaseModel):
             and value <= start_time
         ):
             raise ValueError(
-                "Daily end time must be after daily start time."
+                "Daily end time must be after start time."
             )
 
         return value
@@ -148,15 +148,75 @@ class MultiOccurrenceBookingCreateRequest(BaseModel):
     ) -> list[date]:
         return list(dict.fromkeys(value))
 
-    @field_validator("notes")
+    _normalize_notes = field_validator("notes")(
+        _normalize_notes
+    )
+
+
+class CustomerBookingCancellationRequest(BaseModel):
+    reason: str | None = Field(
+        default="Customer cancellation",
+        max_length=500,
+    )
+
+    @field_validator("reason")
     @classmethod
-    def normalize_notes(
+    def normalize_reason(
         cls,
         value: str | None,
     ) -> str | None:
         if value is None:
-            return None
+            return "Customer cancellation"
 
         value = value.strip()
 
-        return value or None
+        return value or "Customer cancellation"
+
+
+class CustomerBookingRescheduleRequest(BaseModel):
+    new_start: datetime
+    new_end: datetime
+
+    _validate_start = field_validator(
+        "new_start",
+    )(_require_timezone)
+
+    _validate_end = field_validator(
+        "new_end",
+    )(_require_timezone)
+
+    @field_validator("new_end")
+    @classmethod
+    def validate_time_range(
+        cls,
+        value: datetime,
+        info,
+    ) -> datetime:
+        start = info.data.get("new_start")
+
+        if start is not None and value <= start:
+            raise ValueError(
+                "New booking end time must be after start time."
+            )
+
+        return value
+
+
+class CustomerBookingOccurrenceCancellationRequest(BaseModel):
+    reason: str | None = Field(
+        default="Customer cancellation",
+        max_length=500,
+    )
+
+    @field_validator("reason")
+    @classmethod
+    def normalize_reason(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return "Customer cancellation"
+
+        value = value.strip()
+
+        return value or "Customer cancellation"
