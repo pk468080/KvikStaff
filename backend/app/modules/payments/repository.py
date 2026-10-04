@@ -1,4 +1,5 @@
-from datetime import date, datetime, time, timezone
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -6,315 +7,321 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class BookingsRepository:
+class PaymentsRepository:
     def __init__(
         self,
         db: AsyncSession,
     ) -> None:
         self.db = db
 
-    async def _set_customer_auth_context(
+    async def get_customer_booking(
         self,
         customer_id: UUID,
-    ) -> None:
-        await self.db.execute(
+        booking_id: UUID,
+    ) -> dict[str, Any] | None:
+        result = await self.db.execute(
             text(
                 """
-                SELECT set_config(
-                    'request.jwt.claim.sub',
-                    CAST(:customer_id AS text),
-                    true
-                )
+                SELECT
+                    id,
+                    customer_id,
+                    status::text AS status,
+                    fulfillment_type::text
+                        AS fulfillment_type,
+                    service_variant_id,
+                    total_amount,
+                    pricing_snapshot,
+                    scheduled_start,
+                    schedule_start_date,
+                    schedule_end_date,
+                    selected_weekdays,
+                    off_dates,
+                    total_working_hours
+                FROM public.bookings
+                WHERE id =
+                    CAST(:booking_id AS uuid)
+                  AND customer_id =
+                    CAST(:customer_id AS uuid)
+                LIMIT 1
                 """
             ),
             {
+                "booking_id": str(booking_id),
                 "customer_id": str(customer_id),
             },
         )
 
-    async def create_hourly_booking(
+        row = result.mappings().first()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    async def mark_payment_failed(
         self,
         customer_id: UUID,
-        service_variant_id: UUID,
-        address_id: UUID,
-        booking_type: str,
-        scheduled_start: datetime,
-        scheduled_end: datetime,
-        notes: str | None,
-    ) -> dict[str, Any]:
-        async with self.db.begin():
-            await self._set_customer_auth_context(
-                customer_id
-            )
+        booking_id: UUID,
+    ) -> str | None:
+        result = await self.db.execute(
+            text(
+                """
+                UPDATE public.bookings
+                SET
+                    status = 'payment_failed',
+                    updated_at = now()
+                WHERE id =
+                    CAST(:booking_id AS uuid)
+                  AND customer_id =
+                    CAST(:customer_id AS uuid)
+                  AND status = 'pending_payment'
+                RETURNING status::text AS status
+                """
+            ),
+            {
+                "booking_id": str(booking_id),
+                "customer_id": str(customer_id),
+            },
+        )
 
-            result = await self.db.execute(
-                text(
-                    """
-                    SELECT public.create_customer_hourly_booking(
-                        CAST(:service_variant_id AS uuid),
-                        CAST(:address_id AS uuid),
-                        CAST(
-                            :booking_type
-                            AS public.booking_fulfillment_type
-                        ),
-                        CAST(:scheduled_start AS timestamptz),
-                        CAST(:scheduled_end AS timestamptz),
-                        :notes
-                    ) AS result
-                    """
-                ),
-                {
-                    "service_variant_id": str(
-                        service_variant_id
-                    ),
-                    "address_id": str(
-                        address_id
-                    ),
-                    "booking_type": booking_type,
-                    "scheduled_start": scheduled_start,
-                    "scheduled_end": scheduled_end,
-                    "notes": notes,
-                },
-            )
+        await self.db.commit()
 
-            value = result.scalar_one()
+        row = result.mappings().first()
 
-        return self._to_dict(value)
+        if row is not None:
+            return str(row["status"])
 
-    async def create_multi_occurrence_booking(
+        booking = await self.get_customer_booking(
+            customer_id=customer_id,
+            booking_id=booking_id,
+        )
+
+        if booking is None:
+            return None
+
+        return str(
+            booking.get("status")
+        )
+
+    async def reset_payment_failed(
         self,
         customer_id: UUID,
-        service_variant_id: UUID,
-        address_id: UUID,
-        schedule_start_date: date,
-        schedule_end_date: date,
-        daily_start_time: time,
-        daily_end_time: time,
-        selected_weekdays: list[int],
-        off_dates: list[date],
-        notes: str | None,
-        booking_type: str,
-    ) -> dict[str, Any]:
-        async with self.db.begin():
-            await self._set_customer_auth_context(
-                customer_id
-            )
+        booking_id: UUID,
+    ) -> bool:
+        result = await self.db.execute(
+            text(
+                """
+                UPDATE public.bookings
+                SET
+                    status = 'pending_payment',
+                    updated_at = now()
+                WHERE id =
+                    CAST(:booking_id AS uuid)
+                  AND customer_id =
+                    CAST(:customer_id AS uuid)
+                  AND status = 'payment_failed'
+                """
+            ),
+            {
+                "booking_id": str(booking_id),
+                "customer_id": str(customer_id),
+            },
+        )
 
-            if booking_type == "scheduled":
-                function_name = (
-                    "create_customer_scheduled_booking"
+        await self.db.commit()
+
+        return result.rowcount > 0
+
+    async def expire_payment_booking(
+        self,
+        customer_id: UUID,
+        booking_id: UUID,
+    ) -> bool:
+        result = await self.db.execute(
+            text(
+                """
+                UPDATE public.bookings
+                SET
+                    status = 'expired',
+                    updated_at = now()
+                WHERE id =
+                    CAST(:booking_id AS uuid)
+                  AND customer_id =
+                    CAST(:customer_id AS uuid)
+                  AND status IN (
+                      'pending_payment',
+                      'payment_failed'
+                  )
+                """
+            ),
+            {
+                "booking_id": str(booking_id),
+                "customer_id": str(customer_id),
+            },
+        )
+
+        await self.db.commit()
+
+        return result.rowcount > 0
+
+    async def get_latest_payment(
+        self,
+        booking_id: UUID,
+    ) -> dict[str, Any] | None:
+        result = await self.db.execute(
+            text(
+                """
+                SELECT
+                    id,
+                    booking_id,
+                    provider,
+                    provider_order_id,
+                    provider_payment_id,
+                    amount,
+                    currency,
+                    status::text AS status,
+                    paid_at,
+                    created_at,
+                    updated_at
+                FROM public.payments
+                WHERE booking_id =
+                    CAST(:booking_id AS uuid)
+                  AND provider = 'razorpay'
+                ORDER BY created_at DESC
+                LIMIT 1
+                """
+            ),
+            {
+                "booking_id": str(booking_id),
+            },
+        )
+
+        row = result.mappings().first()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    async def get_payment_by_order(
+        self,
+        customer_id: UUID,
+        booking_id: UUID,
+        provider_order_id: str,
+    ) -> dict[str, Any] | None:
+        result = await self.db.execute(
+            text(
+                """
+                SELECT
+                    p.id,
+                    p.booking_id,
+                    p.provider,
+                    p.provider_order_id,
+                    p.provider_payment_id,
+                    p.amount,
+                    p.currency,
+                    p.status::text AS status,
+                    p.paid_at,
+                    p.created_at,
+                    p.updated_at
+                FROM public.payments p
+                INNER JOIN public.bookings b
+                    ON b.id = p.booking_id
+                WHERE p.booking_id =
+                    CAST(:booking_id AS uuid)
+                  AND b.customer_id =
+                    CAST(:customer_id AS uuid)
+                  AND p.provider = 'razorpay'
+                  AND p.provider_order_id =
+                    :provider_order_id
+                LIMIT 1
+                """
+            ),
+            {
+                "booking_id": str(booking_id),
+                "customer_id": str(customer_id),
+                "provider_order_id":
+                    provider_order_id,
+            },
+        )
+
+        row = result.mappings().first()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    async def insert_payment_if_missing(
+        self,
+        booking_id: UUID,
+        provider_order_id: str,
+        amount: Decimal,
+        currency: str,
+    ) -> dict[str, Any]:
+        result = await self.db.execute(
+            text(
+                """
+                INSERT INTO public.payments (
+                    booking_id,
+                    provider,
+                    provider_order_id,
+                    amount,
+                    currency,
+                    status
                 )
-            elif booking_type == "recurring":
-                function_name = (
-                    "create_customer_recurring_booking"
+                VALUES (
+                    CAST(:booking_id AS uuid),
+                    'razorpay',
+                    :provider_order_id,
+                    :amount,
+                    :currency,
+                    'pending'
                 )
-            else:
-                raise ValueError(
-                    "Unsupported multi-occurrence booking type."
-                )
-
-            result = await self.db.execute(
-                text(
-                    f"""
-                    SELECT public.{function_name}(
-                        CAST(:service_variant_id AS uuid),
-                        CAST(:address_id AS uuid),
-                        CAST(:schedule_start_date AS date),
-                        CAST(:schedule_end_date AS date),
-                        CAST(:daily_start_time AS time),
-                        CAST(:daily_end_time AS time),
-                        CAST(:selected_weekdays AS smallint[]),
-                        CAST(:off_dates AS date[]),
-                        :notes
-                    ) AS result
-                    """
+                ON CONFLICT (booking_id)
+                DO NOTHING
+                RETURNING
+                    id,
+                    booking_id,
+                    provider,
+                    provider_order_id,
+                    provider_payment_id,
+                    amount,
+                    currency,
+                    status::text AS status,
+                    paid_at,
+                    created_at,
+                    updated_at
+                """
+            ),
+            {
+                "booking_id": str(
+                    booking_id
                 ),
-                {
-                    "service_variant_id": str(
-                        service_variant_id
-                    ),
-                    "address_id": str(
-                        address_id
-                    ),
-                    "schedule_start_date":
-                        schedule_start_date,
-                    "schedule_end_date":
-                        schedule_end_date,
-                    "daily_start_time":
-                        daily_start_time,
-                    "daily_end_time":
-                        daily_end_time,
-                    "selected_weekdays":
-                        selected_weekdays,
-                    "off_dates":
-                        off_dates,
-                    "notes": notes,
-                },
+                "provider_order_id":
+                    provider_order_id,
+                "amount": amount,
+                "currency": currency,
+            },
+        )
+
+        await self.db.commit()
+
+        row = result.mappings().first()
+
+        if row is not None:
+            return dict(row)
+
+        existing = await self.get_latest_payment(
+            booking_id
+        )
+
+        if existing is None:
+            raise ValueError(
+                "Payment record could not be created."
             )
 
-            value = result.scalar_one()
-
-        return self._to_dict(value)
-
-    async def cancel_customer_booking(
-        self,
-        customer_id: UUID,
-        booking_id: UUID,
-        reason: str,
-    ) -> dict[str, Any]:
-        async with self.db.begin():
-            await self._set_customer_auth_context(
-                customer_id
-            )
-
-            result = await self.db.execute(
-                text(
-                    """
-                    SELECT public.cancel_customer_booking(
-                        CAST(:booking_id AS uuid),
-                        :reason
-                    ) AS result
-                    """
-                ),
-                {
-                    "booking_id": str(
-                        booking_id
-                    ),
-                    "reason": reason,
-                },
-            )
-
-            value = result.scalar_one()
-
-        return self._to_dict(value)
-
-    async def cancel_customer_booking_series(
-        self,
-        customer_id: UUID,
-        booking_id: UUID,
-        reason: str,
-    ) -> dict[str, Any]:
-        async with self.db.begin():
-            await self._set_customer_auth_context(
-                customer_id
-            )
-
-            result = await self.db.execute(
-                text(
-                    """
-                    SELECT public.cancel_customer_booking_series(
-                        CAST(:booking_id AS uuid),
-                        :reason
-                    ) AS result
-                    """
-                ),
-                {
-                    "booking_id": str(
-                        booking_id
-                    ),
-                    "reason": reason,
-                },
-            )
-
-            value = result.scalar_one()
-
-        return self._to_dict(value)
-
-    async def cancel_customer_booking_occurrence(
-        self,
-        customer_id: UUID,
-        occurrence_id: UUID,
-        reason: str,
-    ) -> dict[str, Any]:
-        async with self.db.begin():
-            await self._set_customer_auth_context(
-                customer_id
-            )
-
-            result = await self.db.execute(
-                text(
-                    """
-                    SELECT public.cancel_customer_booking_occurrence(
-                        CAST(:occurrence_id AS uuid),
-                        :reason
-                    ) AS result
-                    """
-                ),
-                {
-                    "occurrence_id": str(
-                        occurrence_id
-                    ),
-                    "reason": reason,
-                },
-            )
-
-            value = result.scalar_one()
-
-        return self._to_dict(value)
-
-    async def get_customer_booking_refunds(
-        self,
-        customer_id: UUID,
-        booking_id: UUID,
-    ) -> list[dict[str, Any]]:
-        async with self.db.begin():
-            await self._set_customer_auth_context(
-                customer_id
-            )
-
-            result = await self.db.execute(
-                text(
-                    """
-                    SELECT private.get_customer_booking_refunds(
-                        CAST(:booking_id AS uuid)
-                    ) AS result
-                    """
-                ),
-                {
-                    "booking_id": str(
-                        booking_id
-                    ),
-                },
-            )
-
-            value = result.scalar_one()
-
-        return self._to_list(value)
-
-    async def reschedule_customer_booking(
-        self,
-        customer_id: UUID,
-        booking_id: UUID,
-        new_start: datetime,
-        new_end: datetime,
-    ) -> dict[str, Any]:
-        async with self.db.begin():
-            await self._set_customer_auth_context(
-                customer_id
-            )
-
-            result = await self.db.execute(
-                text(
-                    """
-                    SELECT public.reschedule_customer_booking(
-                        CAST(:booking_id AS uuid),
-                        CAST(:new_start AS timestamptz),
-                        CAST(:new_end AS timestamptz)
-                    ) AS result
-                    """
-                ),
-                {
-                    "booking_id": str(
-                        booking_id
-                    ),
-                    "new_start": new_start,
-                    "new_end": new_end,
-                },
-            )
-
-            value = result.scalar_one()
-
-        return self._to_dict(value)
+        return existing
 
     async def finalize_razorpay_payment(
         self,
@@ -322,6 +329,11 @@ class BookingsRepository:
         provider_payment_id: str,
         paid_at: datetime | None,
     ) -> dict[str, Any]:
+        # This RPC requires service_role.
+        # Set the role and execute the RPC in the
+        # same transaction.
+        await self.db.rollback()
+
         async with self.db.begin():
             await self.db.execute(
                 text(
@@ -379,32 +391,5 @@ class BookingsRepository:
                 return parsed
 
         raise ValueError(
-            "Booking function returned an invalid result."
-        )
-
-    @staticmethod
-    def _to_list(
-        value: Any,
-    ) -> list[dict[str, Any]]:
-        if isinstance(value, list):
-            return [
-                item
-                for item in value
-                if isinstance(item, dict)
-            ]
-
-        if isinstance(value, str):
-            import json
-
-            parsed = json.loads(value)
-
-            if isinstance(parsed, list):
-                return [
-                    item
-                    for item in parsed
-                    if isinstance(item, dict)
-                ]
-
-        raise ValueError(
-            "Booking refund function returned an invalid result."
+            "Payment function returned an invalid result."
         )
