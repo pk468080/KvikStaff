@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type RazorpayOrder = {
   keyId: string
@@ -33,93 +33,59 @@ export type BookingPaymentDetails = {
   totalWorkingHours: number
 }
 
-function getBookingCurrency(
-  pricingSnapshot: unknown,
-): string | null {
+type BookingPaymentDetailsApiResponse = {
+  bookingId: string
+  amount: number | string
+  currency: string
+  occurrenceCount: number
+  totalWorkingHours: number | string
+}
+
+function parseAmount(
+  value: unknown,
+): number {
+  const amount =
+    typeof value === 'number'
+      ? value
+      : Number(value)
+
   if (
-    pricingSnapshot &&
-    typeof pricingSnapshot === 'object' &&
-    'currency' in pricingSnapshot &&
-    typeof pricingSnapshot.currency === 'string'
+    !Number.isFinite(amount)
   ) {
-    return pricingSnapshot.currency
+    throw new Error(
+      'The booking payment amount is invalid.',
+    )
   }
 
-  return null
+  return amount
 }
 
-function getDateOnly(
-  date: Date,
-): string {
-  const year = date.getFullYear()
-  const month = String(
-    date.getMonth() + 1,
-  ).padStart(2, '0')
-  const day = String(
-    date.getDate(),
-  ).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
-}
-
-/**
- * Loads the payment values from the booking itself.
- *
- * Navigation parameters are display/navigation context only.
- * The booking row remains the authoritative customer payment source.
- */
 export async function getBookingPaymentDetails(
   bookingId: string,
 ): Promise<BookingPaymentDetails> {
   if (!bookingId) {
-    throw new Error('A booking ID is required.')
-  }
-
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('bookings')
-    .select(
-      `
-        id,
-        total_amount,
-        pricing_snapshot,
-        total_working_hours,
-        fulfillment_type,
-        schedule_start_date,
-        schedule_end_date,
-        selected_weekdays,
-        off_dates
-      `,
-    )
-    .eq('id', bookingId)
-    .single()
-
-  if (error) {
-    throw error
-  }
-
-  if (!data) {
     throw new Error(
-      'The booking could not be found.',
+      'A booking ID is required.',
     )
   }
 
-  const amount = Number(
-    data.total_amount,
-  )
+  const result =
+    await apiRequest<BookingPaymentDetailsApiResponse>(
+      `/payments/bookings/${bookingId}`,
+      {
+        method: 'GET',
+      },
+    )
 
-  const currency = getBookingCurrency(
-    data.pricing_snapshot,
-  )
+  const amount =
+    parseAmount(result.amount)
 
-  const totalWorkingHours = Number(
-    data.total_working_hours,
-  )
+  const totalWorkingHours =
+    parseAmount(
+      result.totalWorkingHours,
+    )
 
   if (
-    !Number.isFinite(amount) ||
     amount <= 0
   ) {
     throw new Error(
@@ -127,16 +93,27 @@ export async function getBookingPaymentDetails(
     )
   }
 
-  if (!currency) {
+  if (
+    !result.currency ||
+    typeof result.currency !== 'string'
+  ) {
     throw new Error(
       'The booking payment currency is missing.',
     )
   }
 
   if (
-    !Number.isFinite(
-      totalWorkingHours,
+    !Number.isInteger(
+      Number(result.occurrenceCount),
     ) ||
+    Number(result.occurrenceCount) <= 0
+  ) {
+    throw new Error(
+      'The booking occurrence count is invalid.',
+    )
+  }
+
+  if (
     totalWorkingHours <= 0
   ) {
     throw new Error(
@@ -144,132 +121,14 @@ export async function getBookingPaymentDetails(
     )
   }
 
-  /*
-   * Instant bookings always contain one occurrence.
-   */
-  /*
- * Instant and scheduled bookings are single-record bookings.
- * Only recurring bookings use the persisted recurring schedule
- * fields to calculate the occurrence count.
- */
-if (
-  data.fulfillment_type ===
-  'instant' ||
-  data.fulfillment_type ===
-  'scheduled'
-) {
   return {
-    bookingId: data.id,
+    bookingId:
+      result.bookingId,
     amount,
-    currency,
-    occurrenceCount: 1,
-    totalWorkingHours,
-  }
-}
-
-  /*
-   * Scheduled and recurring bookings derive their
-   * occurrence count from the persisted booking schedule.
-   *
-   * The price itself is NOT recalculated here.
-   * total_amount remains authoritative.
-   */
-  const startDate =
-    data.schedule_start_date
-
-  const endDate =
-    data.schedule_end_date
-
-  const selectedWeekdays =
-    Array.isArray(
-      data.selected_weekdays,
-    )
-      ? data.selected_weekdays
-          .map(Number)
-          .filter(Number.isInteger)
-      : []
-
-  const excludedDates = new Set(
-    Array.isArray(data.off_dates)
-      ? data.off_dates.map(String)
-      : [],
-  )
-
-  if (
-    !startDate ||
-    !endDate ||
-    selectedWeekdays.length === 0
-  ) {
-    throw new Error(
-      'The booking schedule is incomplete.',
-    )
-  }
-
-  /*
-   * These are date-only values from the database.
-   * Constructing local midnight avoids introducing a
-   * UTC date shift while calculating weekday occurrences.
-   */
-  const start = new Date(
-    `${startDate}T00:00:00`,
-  )
-
-  const end = new Date(
-    `${endDate}T00:00:00`,
-  )
-
-  if (
-    !Number.isFinite(
-      start.getTime(),
-    ) ||
-    !Number.isFinite(
-      end.getTime(),
-    ) ||
-    end < start
-  ) {
-    throw new Error(
-      'The booking schedule is invalid.',
-    )
-  }
-
-  let occurrenceCount = 0
-
-  for (
-    const cursor = new Date(start);
-    cursor <= end;
-    cursor.setDate(
-      cursor.getDate() + 1,
-    )
-  ) {
-    const dateOnly = getDateOnly(
-      cursor,
-    )
-
-    if (
-      selectedWeekdays.includes(
-        cursor.getDay(),
-      ) &&
-      !excludedDates.has(
-        dateOnly,
-      )
-    ) {
-      occurrenceCount += 1
-    }
-  }
-
-  if (
-    occurrenceCount <= 0
-  ) {
-    throw new Error(
-      'The booking has no payable occurrences.',
-    )
-  }
-
-  return {
-    bookingId: data.id,
-    amount,
-    currency,
-    occurrenceCount,
+    currency:
+      result.currency,
+    occurrenceCount:
+      Number(result.occurrenceCount),
     totalWorkingHours,
   }
 }
@@ -277,28 +136,27 @@ if (
 export async function markRazorpayPaymentFailed(
   bookingId: string,
 ): Promise<void> {
-  const {
-    data,
-    error,
-  } = await supabase.functions.invoke(
-    'create-razorpay-order',
-    {
-      body: {
-        bookingId,
-        action: 'mark_payment_failed',
-      },
-    },
-  )
-
-  if (error) {
-    throw error
+  if (!bookingId) {
+    throw new Error(
+      'A booking ID is required.',
+    )
   }
 
   const result =
-    data as Record<
-      string,
-      unknown
-    > | null
+    await apiRequest<{
+      success: boolean
+      bookingId: string
+      status: string
+    }>(
+      '/payments/mark-failed',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          booking_id:
+            bookingId,
+        }),
+      },
+    )
 
   if (
     result?.success !== true
@@ -314,72 +172,26 @@ export async function createRazorpayOrder(
   expectedAmount: number,
   expectedCurrency: string,
 ): Promise<RazorpayOrder> {
-  /*
-   * We only need the service variant so the Edge Function
-   * can validate the booking/service relationship.
-   *
-   * The payment amount and currency are NOT sent to the
-   * server as authoritative values.
-   */
-  const {
-    data: booking,
-    error: bookingError,
-  } = await supabase
-    .from('bookings')
-    .select(
-      'service_variant_id',
-    )
-    .eq('id', bookingId)
-    .single()
-
-  if (bookingError) {
-    throw bookingError
-  }
-
-  const packageId = (
-    booking as {
-      service_variant_id?: unknown
-    }
-  ).service_variant_id
-
-  if (
-    typeof packageId !== 'string' ||
-    packageId.length === 0
-  ) {
+  if (!bookingId) {
     throw new Error(
-      'The booking service variant is missing.',
+      'A booking ID is required.',
     )
-  }
-
-  const {
-    data,
-    error,
-  } = await supabase.functions.invoke(
-    'create-razorpay-order',
-    {
-      body: {
-        bookingId,
-        packageId,
-      },
-    },
-  )
-
-  if (error) {
-    throw error
   }
 
   const result =
-    data as Record<
-      string,
-      unknown
-    > | null
+    await apiRequest<
+      Record<string, unknown>
+    >(
+      '/payments/order',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          booking_id:
+            bookingId,
+        }),
+      },
+    )
 
-  /*
-   * The backend found that Razorpay already captured
-   * this booking's payment and reconciled it.
-   *
-   * Never open Checkout again.
-   */
   if (
     result?.success === true &&
     result?.alreadyPaid === true
@@ -389,31 +201,25 @@ export async function createRazorpayOrder(
         typeof result.keyId === 'string'
           ? result.keyId
           : '',
-
       orderId:
         typeof result.orderId === 'string'
           ? result.orderId
           : '',
-
       amount:
         typeof result.amount === 'number'
           ? result.amount
           : Math.round(
               expectedAmount * 100,
             ),
-
       currency:
         typeof result.currency === 'string'
           ? result.currency
           : expectedCurrency,
-
       alreadyPaid: true,
-
       paymentId:
         typeof result.paymentId === 'string'
           ? result.paymentId
           : undefined,
-
       status:
         typeof result.status === 'string'
           ? result.status
@@ -422,58 +228,87 @@ export async function createRazorpayOrder(
   }
 
   if (
-  result?.success === true &&
-  result?.paymentPending === true
-) {
-  return {
-    keyId: '',
-    orderId:
-      typeof result.orderId === 'string'
-        ? result.orderId
-        : '',
-    amount: 0,
-    currency: expectedCurrency,
-    alreadyPaid: false,
-    paymentPending: true,
-    status:
-      typeof result.status === 'string'
-        ? result.status
-        : 'authorized',
+    result?.success === true &&
+    result?.paymentPending === true
+  ) {
+    return {
+      keyId: '',
+      orderId:
+        typeof result.orderId === 'string'
+          ? result.orderId
+          : '',
+      amount: 0,
+      currency:
+        typeof result.currency === 'string'
+          ? result.currency
+          : expectedCurrency,
+      alreadyPaid: false,
+      paymentPending: true,
+      status:
+        typeof result.status === 'string'
+          ? result.status
+          : 'authorized',
+    }
   }
-}
 
   const amount =
-    Number(result?.amount) / 100
+    Number(result?.amount)
+
+  const keyId =
+    typeof result?.keyId === 'string'
+      ? result.keyId
+      : ''
+
+  const orderId =
+    typeof result?.orderId === 'string'
+      ? result.orderId
+      : ''
+
+  const currency =
+    typeof result?.currency === 'string'
+      ? result.currency
+      : ''
 
   if (
     result?.success !== true ||
-    typeof result.keyId !==
-      'string' ||
-    typeof result.orderId !==
-      'string' ||
+    !keyId ||
+    !orderId ||
     !Number.isFinite(amount) ||
+    amount <= 0 ||
+    !currency
+  ) {
+    throw new Error(
+      'The payment order returned by the server is invalid.',
+    )
+  }
+
+  if (
     Math.round(
-      amount * 100,
+      amount / 100 * 100,
     ) !==
-      Math.round(
-        expectedAmount * 100,
-      ) ||
-    result.currency !==
-      expectedCurrency
+    Math.round(
+      expectedAmount * 100,
+    )
   ) {
     throw new Error(
       'The payment order does not match the booking amount.',
     )
   }
 
+  if (
+    currency !==
+    expectedCurrency
+  ) {
+    throw new Error(
+      'The payment order does not match the booking currency.',
+    )
+  }
+
   return {
-    keyId: result.keyId,
-    orderId: result.orderId,
-    amount: Number(
-      result.amount,
-    ),
-    currency:
-      result.currency,
+    keyId,
+    orderId,
+    amount,
+    currency,
     alreadyPaid: false,
   }
 }
@@ -482,101 +317,55 @@ export async function verifyRazorpayPayment(
   bookingId: string,
   checkout: RazorpayCheckoutResult,
 ): Promise<RazorpayPaymentResult> {
-  const {
-    data,
-    error,
-  } = await supabase.functions.invoke(
-    'verify-razorpay-payment',
-    {
-      body: {
-        bookingId,
-        razorpayOrderId:
-          checkout.razorpay_order_id,
-        razorpayPaymentId:
-          checkout.razorpay_payment_id,
-        razorpaySignature:
-          checkout.razorpay_signature,
-      },
-    },
-  )
-
-  /*
-   * Supabase functions.invoke() can return a generic
-   * FunctionsHttpError for a non-2xx response.
-   *
-   * Try to read the actual JSON response from the
-   * Edge Function so the customer app can show the
-   * real verification/finalization error.
-   */
-  if (error) {
-    let serverMessage: string | null = null
-
-    try {
-      const context = (
-        error as {
-          context?: {
-            json?: () => Promise<unknown>
-          }
-        }
-      ).context
-
-      if (
-        context &&
-        typeof context.json === 'function'
-      ) {
-        const responseBody =
-          await context.json()
-
-        if (
-          responseBody &&
-          typeof responseBody === 'object' &&
-          'error' in responseBody &&
-          typeof (
-            responseBody as {
-              error?: unknown
-            }
-          ).error === 'string'
-        ) {
-          serverMessage = (
-            responseBody as {
-              error: string
-            }
-          ).error
-        }
-      }
-    } catch (readError) {
-      console.error(
-        'Unable to read payment verification error:',
-        readError,
-      )
-    }
-
+  if (!bookingId) {
     throw new Error(
-      serverMessage ??
-        error.message ??
-        'Payment verification failed.',
+      'A booking ID is required.',
     )
   }
 
   const result =
-    data as Record<
-      string,
-      unknown
-    > | null
+    await apiRequest<
+      Record<string, unknown>
+    >(
+      '/payments/verify',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          booking_id:
+            bookingId,
+          razorpay_order_id:
+            checkout.razorpay_order_id,
+          razorpay_payment_id:
+            checkout.razorpay_payment_id,
+          razorpay_signature:
+            checkout.razorpay_signature,
+        }),
+      },
+    )
 
   if (
-  result?.success !== true ||
-  typeof result.bookingId !==
-    'string' ||
-  typeof result.paymentId !==
-    'string' ||
-  typeof result.status !==
-    'string'
-) {
+    result?.success !== true ||
+    typeof result.bookingId !==
+      'string' ||
+    typeof result.paymentId !==
+      'string' ||
+    typeof result.status !==
+      'string'
+  ) {
     const serverError =
       typeof result?.error ===
-      'string'
-        ? result.error
+      'object' &&
+      result.error !== null &&
+      typeof (
+        result.error as {
+          message?: unknown
+        }
+      ).message === 'string'
+        ? (
+            result.error as {
+              message: string
+            }
+          ).message
         : null
 
     throw new Error(
@@ -586,14 +375,14 @@ export async function verifyRazorpayPayment(
   }
 
   return {
-  success: true,
-  bookingId:
-    result.bookingId,
-  paymentId:
-    result.paymentId,
-  status:
-    result.status,
-  paymentPending:
-    result.paymentPending === true,
-}
+    success: true,
+    bookingId:
+      result.bookingId,
+    paymentId:
+      result.paymentId,
+    status:
+      result.status,
+    paymentPending:
+      result.paymentPending === true,
+  }
 }

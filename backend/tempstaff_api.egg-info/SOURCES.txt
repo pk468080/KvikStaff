@@ -10,6 +10,7 @@ app/api/v1/auth.py
 app/api/v1/availability.py
 app/api/v1/bookings.py
 app/api/v1/health.py
+app/api/v1/payments.py
 app/api/v1/services.py
 app/core/__init__.py
 app/core/config.py
@@ -21,6 +22,7 @@ app/core/security.py
 app/integrations/expo_push/__init__.py
 app/integrations/maps/__init__.py
 app/integrations/razorpay/__init__.py
+app/integrations/razorpay/client.py
 app/integrations/supabase/__init__.py
 app/modules/addresses/__init__.py
 app/modules/addresses/repository.py
@@ -40,6 +42,9 @@ app/modules/customers/__init__.py
 app/modules/earnings/__init__.py
 app/modules/notifications/__init__.py
 app/modules/payments/__init__.py
+app/modules/payments/repository.py
+app/modules/payments/schemas.py
+app/modules/payments/service.py
 app/modules/refunds/__init__.py
 app/modules/reviews/__init__.py
 app/modules/services/__init__.py
