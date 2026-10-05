@@ -92,8 +92,8 @@ export default function Dashboard() {
           .select('id, amount, status'),
 
         supabase
-          .from('refunds')
-          .select('amount, status'),
+  .from('payment_refunds')
+  .select('amount, status'),
       ])
 
       if (bookingsResult.error) {
