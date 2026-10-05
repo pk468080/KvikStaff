@@ -14,6 +14,7 @@ from app.modules.bookings.repository import (
 from app.modules.bookings.schemas import (
     CustomerBookingCancellationRequest,
     CustomerBookingOccurrenceCancellationRequest,
+    CustomerBookingOtpRequest,
     CustomerBookingRescheduleRequest,
     InstantBookingCreateRequest,
     MultiOccurrenceBookingCreateRequest,
@@ -30,6 +31,18 @@ def get_bookings_service(
 ) -> BookingsService:
     return BookingsService(
         BookingsRepository(db),
+    )
+
+
+@router.get("")
+async def list_customer_bookings(
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> list[dict[str, Any]]:
+    return await service.list_customer_bookings(
+        customer_id=UUID(current_user.id),
     )
 
 
@@ -71,6 +84,93 @@ async def create_recurring_booking(
 ) -> dict[str, Any]:
     return await service.create_recurring_booking(
         request=request,
+        customer_id=UUID(current_user.id),
+    )
+
+
+@router.get("/{booking_id}/history")
+async def get_booking_history(
+    booking_id: UUID,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> list[dict[str, Any]]:
+    return await service.get_customer_booking_status_history(
+        booking_id=booking_id,
+        customer_id=UUID(current_user.id),
+    )
+
+
+@router.get("/{booking_id}/occurrences")
+async def get_booking_occurrences(
+    booking_id: UUID,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> list[dict[str, Any]]:
+    return await service.get_customer_booking_occurrences(
+        booking_id=booking_id,
+        customer_id=UUID(current_user.id),
+    )
+
+
+@router.get("/{booking_id}/occurrences/active")
+async def get_active_booking_occurrence(
+    booking_id: UUID,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> dict[str, Any] | None:
+    return await service.get_customer_active_booking_occurrence(
+        booking_id=booking_id,
+        customer_id=UUID(current_user.id),
+    )
+
+
+@router.get("/{booking_id}/tracking/location")
+async def get_booking_worker_location(
+    booking_id: UUID,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> dict[str, Any] | None:
+    return await service.get_customer_booking_latest_worker_location(
+        booking_id=booking_id,
+        customer_id=UUID(current_user.id),
+    )
+
+
+@router.post("/{booking_id}/otp")
+async def create_booking_otp(
+    booking_id: UUID,
+    request: CustomerBookingOtpRequest,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> dict[str, Any]:
+    return await service.create_customer_booking_otp(
+        booking_id=booking_id,
+        customer_id=UUID(current_user.id),
+        otp_type=request.otp_type,
+        occurrence_id=request.occurrence_id,
+    )
+
+
+@router.get("/{booking_id}")
+async def get_customer_booking(
+    booking_id: UUID,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> dict[str, Any]:
+    return await service.get_customer_booking(
+        booking_id=booking_id,
         customer_id=UUID(current_user.id),
     )
 

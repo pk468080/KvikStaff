@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type BookingStatus =
   | 'pending_payment'
@@ -12,6 +12,25 @@ export type BookingStatus =
   | 'cancelled'
   | 'expired'
   | 'payment_failed'
+
+export type CustomerBookingOccurrence = {
+  id: string
+  booking_id: string
+  worker_id: string | null
+  occurrence_index: number
+  occurrence_date: string
+  scheduled_start: string
+  scheduled_end: string
+  status: string
+  journey_started_at: string | null
+  arrived_at: string | null
+  started_at: string | null
+  completed_at: string | null
+  start_otp_verified_at: string | null
+  end_otp_verified_at: string | null
+  created_at: string
+  updated_at: string
+}
 
 export type CustomerBooking = {
   id: string
@@ -36,28 +55,6 @@ export type CustomerBooking = {
   created_at?: string | null
 }
 
-export type CustomerBookingOccurrence = {
-  id: string
-  booking_id: string
-  worker_id: string | null
-  occurrence_index: number
-  occurrence_date: string
-  scheduled_start: string
-  scheduled_end: string
-  status: string
-
-  journey_started_at: string | null
-  arrived_at: string | null
-  started_at: string | null
-  completed_at: string | null
-
-  start_otp_verified_at: string | null
-  end_otp_verified_at: string | null
-
-  created_at: string
-  updated_at: string
-}
-
 export type BookingStatusHistoryItem = {
   id: string
   booking_id: string
@@ -78,528 +75,143 @@ export type WorkerLocationFreshness =
   | 'fresh'
   | 'stale'
 
-type BookingRow = {
+type BookingApiRow = {
   id: string
   address_id: string
   status: BookingStatus
-  fulfillment_type?: string | null
-  service_name?: string | null
-  service_image_url?: string | null
+  fulfillment_type: string | null
+  service_name: string | null
+  service_image_url: string | null
   scheduled_start: string | null
   scheduled_end: string | null
-  total_working_hours: number | null
-  discount_amount: number
-  platform_fee: number
-  tax_amount: number
-  total_amount: number | null
+  total_working_hours: number | string | null
+  discount_amount: number | string | null
+  platform_fee: number | string | null
+  tax_amount: number | string | null
+  total_amount: number | string | null
   worker_id: string | null
   started_at: string | null
   completed_at: string | null
   journey_started_at: string | null
   arrived_at: string | null
-  created_at?: string | null
+  active_occurrence?: CustomerBookingOccurrence | null
+  created_at: string | null
+}
 
-  service_variant?: {
-    service?: {
-      name?: string | null
-      image_url?: string | null
-    } | null
-  } | null
+function toNumber(
+  value: number | string | null | undefined,
+  fallback = 0,
+): number {
+  if (value === null || value === undefined) {
+    return fallback
+  }
+
+  const result = Number(value)
+
+  return Number.isFinite(result)
+    ? result
+    : fallback
 }
 
 function mapBooking(
-  row: BookingRow,
+  row: BookingApiRow,
 ): CustomerBooking {
   return {
     id: row.id,
-
-    address_id:
-      row.address_id,
-
-    status:
-      row.status,
-
+    address_id: row.address_id,
+    status: row.status,
     booking_type:
-  row.fulfillment_type ??
-  null,
-
+      row.fulfillment_type ?? null,
     service_name:
-      row.service_variant?.service?.name ??
-      row.service_name ??
-      null,
-
+      row.service_name ?? null,
     service_image_url:
-      row.service_variant?.service?.image_url ??
-      row.service_image_url ??
-      null,
-
+      row.service_image_url ?? null,
     scheduled_start:
       row.scheduled_start,
-
     scheduled_end:
       row.scheduled_end,
-
     total_working_hours:
-      row.total_working_hours,
-
+      row.total_working_hours === null
+        ? null
+        : toNumber(
+            row.total_working_hours,
+          ),
     discount_amount:
-      row.discount_amount,
-
+      toNumber(
+        row.discount_amount,
+      ),
     platform_fee:
-      row.platform_fee,
-
+      toNumber(
+        row.platform_fee,
+      ),
     tax_amount:
-      row.tax_amount,
-
+      toNumber(
+        row.tax_amount,
+      ),
     total_amount:
-      row.total_amount,
-
+      row.total_amount === null
+        ? null
+        : toNumber(
+            row.total_amount,
+          ),
     worker_id:
       row.worker_id,
-
     started_at:
       row.started_at,
-
     completed_at:
       row.completed_at,
-
     journey_started_at:
       row.journey_started_at,
-
     arrived_at:
       row.arrived_at,
-
-    activeOccurrenceId: null,
-
-    created_at:
-      row.created_at ??
-      null,
-  }
-}
-
-const BOOKING_SELECT = `
-  id,
-  status,
-  fulfillment_type,
-  address_id,
-  created_at,
-  scheduled_start,
-  scheduled_end,
-  total_working_hours,
-  discount_amount,
-  platform_fee,
-  tax_amount,
-  total_amount,
-  worker_id,
-  started_at,
-  completed_at,
-  journey_started_at,
-  arrived_at,
-  service_variant:service_variants(
-    service:services(
-      name,
-      image_url
-    )
-  )
-`
-
-const OCCURRENCE_LIFECYCLE_STATUSES:
-  BookingStatus[] = [
-  'assigned',
-  'on_the_way',
-  'arrived',
-  'in_progress',
-]
-
-const OCCURRENCE_STATUS_PRIORITY:
-  Partial<Record<BookingStatus, number>> = {
-  assigned: 1,
-  on_the_way: 2,
-  arrived: 3,
-  in_progress: 4,
-}
-
-function selectPreferredOccurrence(
-  occurrences: CustomerBookingOccurrence[],
-  nowMs = Date.now(),
-): CustomerBookingOccurrence | null {
-  if (
-    occurrences.length === 0
-  ) {
-    return null
-  }
-
-  const lifecycleOccurrences =
-    occurrences
-      .filter(
-        occurrence =>
-          Boolean(
-            occurrence.worker_id,
-          ) &&
-          OCCURRENCE_LIFECYCLE_STATUSES.includes(
-            occurrence.status as BookingStatus,
-          ),
-      )
-      .sort(
-        (
-          left,
-          right,
-        ) => {
-          const leftPriority =
-            OCCURRENCE_STATUS_PRIORITY[
-              left.status as BookingStatus
-            ] ?? 0
-
-          const rightPriority =
-            OCCURRENCE_STATUS_PRIORITY[
-              right.status as BookingStatus
-            ] ?? 0
-
-          if (
-            leftPriority !==
-            rightPriority
-          ) {
-            return (
-              rightPriority -
-              leftPriority
-            )
-          }
-
-          const leftStart =
-            Date.parse(
-              left.scheduled_start,
-            )
-
-          const rightStart =
-            Date.parse(
-              right.scheduled_start,
-            )
-
-          return (
-            Math.abs(
-              leftStart -
-                nowMs,
-            ) -
-            Math.abs(
-              rightStart -
-                nowMs,
-            )
-          )
-        },
-      )
-
-  if (
-    lifecycleOccurrences[0]
-  ) {
-    return (
-      lifecycleOccurrences[0]
-    )
-  }
-
-  const futureOccurrences =
-    occurrences
-      .filter(
-        occurrence => {
-          const start =
-            Date.parse(
-              occurrence.scheduled_start,
-            )
-
-          return (
-            Number.isFinite(
-              start,
-            ) &&
-            start >= nowMs
-          )
-        },
-      )
-      .sort(
-        (
-          left,
-          right,
-        ) =>
-          Date.parse(
-            left.scheduled_start,
-          ) -
-          Date.parse(
-            right.scheduled_start,
-          ),
-      )
-
-  if (
-    futureOccurrences[0]
-  ) {
-    return (
-      futureOccurrences[0]
-    )
-  }
-
-  return [...occurrences]
-    .sort(
-      (
-        left,
-        right,
-      ) =>
-        Date.parse(
-          right.scheduled_start,
-        ) -
-        Date.parse(
-          left.scheduled_start,
-        ),
-    )[0] ?? null
-}
-
-function applyActiveOccurrenceToBooking(
-  booking: CustomerBooking,
-  occurrence:
-    | CustomerBookingOccurrence
-    | null,
-): CustomerBooking {
-  if (!occurrence) {
-    return booking
-  }
-
-  /*
-   * Scheduled/recurring bookings can keep
-   * worker assignment on the active occurrence.
-   */
-  if (!occurrence.worker_id) {
-    return booking
-  }
-
-  if (
-    booking.worker_id &&
-    occurrence.worker_id !==
-      booking.worker_id
-  ) {
-    return booking
-  }
-
-  if (
-    !OCCURRENCE_LIFECYCLE_STATUSES.includes(
-      occurrence.status as BookingStatus,
-    )
-  ) {
-    return booking
-  }
-
-  return {
-    ...booking,
-
-    status:
-      occurrence.status as BookingStatus,
-
-    scheduled_start:
-      occurrence.scheduled_start,
-
-    scheduled_end:
-      occurrence.scheduled_end,
-
-    journey_started_at:
-      occurrence.journey_started_at,
-
-    arrived_at:
-      occurrence.arrived_at,
-
-    started_at:
-      occurrence.started_at,
-
-    completed_at:
-      occurrence.completed_at,
-
-    worker_id:
-      occurrence.worker_id,
-
     activeOccurrenceId:
-      occurrence.id,
+      row.active_occurrence?.id ??
+      null,
+    created_at:
+      row.created_at ?? null,
   }
 }
 
 export async function getCustomerBooking(
   bookingId: string,
 ): Promise<CustomerBooking> {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('bookings')
-    .select(
-      BOOKING_SELECT,
-    )
-    .eq(
-      'id',
-      bookingId,
-    )
-    .single()
-
-  if (error) {
-    throw error
-  }
-
-  if (!data) {
+  if (!bookingId.trim()) {
     throw new Error(
-      'Booking could not be loaded.',
+      'Booking ID is required.',
     )
   }
 
-  const booking =
-    mapBooking(
-      data as unknown as BookingRow,
+  const row =
+    await apiRequest<BookingApiRow>(
+      `/bookings/${bookingId}`,
+      {
+        method: 'GET',
+      },
     )
 
-  if (
-    booking.booking_type !==
-    'recurring'
-  ) {
-    return booking
-  }
-
-  const occurrence =
-    await getCustomerActiveBookingOccurrence(
-      bookingId,
-    )
-
-  return applyActiveOccurrenceToBooking(
-    booking,
-    occurrence,
-  )
+  return mapBooking(row)
 }
 
 export async function getCustomerBookings(): Promise<
   CustomerBooking[]
 > {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('bookings')
-    .select(
-      BOOKING_SELECT,
-    )
-    .order(
-      'created_at',
+  const rows =
+    await apiRequest<BookingApiRow[]>(
+      '/bookings',
       {
-        ascending: false,
+        method: 'GET',
       },
     )
 
-  if (error) {
-    throw error
-  }
-
-  const bookings =
-    (
-      (data ?? []) as unknown as BookingRow[]
-    ).map(
-      mapBooking,
-    )
-
-  const occurrenceBookingIds =
-    bookings
-      .filter(
-        booking =>
-          booking.booking_type ===
-          'recurring',
-      )
-      .map(
-        booking =>
-          booking.id,
-      )
-
-  if (
-    occurrenceBookingIds.length ===
-    0
-  ) {
-    return bookings
-  }
-
-  const {
-    data: occurrenceRows,
-    error:
-      occurrenceError,
-  } = await supabase
-    .from(
-      'booking_schedule_occurrences',
-    )
-    .select(
-      `
-        id,
-        booking_id,
-        worker_id,
-        occurrence_index,
-        occurrence_date,
-        scheduled_start,
-        scheduled_end,
-        status,
-        journey_started_at,
-        arrived_at,
-        started_at,
-        completed_at,
-        start_otp_verified_at,
-        end_otp_verified_at,
-        created_at,
-        updated_at
-      `,
-    )
-    .in(
-      'booking_id',
-      occurrenceBookingIds,
-    )
-    .not(
-      'status',
-      'in',
-      '("completed","cancelled")',
-    )
-    .order(
-      'scheduled_start',
-      {
-        ascending: true,
-      },
-    )
-
-  if (occurrenceError) {
-    throw occurrenceError
-  }
-
-  const occurrencesByBooking =
-    new Map<
-      string,
-      CustomerBookingOccurrence[]
-    >()
-
-  for (
-    const row of (
-      occurrenceRows ??
-      []
-    ) as unknown as CustomerBookingOccurrence[]
-  ) {
-    const existing =
-      occurrencesByBooking.get(
-        row.booking_id,
-      ) ?? []
-
-    existing.push(
-      row,
-    )
-
-    occurrencesByBooking.set(
-      row.booking_id,
-      existing,
+  if (!Array.isArray(rows)) {
+    throw new Error(
+      'Unable to load bookings.',
     )
   }
 
-  return bookings.map(
-    booking =>
-      applyActiveOccurrenceToBooking(
-        booking,
-        selectPreferredOccurrence(
-          occurrencesByBooking.get(
-            booking.id,
-          ) ?? [],
-        ),
-      ),
-  )
+  return rows.map(mapBooking)
 }
+
 export function sortBookingStatusHistory(
   history: BookingStatusHistoryItem[],
 ): BookingStatusHistoryItem[] {
@@ -610,17 +222,23 @@ export function sortBookingStatusHistory(
   const items = [...history].sort(
     (left, right) => {
       const leftTime =
-        Date.parse(left.created_at)
+        Date.parse(
+          left.created_at,
+        )
 
       const rightTime =
-        Date.parse(right.created_at)
+        Date.parse(
+          right.created_at,
+        )
 
       if (
         Number.isFinite(leftTime) &&
         Number.isFinite(rightTime) &&
         leftTime !== rightTime
       ) {
-        return leftTime - rightTime
+        return (
+          leftTime - rightTime
+        )
       }
 
       if (
@@ -650,8 +268,11 @@ export function sortBookingStatusHistory(
     | BookingStatus
     | null = null
 
-  while (cursor < items.length) {
-    const firstItem = items[cursor]
+  while (
+    cursor < items.length
+  ) {
+    const firstItem =
+      items[cursor]
 
     const firstTime =
       Date.parse(
@@ -674,9 +295,14 @@ export function sortBookingStatusHistory(
 
       const sameTimestamp =
         (
-          Number.isFinite(firstTime) &&
-          Number.isFinite(currentTime) &&
-          firstTime === currentTime
+          Number.isFinite(
+            firstTime,
+          ) &&
+          Number.isFinite(
+            currentTime,
+          ) &&
+          firstTime ===
+            currentTime
         ) ||
         (
           firstItem.created_at ===
@@ -694,14 +320,6 @@ export function sortBookingStatusHistory(
       cursor += 1
     }
 
-    /*
-     * Resolve transitions that share the same timestamp
-     * by following the state chain:
-     *
-     * pending_payment -> paid -> searching_worker
-     *
-     * rather than relying on UUID ordering.
-     */
     const remaining = [
       ...group,
     ]
@@ -722,10 +340,6 @@ export function sortBookingStatusHistory(
           )
       }
 
-      /*
-       * For the first transition of the entire history,
-       * prefer the entry without a previous status.
-       */
       if (
         nextIndex === -1 &&
         previousStatus === null
@@ -738,11 +352,6 @@ export function sortBookingStatusHistory(
           )
       }
 
-      /*
-       * If the database does not provide enough information
-       * to establish the chain, use deterministic UUID ordering
-       * instead of producing unstable UI ordering.
-       */
       if (
         nextIndex === -1
       ) {
@@ -783,20 +392,6 @@ export function sortBookingStatusHistory(
       previousStatus =
         nextItem.new_status
     }
-
-    /*
-     * If the timestamp group was empty or somehow did not
-     * produce a status, preserve the last known state.
-     */
-    if (
-      result.length > 0 &&
-      previousStatus === null
-    ) {
-      previousStatus =
-        result[
-          result.length - 1
-        ].new_status
-    }
   }
 
   return result
@@ -805,94 +400,30 @@ export function sortBookingStatusHistory(
 export async function getCustomerBookingStatusHistory(
   bookingId: string,
 ): Promise<BookingStatusHistoryItem[]> {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from(
-      'booking_status_history',
+  if (!bookingId.trim()) {
+    throw new Error(
+      'Booking ID is required.',
     )
-    .select(
-      'id, booking_id, old_status, new_status, changed_by, created_at',
-    )
-    .eq(
-      'booking_id',
-      bookingId,
-    )
-    .order(
-      'created_at',
+  }
+
+  const rows =
+    await apiRequest<
+      BookingStatusHistoryItem[]
+    >(
+      `/bookings/${bookingId}/history`,
       {
-        ascending: true,
+        method: 'GET',
       },
     )
 
-  if (error) {
-    throw error
+  if (!Array.isArray(rows)) {
+    throw new Error(
+      'Unable to load booking history.',
+    )
   }
 
   return sortBookingStatusHistory(
-    (
-      (data ?? []) as unknown as
-        BookingStatusHistoryItem[]
-    ),
-  )
-}
-
-
-export async function getCustomerActiveBookingOccurrence(
-  bookingId: string,
-): Promise<CustomerBookingOccurrence | null> {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from(
-      'booking_schedule_occurrences',
-    )
-    .select(
-      `
-        id,
-        booking_id,
-        worker_id,
-        occurrence_index,
-        occurrence_date,
-        scheduled_start,
-        scheduled_end,
-        status,
-        journey_started_at,
-        arrived_at,
-        started_at,
-        completed_at,
-        start_otp_verified_at,
-        end_otp_verified_at,
-        created_at,
-        updated_at
-      `,
-    )
-    .eq(
-      'booking_id',
-      bookingId,
-    )
-    .not(
-      'status',
-      'in',
-      '("completed","cancelled")',
-    )
-    .order(
-      'scheduled_start',
-      {
-        ascending: true,
-      },
-    )
-
-  if (error) {
-    throw error
-  }
-
-  return selectPreferredOccurrence(
-    (
-      data ?? []
-    ) as unknown as CustomerBookingOccurrence[],
+    rows,
   )
 }
 
@@ -901,101 +432,84 @@ export async function getCustomerBookingOccurrences(
 ): Promise<
   CustomerBookingOccurrence[]
 > {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from(
-      'booking_schedule_occurrences',
+  if (!bookingId.trim()) {
+    throw new Error(
+      'Booking ID is required.',
     )
-    .select(
-      `
-        id,
-        booking_id,
-        worker_id,
-        occurrence_index,
-        occurrence_date,
-        scheduled_start,
-        scheduled_end,
-        status,
-        journey_started_at,
-        arrived_at,
-        started_at,
-        completed_at,
-        start_otp_verified_at,
-        end_otp_verified_at,
-        created_at,
-        updated_at
-      `,
-    )
-    .eq(
-      'booking_id',
-      bookingId,
-    )
-    .order(
-      'occurrence_index',
+  }
+
+  const rows =
+    await apiRequest<
+      CustomerBookingOccurrence[]
+    >(
+      `/bookings/${bookingId}/occurrences`,
       {
-        ascending: true,
+        method: 'GET',
       },
     )
 
-  if (error) {
-    throw error
+  if (!Array.isArray(rows)) {
+    throw new Error(
+      'Unable to load booking occurrences.',
+    )
   }
 
-  return (
-    (data ?? []) as unknown as
-      CustomerBookingOccurrence[]
+  return rows
+}
+
+export async function getCustomerActiveBookingOccurrence(
+  bookingId: string,
+): Promise<
+  CustomerBookingOccurrence | null
+> {
+  if (!bookingId.trim()) {
+    throw new Error(
+      'Booking ID is required.',
+    )
+  }
+
+  return apiRequest<
+    CustomerBookingOccurrence | null
+  >(
+    `/bookings/${bookingId}/occurrences/active`,
+    {
+      method: 'GET',
+    },
   )
 }
 
 export async function getLatestWorkerLocation(
   bookingId: string,
 ): Promise<WorkerLocation | null> {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from(
-      'worker_locations',
+  if (!bookingId.trim()) {
+    throw new Error(
+      'Booking ID is required.',
     )
-    .select(
-      'latitude, longitude, recorded_at',
-    )
-    .eq(
-      'booking_id',
-      bookingId,
-    )
-    .order(
-      'recorded_at',
-      {
-        ascending: false,
-      },
-    )
-    .limit(1)
-    .maybeSingle()
-
-  if (error) {
-    throw error
   }
 
-  if (!data) {
+  const location =
+    await apiRequest<
+      WorkerLocation | null
+    >(
+      `/bookings/${bookingId}/tracking/location`,
+      {
+        method: 'GET',
+      },
+    )
+
+  if (!location) {
     return null
   }
 
   return {
-    latitude:
-      Number(
-        data.latitude,
-      ),
-
-    longitude:
-      Number(
-        data.longitude,
-      ),
-
+    latitude: Number(
+      location.latitude,
+    ),
+    longitude: Number(
+      location.longitude,
+    ),
     recorded_at:
-      data.recorded_at,
+      location.recorded_at,
   }
 }
 
@@ -1057,70 +571,13 @@ export function getWorkerLocationAgeSeconds(
   return Math.max(
     0,
     Math.floor(
-      (nowMs -
-        recordedAt) /
+      (
+        nowMs -
+        recordedAt
+      ) /
         1000,
     ),
   )
-}
-
-async function resolveOccurrenceIdForOtp(
-  bookingId: string,
-): Promise<
-  string | undefined
-> {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('bookings')
-    .select(
-      'id, fulfillment_type, worker_id',
-    )
-    .eq(
-      'id',
-      bookingId,
-    )
-    .single()
-
-  if (error) {
-    throw error
-  }
-
-  const bookingType =
-    String(
-      data?.fulfillment_type ??
-        '',
-    )
-
-  if (
-    bookingType !==
-    'recurring'
-  ) {
-    return undefined
-  }
-
-  const occurrence =
-    await getCustomerActiveBookingOccurrence(
-      bookingId,
-    )
-
-  if (
-    !occurrence ||
-    !occurrence.worker_id
-  ) {
-    return undefined
-  }
-
-  if (
-    data?.worker_id &&
-    occurrence.worker_id !==
-      data.worker_id
-  ) {
-    return undefined
-  }
-
-  return occurrence.id
 }
 
 export async function requestBookingOtp(
@@ -1130,58 +587,43 @@ export async function requestBookingOtp(
     | 'end',
   occurrenceId?: string,
 ) {
-  let resolvedOccurrenceId =
-    occurrenceId
-
-  if (
-    !resolvedOccurrenceId
-  ) {
-    resolvedOccurrenceId =
-      await resolveOccurrenceIdForOtp(
-        bookingId,
-      )
-  }
-
-  const body: {
-    bookingId: string
-    otpType:
-      | 'start'
-      | 'end'
-    occurrenceId?: string
-  } = {
-    bookingId,
-    otpType,
-  }
-
-  if (
-    resolvedOccurrenceId
-  ) {
-    body.occurrenceId =
-      resolvedOccurrenceId
-  }
-
-  const {
-    data,
-    error,
-  } =
-    await supabase.functions.invoke(
-      'create-booking-otp',
-      {
-        body,
-      },
+  if (!bookingId.trim()) {
+    throw new Error(
+      'Booking ID is required.',
     )
+  }
 
-  if (error) {
-    throw error
+  if (
+    otpType !== 'start' &&
+    otpType !== 'end'
+  ) {
+    throw new Error(
+      'OTP type must be start or end.',
+    )
   }
 
   const result =
-    data as {
+    await apiRequest<{
       success?: boolean
+      message?: string
       otp?: string
       expiresAt?: string
       occurrence_id?: string | null
-    }
+    }>(
+      `/bookings/${bookingId}/otp`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          otp_type: otpType,
+          ...(occurrenceId
+            ? {
+                occurrence_id:
+                  occurrenceId,
+              }
+            : {}),
+        }),
+      },
+    )
 
   if (
     result.success !== true

@@ -1,4 +1,5 @@
 from datetime import date, datetime, time
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -220,3 +221,8 @@ class CustomerBookingOccurrenceCancellationRequest(BaseModel):
         value = value.strip()
 
         return value or "Customer cancellation"
+
+
+class CustomerBookingOtpRequest(BaseModel):
+    otp_type: Literal["start", "end"]
+    occurrence_id: UUID | None = None
