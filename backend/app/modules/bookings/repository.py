@@ -2,7 +2,14 @@ from datetime import date, datetime, time
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import (
+    Date,
+    SmallInteger,
+    Time,
+    bindparam,
+    text,
+)
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -95,24 +102,6 @@ class BookingsRepository:
         notes: str | None,
         booking_type: str,
     ) -> dict[str, Any]:
-        selected_weekdays_literal = (
-            "{"
-            + ",".join(
-                str(day)
-                for day in selected_weekdays
-            )
-            + "}"
-        )
-
-        off_dates_literal = (
-            "{"
-            + ",".join(
-                value.isoformat()
-                for value in off_dates
-            )
-            + "}"
-        )
-
         async with self.db.begin():
             await self._set_customer_auth_context(
                 customer_id
@@ -131,22 +120,49 @@ class BookingsRepository:
                     "Unsupported multi-occurrence booking type."
                 )
 
-            result = await self.db.execute(
-                text(
-                    f"""
-                    SELECT public.{function_name}(
-                        CAST(:service_variant_id AS uuid),
-                        CAST(:address_id AS uuid),
-                        CAST(:schedule_start_date AS date),
-                        CAST(:schedule_end_date AS date),
-                        CAST(:daily_start_time AS time),
-                        CAST(:daily_end_time AS time),
-                        CAST(:selected_weekdays AS smallint[]),
-                        CAST(:off_dates AS date[]),
-                        :notes
-                    ) AS result
-                    """
+            query = text(
+                f"""
+                SELECT public.{function_name}(
+                    CAST(:service_variant_id AS uuid),
+                    CAST(:address_id AS uuid),
+                    :schedule_start_date,
+                    :schedule_end_date,
+                    :daily_start_time,
+                    :daily_end_time,
+                    :selected_weekdays,
+                    :off_dates,
+                    :notes
+                ) AS result
+                """
+            ).bindparams(
+                bindparam(
+                    "schedule_start_date",
+                    type_=Date(),
                 ),
+                bindparam(
+                    "schedule_end_date",
+                    type_=Date(),
+                ),
+                bindparam(
+                    "daily_start_time",
+                    type_=Time(),
+                ),
+                bindparam(
+                    "daily_end_time",
+                    type_=Time(),
+                ),
+                bindparam(
+                    "selected_weekdays",
+                    type_=ARRAY(SmallInteger()),
+                ),
+                bindparam(
+                    "off_dates",
+                    type_=ARRAY(Date()),
+                ),
+            )
+
+            result = await self.db.execute(
+                query,
                 {
                     "service_variant_id": str(
                         service_variant_id
@@ -155,21 +171,21 @@ class BookingsRepository:
                         address_id
                     ),
                     "schedule_start_date": (
-                        schedule_start_date.isoformat()
+                        schedule_start_date
                     ),
                     "schedule_end_date": (
-                        schedule_end_date.isoformat()
+                        schedule_end_date
                     ),
                     "daily_start_time": (
-                        daily_start_time.isoformat()
+                        daily_start_time
                     ),
                     "daily_end_time": (
-                        daily_end_time.isoformat()
+                        daily_end_time
                     ),
                     "selected_weekdays": (
-                        selected_weekdays_literal
+                        selected_weekdays
                     ),
-                    "off_dates": off_dates_literal,
+                    "off_dates": off_dates,
                     "notes": notes,
                 },
             )
@@ -320,7 +336,9 @@ class BookingsRepository:
                     """
                 ),
                 {
-                    "booking_id": str(booking_id),
+                    "booking_id": str(
+                        booking_id
+                    ),
                     "new_start": new_start,
                     "new_end": new_end,
                 },
