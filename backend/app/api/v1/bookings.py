@@ -2,7 +2,16 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
-
+from app.modules.bookings.schemas import (
+    CustomerBookingCancellationRequest,
+    CustomerBookingOccurrenceCancellationRequest,
+    CustomerBookingOtpRequest,
+    CustomerBookingRescheduleRequest,
+    InstantBookingCreateRequest,
+    InstantBookingPriceRequest,
+    MultiOccurrenceBookingCreateRequest,
+    MultiOccurrenceBookingPriceRequest,
+)
 from app.core.database import get_db
 from app.core.security import (
     CurrentUser,
