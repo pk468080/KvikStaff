@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type CustomerPushPlatform =
   | 'android'
@@ -62,25 +62,6 @@ function normalizePlatform(
   return normalized as CustomerPushPlatform
 }
 
-async function getCurrentCustomerId(): Promise<string> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) {
-    throw error
-  }
-
-  if (!user) {
-    throw new Error(
-      'A customer authentication session is required.',
-    )
-  }
-
-  return user.id
-}
-
 export function formatUnreadNotificationCount(
   count: number,
 ): string {
@@ -105,133 +86,10 @@ export async function markCustomerNotificationRead(
     )
   }
 
-  const { error } =
-    await supabase.rpc(
-      'mark_notification_read',
-      {
-        p_notification_id:
-          normalizedId,
-      },
-    )
-
-  if (error) {
-    throw error
-  }
-}
-
-export async function getUnreadCustomerNotificationCount(): Promise<number> {
-  const customerId =
-    await getCurrentCustomerId()
-
-  const {
-    count,
-    error,
-  } = await supabase
-    .from('notifications')
-    .select('id', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('user_id', customerId)
-    .eq('is_read', false)
-
-  if (error) {
-    throw error
-  }
-
-  if (
-    typeof count !== 'number' ||
-    !Number.isFinite(count)
-  ) {
-    return 0
-  }
-
-  return Math.min(
-    Number.MAX_SAFE_INTEGER,
-    Math.max(0, Math.floor(count)),
-  )
-}
-
-export async function registerCustomerPushToken(
-  token: string,
-  platform?:
-    | CustomerPushPlatform
-    | null,
-): Promise<CustomerPushToken> {
-  const normalizedToken =
-    validatePushToken(token)
-
-  const normalizedPlatform =
-    normalizePlatform(platform)
-
-  const customerId =
-    await getCurrentCustomerId()
-
-  const {
-    data,
-    error,
-  } = await supabase.rpc(
-    'register_customer_push_token',
+  await apiRequest<unknown>(
+    `/notifications/${normalizedId}/read`,
     {
-      p_token:
-        normalizedToken,
-      ...(normalizedPlatform
-  ? {
-      p_platform:
-        normalizedPlatform,
-    }
-  : {}),
+      method: 'POST',
     },
   )
-
-  if (error) {
-    throw error
-  }
-
-  if (!data) {
-    throw new Error(
-      'Customer push token could not be registered.',
-    )
-  }
-
-  const row =
-    data as CustomerPushToken
-
-  if (
-    row.user_id !==
-    customerId
-  ) {
-    throw new Error(
-      'Push token registration belongs to a different customer account.',
-    )
-  }
-
-  return row
-}
-
-export async function deactivateCurrentCustomerPushTokens(): Promise<void> {
-  const customerId =
-    await getCurrentCustomerId()
-
-  const {
-    error,
-  } = await supabase
-    .from('push_tokens')
-    .update({
-      is_active: false,
-      updated_at:
-        new Date().toISOString(),
-    })
-    .eq(
-      'user_id',
-      customerId,
-    )
-    .eq(
-      'is_active',
-      true,
-    )
-
-  if (error) {
-    throw error
-  }
 }
