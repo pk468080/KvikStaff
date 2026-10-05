@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type CustomerInvoice = {
   invoiceReference: string
@@ -24,213 +24,198 @@ export type CustomerInvoice = {
   createdAt: string | null
 }
 
-type InvoiceBookingRow = {
-  id: string
-  customer_id: string
-  status: string
-  fulfillment_type: string | null
-  scheduled_start: string | null
-  scheduled_end: string | null
-  total_working_hours: number | null
-  base_amount: number
-  discount_amount: number
-  platform_fee: number
-  tax_amount: number
-  total_amount: number
-  completed_at: string | null
-  created_at: string
-  service_variant?: {
-    service?: {
-      name?: string | null
-    } | null
-  } | null
-}
-
-type InvoicePaymentRow = {
-  id: string
-  booking_id: string
-  amount: number
-  currency: string
-  status: string
-  provider: string
-  provider_order_id: string | null
-  provider_payment_id: string | null
-  paid_at: string | null
-  created_at: string
-}
-
-const INVOICE_BOOKING_SELECT = `
-  id,
-  customer_id,
-  status,
-  fulfillment_type,
-  scheduled_start,
-  scheduled_end,
-  total_working_hours,
-  base_amount,
-  discount_amount,
-  platform_fee,
-  tax_amount,
-  total_amount,
-  completed_at,
-  created_at,
-  service_variant:service_variants(
-    service:services(
-      name
-    )
-  )
-`
-
-const INVOICE_PAYMENT_SELECT = `
-  id,
-  booking_id,
-  amount,
-  currency,
-  status,
-  provider,
-  provider_order_id,
-  provider_payment_id,
-  paid_at,
-  created_at
-`
-
-function requireMoney(
+function normalizeMoney(
   value: unknown,
   label: string,
 ): number {
   const amount = Number(value)
 
   if (!Number.isFinite(amount) || amount < 0) {
-    throw new Error(`The stored ${label} is invalid.`)
+    throw new Error(
+      `The stored ${label} is invalid.`,
+    )
   }
 
   return amount
 }
 
-function requireCurrency(value: unknown): string {
-  if (typeof value !== 'string' || !value.trim()) {
-    throw new Error('The stored payment currency is invalid.')
+function normalizeCurrency(
+  value: unknown,
+): string {
+  if (
+    typeof value !== 'string' ||
+    !value.trim()
+  ) {
+    throw new Error(
+      'The stored payment currency is invalid.',
+    )
   }
 
   return value.trim().toUpperCase()
 }
 
-export function createReceiptReference(bookingId: string): string {
-  const normalized = bookingId.trim()
-
-  if (!normalized) {
-    throw new Error('A booking ID is required.')
-  }
-
-  return `TEMPSTAFF-REC-${normalized.slice(0, 8).toUpperCase()}`
-}
-
-export function mapCustomerInvoice(
-  booking: InvoiceBookingRow,
-  payment: InvoicePaymentRow,
+function normalizeInvoice(
+  data: unknown,
 ): CustomerInvoice {
-  if (booking.status !== 'completed') {
-    throw new Error('A payment receipt is available only for completed bookings.')
+  if (
+    !data ||
+    typeof data !== 'object'
+  ) {
+    throw new Error(
+      'The backend did not return a valid payment receipt.',
+    )
   }
 
-  if (payment.booking_id !== booking.id) {
-    throw new Error('The payment does not belong to this booking.')
+  const result =
+    data as Record<string, unknown>
+
+  if (
+    typeof result.invoice_reference !== 'string' ||
+    typeof result.booking_id !== 'string' ||
+    typeof result.payment_id !== 'string' ||
+    typeof result.service_name !== 'string'
+  ) {
+    throw new Error(
+      'The payment receipt response is missing required information.',
+    )
   }
 
-  const paymentAmount = requireMoney(payment.amount, 'payment amount')
-  const totalAmount = requireMoney(booking.total_amount, 'booking total')
-
-  if (paymentAmount !== totalAmount) {
-    throw new Error('The stored payment and booking totals do not match.')
+  if (
+    typeof result.payment_status !== 'string' ||
+    typeof result.payment_provider !== 'string'
+  ) {
+    throw new Error(
+      'The payment receipt response is missing payment information.',
+    )
   }
 
   return {
-    invoiceReference: createReceiptReference(booking.id),
-    bookingId: booking.id,
-    paymentId: payment.id,
+    invoiceReference:
+      result.invoice_reference,
+    bookingId:
+      result.booking_id,
+    paymentId:
+      result.payment_id,
     serviceName:
-      booking.service_variant?.service?.name ??
-      'Service',
-    bookingType: booking.fulfillment_type,
-    scheduledStart: booking.scheduled_start,
-    scheduledEnd: booking.scheduled_end,
+      result.service_name,
+    bookingType:
+      typeof result.booking_type === 'string'
+        ? result.booking_type
+        : null,
+    scheduledStart:
+      typeof result.scheduled_start === 'string'
+        ? result.scheduled_start
+        : null,
+    scheduledEnd:
+      typeof result.scheduled_end === 'string'
+        ? result.scheduled_end
+        : null,
     workingHours:
-      booking.total_working_hours === null
+      result.working_hours == null
         ? null
-        : requireMoney(booking.total_working_hours, 'working hours'),
-    completedAt: booking.completed_at,
-    subtotal: requireMoney(booking.base_amount, 'subtotal'),
-    discountAmount: requireMoney(booking.discount_amount, 'discount'),
-    platformFee: requireMoney(booking.platform_fee, 'platform fee'),
-    taxAmount: requireMoney(booking.tax_amount, 'tax'),
-    totalAmount,
-    currency: requireCurrency(payment.currency),
-    paymentStatus: payment.status,
-    paymentProvider: payment.provider,
-    providerPaymentId: payment.provider_payment_id,
-    providerOrderId: payment.provider_order_id,
-    paidAt: payment.paid_at,
-    createdAt: payment.created_at,
+        : normalizeMoney(
+            result.working_hours,
+            'working hours',
+          ),
+    completedAt:
+      typeof result.completed_at === 'string'
+        ? result.completed_at
+        : null,
+    subtotal:
+      normalizeMoney(
+        result.subtotal,
+        'subtotal',
+      ),
+    discountAmount:
+      normalizeMoney(
+        result.discount_amount,
+        'discount',
+      ),
+    platformFee:
+      normalizeMoney(
+        result.platform_fee,
+        'platform fee',
+      ),
+    taxAmount:
+      normalizeMoney(
+        result.tax_amount,
+        'tax',
+      ),
+    totalAmount:
+      normalizeMoney(
+        result.total_amount,
+        'booking total',
+      ),
+    currency:
+      normalizeCurrency(
+        result.currency,
+      ),
+    paymentStatus:
+      result.payment_status,
+    paymentProvider:
+      result.payment_provider,
+    providerPaymentId:
+      typeof result.provider_payment_id === 'string'
+        ? result.provider_payment_id
+        : null,
+    providerOrderId:
+      typeof result.provider_order_id === 'string'
+        ? result.provider_order_id
+        : null,
+    paidAt:
+      typeof result.paid_at === 'string'
+        ? result.paid_at
+        : null,
+    createdAt:
+      typeof result.created_at === 'string'
+        ? result.created_at
+        : null,
   }
+}
+
+export function createReceiptReference(
+  bookingId: string,
+): string {
+  const normalized =
+    bookingId.trim()
+
+  if (!normalized) {
+    throw new Error(
+      'A booking ID is required.',
+    )
+  }
+
+  return (
+    `TEMPSTAFF-REC-${normalized
+      .slice(0, 8)
+      .toUpperCase()}`
+  )
+}
+
+export function mapCustomerInvoice(
+  invoice: CustomerInvoice,
+): CustomerInvoice {
+  return invoice
 }
 
 export async function getCustomerInvoice(
   bookingId: string,
 ): Promise<CustomerInvoice> {
-  if (!bookingId.trim()) {
-    throw new Error('A booking ID is required.')
+  const normalizedBookingId =
+    bookingId.trim()
+
+  if (!normalizedBookingId) {
+    throw new Error(
+      'A booking ID is required.',
+    )
   }
 
-  const {
-    data: userData,
-    error: userError,
-  } = await supabase.auth.getUser()
+  const data =
+    await apiRequest<unknown>(
+      `/invoices/bookings/${encodeURIComponent(
+        normalizedBookingId,
+      )}`,
+    )
 
-  if (userError || !userData.user) {
-    throw new Error('Authentication is required to view this receipt.')
-  }
-
-  const {
-    data: booking,
-    error: bookingError,
-  } = await supabase
-    .from('bookings')
-    .select(INVOICE_BOOKING_SELECT)
-    .eq('id', bookingId)
-    .eq('customer_id', userData.user.id)
-    .maybeSingle()
-
-  if (bookingError) {
-    throw new Error('Unable to load the booking receipt.')
-  }
-
-  if (!booking) {
-    throw new Error('Booking not found or unavailable.')
-  }
-
-  if (booking.status !== 'completed') {
-    throw new Error('A payment receipt is available only for completed bookings.')
-  }
-
-  const {
-    data: payment,
-    error: paymentError,
-  } = await supabase
-    .from('payments')
-    .select(INVOICE_PAYMENT_SELECT)
-    .eq('booking_id', bookingId)
-    .maybeSingle()
-
-  if (paymentError) {
-    throw new Error('Unable to load the booking payment receipt.')
-  }
-
-  if (!payment) {
-    throw new Error('No valid payment record was found for this booking.')
-  }
-
-  return mapCustomerInvoice(
-    booking as unknown as InvoiceBookingRow,
-    payment as unknown as InvoicePaymentRow,
-  )
+  return normalizeInvoice(data)
 }
