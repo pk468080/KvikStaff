@@ -1,13 +1,18 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 import type { AvailabilityResult } from '../../types/availability'
 
-type InstantAvailabilityRpcResult = {
-  service_area_available?: boolean
-  nearby_worker_available?: boolean
-  instant_available?: boolean
-  nearby_worker_count?: number
-  nearest_worker_id?: string | null
-  nearest_worker_distance_km?: number | string | null
+type InstantAvailabilityResponse = {
+  service_area_available: boolean
+  nearby_worker_available: boolean
+  instant_available: boolean
+  recommended_booking_type:
+    | 'instant'
+    | 'scheduled'
+  nearby_worker_count: number
+  nearest_worker_id: string | null
+  nearest_worker_distance_km: number | string | null
+  checked_at: string
+  error_message?: string | null
 }
 
 export async function checkInstantAvailability(
@@ -15,7 +20,8 @@ export async function checkInstantAvailability(
   latitude: number,
   longitude: number,
 ): Promise<AvailabilityResult> {
-  const checkedAt = new Date().toISOString()
+  const checkedAt =
+    new Date().toISOString()
 
   if (
     !serviceId ||
@@ -35,48 +41,27 @@ export async function checkInstantAvailability(
       nearestWorkerId: null,
       nearestWorkerDistanceKm: null,
       checkedAt,
-      errorMessage: 'A valid service and location are required.',
+      errorMessage:
+        'A valid service and location are required.',
     }
   }
 
-  const { data, error } = await supabase.rpc(
-    'check_customer_instant_worker_availability',
-    {
-      p_service_id: serviceId,
-      p_latitude: latitude,
-      p_longitude: longitude,
-    },
-  )
-
-  if (error) {
-    throw error
-  }
-
-  const result = (data ?? null) as
-    | InstantAvailabilityRpcResult
-    | null
-
-  if (!result) {
-    throw new Error(
-      'The backend did not return instant availability.',
+  const result =
+    await apiRequest<InstantAvailabilityResponse>(
+      '/availability/instant/check',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          service_id: serviceId,
+          latitude,
+          longitude,
+        }),
+      },
     )
-  }
-
-  const serviceAreaAvailable =
-    result.service_area_available === true
 
   const nearbyWorkerCount = Number(
     result.nearby_worker_count ?? 0,
   )
-
-  const nearbyWorkerAvailable =
-    result.nearby_worker_available === true ||
-    nearbyWorkerCount > 0
-
-  const instantAvailable =
-    result.instant_available === true &&
-    serviceAreaAvailable &&
-    nearbyWorkerAvailable
 
   const nearestWorkerDistanceValue =
     result.nearest_worker_distance_km
@@ -87,13 +72,18 @@ export async function checkInstantAvailability(
       : Number(nearestWorkerDistanceValue)
 
   return {
-    serviceAreaAvailable,
-    nearbyWorkerAvailable,
-    instantAvailable,
+    serviceAreaAvailable:
+      result.service_area_available === true,
+    nearbyWorkerAvailable:
+      result.nearby_worker_available === true ||
+      nearbyWorkerCount > 0,
+    instantAvailable:
+      result.instant_available === true &&
+      result.service_area_available === true &&
+      (result.nearby_worker_available === true ||
+        nearbyWorkerCount > 0),
     recommendedBookingType:
-      instantAvailable
-        ? 'instant'
-        : 'scheduled',
+      result.recommended_booking_type,
     nearbyWorkerCount:
       Number.isFinite(nearbyWorkerCount)
         ? nearbyWorkerCount
@@ -105,6 +95,9 @@ export async function checkInstantAvailability(
       Number.isFinite(nearestWorkerDistanceKm)
         ? nearestWorkerDistanceKm
         : null,
-    checkedAt,
+    checkedAt:
+      result.checked_at ?? checkedAt,
+    errorMessage:
+      result.error_message ?? undefined,
   }
 }

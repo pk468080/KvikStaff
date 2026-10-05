@@ -63,13 +63,11 @@ function getErrorMessage(
   return `Request failed with status ${status}.`
 }
 
-export async function apiRequest<T>(
+async function request<T>(
   path: string,
   options: RequestInit = {},
+  requiresAuth: boolean,
 ): Promise<T> {
-  const token =
-    await getAccessToken()
-
   const baseUrl =
     API_BASE_URL.replace(/\/+$/, '')
 
@@ -82,10 +80,15 @@ export async function apiRequest<T>(
     options.headers,
   )
 
-  headers.set(
-    'Authorization',
-    `Bearer ${token}`,
-  )
+  if (requiresAuth) {
+    const token =
+      await getAccessToken()
+
+    headers.set(
+      'Authorization',
+      `Bearer ${token}`,
+    )
+  }
 
   if (
     options.body &&
@@ -130,4 +133,26 @@ export async function apiRequest<T>(
   }
 
   return payload as T
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return request<T>(
+    path,
+    options,
+    true,
+  )
+}
+
+export async function publicApiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return request<T>(
+    path,
+    options,
+    false,
+  )
 }

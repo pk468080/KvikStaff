@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type InstantAvailabilitySlot = {
   start: string
@@ -12,35 +12,52 @@ export type InstantAvailabilityResult = {
   slots: InstantAvailabilitySlot[]
 }
 
+type InstantAvailabilitySlotResponse = {
+  service_area_available: boolean
+  instant_available: boolean
+  slots: InstantAvailabilitySlot[]
+}
+
 export async function getInstantAvailabilitySlots(
   serviceVariantId: string,
   addressId: string,
   durationHours = 1,
 ): Promise<InstantAvailabilityResult> {
-  const { data, error } = await supabase.rpc(
-    'get_customer_instant_availability_slots',
-    {
-      p_service_variant_id: serviceVariantId,
-      p_address_id: addressId,
-      p_duration_hours: durationHours,
-    },
-  )
-
-  if (error) {
-    throw error
-  }
-
-  if (!data || typeof data !== 'object') {
+  if (!serviceVariantId.trim()) {
     throw new Error(
-      'The backend did not return instant availability slots.',
+      'Service variant ID is required.',
     )
   }
 
-  const result = data as {
-    service_area_available?: unknown
-    instant_available?: unknown
-    slots?: unknown
+  if (!addressId.trim()) {
+    throw new Error(
+      'Address ID is required.',
+    )
   }
+
+  if (
+    !Number.isFinite(durationHours) ||
+    durationHours < 1 ||
+    durationHours > 24
+  ) {
+    throw new Error(
+      'Duration must be between 1 and 24 hours.',
+    )
+  }
+
+  const result =
+    await apiRequest<InstantAvailabilitySlotResponse>(
+      '/availability/instant/slots',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          service_variant_id:
+            serviceVariantId,
+          address_id: addressId,
+          duration_hours: durationHours,
+        }),
+      },
+    )
 
   return {
     service_area_available:
@@ -48,7 +65,7 @@ export async function getInstantAvailabilitySlots(
     instant_available:
       result.instant_available === true,
     slots: Array.isArray(result.slots)
-      ? (result.slots as InstantAvailabilitySlot[])
+      ? result.slots
       : [],
   }
 }
