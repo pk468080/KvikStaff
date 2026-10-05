@@ -2,6 +2,10 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
+
+from app.core.database import get_db
+from app.core.security import CurrentUser, get_customer
+from app.modules.bookings.repository import BookingsRepository
 from app.modules.bookings.schemas import (
     CustomerBookingCancellationRequest,
     CustomerBookingOccurrenceCancellationRequest,
@@ -12,25 +16,7 @@ from app.modules.bookings.schemas import (
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
 )
-from app.core.database import get_db
-from app.core.security import (
-    CurrentUser,
-    get_customer,
-)
-from app.modules.bookings.repository import (
-    BookingsRepository,
-)
-from app.modules.bookings.schemas import (
-    CustomerBookingCancellationRequest,
-    CustomerBookingOccurrenceCancellationRequest,
-    CustomerBookingOtpRequest,
-    CustomerBookingRescheduleRequest,
-    InstantBookingCreateRequest,
-    MultiOccurrenceBookingCreateRequest,
-)
-from app.modules.bookings.service import (
-    BookingsService,
-)
+from app.modules.bookings.service import BookingsService
 
 router = APIRouter()
 
@@ -52,6 +38,35 @@ async def list_customer_bookings(
 ) -> list[dict[str, Any]]:
     return await service.list_customer_bookings(
         customer_id=UUID(current_user.id),
+    )
+
+
+@router.post("/pricing/instant")
+async def calculate_instant_booking_price(
+    request: InstantBookingPriceRequest,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> dict[str, Any]:
+    return await service.calculate_customer_instant_booking_price(
+        customer_id=UUID(current_user.id),
+        service_variant_id=request.service_variant_id,
+        total_working_hours=request.total_working_hours,
+    )
+
+
+@router.post("/pricing/multi")
+async def calculate_multi_occurrence_booking_price(
+    request: MultiOccurrenceBookingPriceRequest,
+    current_user: CurrentUser = Depends(get_customer),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
+) -> dict[str, Any]:
+    return await service.calculate_customer_multi_occurrence_booking_price(
+        customer_id=UUID(current_user.id),
+        request=request,
     )
 
 
