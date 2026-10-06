@@ -119,7 +119,7 @@ export default function LocationFetchingScreen({
             <CustomerIcon
               name="location"
               size={28}
-              color="#007E80"
+              color="#0A3972"
             />
           </View>
 

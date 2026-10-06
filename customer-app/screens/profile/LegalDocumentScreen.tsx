@@ -39,7 +39,7 @@ export default function LegalDocumentScreen({
         <Text
           style={styles.meta}
         >
-          TempStaff Customer App
+          KvikStaff Customer App
         </Text>
 
         <Section title="Important">
@@ -47,8 +47,8 @@ export default function LegalDocumentScreen({
             style={styles.paragraph}
           >
             {documentType === 'terms'
-              ? 'This page is the in-app location for the final TempStaff Terms & Conditions. Replace the draft text below with the final terms approved for your business before launch.'
-              : 'This page is the in-app location for the final TempStaff Privacy Policy. Replace the draft text below with the final policy approved for your business before launch.'}
+              ? 'This page is the in-app location for the final KvikStaff Terms & Conditions. Replace the draft text below with the final terms approved for your business before launch.'
+              : 'This page is the in-app location for the final KvikStaff Privacy Policy. Replace the draft text below with the final policy approved for your business before launch.'}
           </Text>
         </Section>
 
@@ -57,8 +57,8 @@ export default function LegalDocumentScreen({
             style={styles.paragraph}
           >
             {documentType === 'terms'
-              ? 'TempStaff connects customers with temporary staffing services for eligible bookings. The final terms should define booking obligations, payment terms, cancellations, service expectations and liability.'
-              : 'The final privacy policy should explain what personal information TempStaff collects, why it is collected, how it is used, how it is shared, retention periods, security practices and customer rights.'}
+              ? 'KvikStaff connects customers with temporary staffing services for eligible bookings. The final terms should define booking obligations, payment terms, cancellations, service expectations and liability.'
+              : 'The final privacy policy should explain what personal information KvikStaff collects, why it is collected, how it is used, how it is shared, retention periods, security practices and customer rights.'}
           </Text>
         </Section>
 

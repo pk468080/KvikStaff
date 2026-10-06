@@ -188,7 +188,7 @@ export default function SavedAddressesScreen() {
               <CustomerIcon
                 name="location"
                 size={24}
-                color="#007E80"
+                color="#0A3972"
               />
             </View>
 
@@ -202,7 +202,7 @@ export default function SavedAddressesScreen() {
               style={styles.emptyText}
             >
               Select a service location
-              on Home and TempStaff will
+              on Home and KvikStaff will
               save it for future bookings.
             </Text>
 
@@ -227,7 +227,7 @@ export default function SavedAddressesScreen() {
               <CustomerIcon
                 name="location"
                 size={18}
-                color="#007E80"
+                color="#0A3972"
               />
             </View>
 

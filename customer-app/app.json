@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "customer-app",
-    "slug": "customer-app",
+    "name": "KvikStaff",
+    "slug": "kvikstaff",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -23,7 +23,7 @@
   {
     "url": "https://sentry.io/",
     "project": "customer-app",
-    "organization": "tempstaff"
+    "organization": "KVIKSTAFF"
   }
 ]
     ],

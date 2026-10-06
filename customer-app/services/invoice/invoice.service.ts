@@ -186,7 +186,7 @@ export function createReceiptReference(
   }
 
   return (
-    `TEMPSTAFF-REC-${normalized
+    `KvikStaff-REC-${normalized
       .slice(0, 8)
       .toUpperCase()}`
   )

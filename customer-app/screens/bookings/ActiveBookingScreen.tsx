@@ -65,7 +65,7 @@ type ActiveBookingScreenProps = {
   ) => void
 }
 
-const tempStaffLogo =
+const KvikStaffLogo =
   require('../../assets/branding/tempstuff-logo.png')
 
 const trackingHero =
@@ -848,7 +848,7 @@ const [
 
           <Image
             source={
-              tempStaffLogo
+              KvikStaffLogo
             }
             style={
               styles.loadingLogo
@@ -883,7 +883,7 @@ const [
           >
             <Image
               source={
-                tempStaffLogo
+                KvikStaffLogo
               }
               style={
                 styles.logo
@@ -983,7 +983,7 @@ const [
         >
           <Image
             source={
-              tempStaffLogo
+              KvikStaffLogo
             }
             style={
               styles.logo
@@ -1045,7 +1045,7 @@ const [
             >
               {tracking
                 ? 'Follow the latest verified worker location below.'
-                : 'Your TempStaff booking status and details are shown here.'}
+                : 'Your KvikStaff booking status and details are shown here.'}
             </Text>
           </View>
         </View>
@@ -1995,7 +1995,7 @@ const styles =
 
     brandLabel: {
       marginLeft: 10,
-      color: '#00A7A7',
+      color: '#0784FB',
       fontSize: 10,
       fontWeight: '900',
       letterSpacing: 1.1,
@@ -2013,7 +2013,7 @@ const styles =
       borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#062F52',
+      backgroundColor: '#0A3972',
       marginRight: 12,
     },
 
@@ -2026,7 +2026,7 @@ const styles =
     title: {
       fontSize: 28,
       fontWeight: '700',
-      color: '#062F52',
+      color: '#0A3972',
       marginBottom: 16,
     },
 
@@ -2070,7 +2070,7 @@ const styles =
       borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#062F52',
+      backgroundColor: '#0A3972',
     },
 
     stateIconText: {
@@ -2089,7 +2089,7 @@ const styles =
     stateTitle: {
       fontSize: 20,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     stateMessage: {
@@ -2114,7 +2114,7 @@ const styles =
     mapTitle: {
       fontSize: 17,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     mapUnavailable: {
@@ -2128,7 +2128,7 @@ const styles =
     mapUnavailableTitle: {
       fontSize: 17,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
       textAlign: 'center',
     },
 
@@ -2149,7 +2149,7 @@ const styles =
     sectionTitle: {
       fontSize: 17,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
       marginBottom: 10,
     },
 
@@ -2209,7 +2209,7 @@ const styles =
       width: 14,
       height: 14,
       borderRadius: 7,
-      backgroundColor: '#00A7A7',
+      backgroundColor: '#0784FB',
       borderWidth: 3,
       borderColor: '#D8F5F5',
     },
@@ -2240,7 +2240,7 @@ const styles =
 
     timelineTitle: {
       flex: 1,
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 15,
       fontWeight: '800',
     },
@@ -2279,7 +2279,7 @@ const styles =
     },
 
     timelineEmptyTitle: {
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 14,
       fontWeight: '800',
     },
@@ -2319,7 +2319,7 @@ const styles =
     value: {
       flex: 1,
       maxWidth: '65%',
-      color: '#062F52',
+      color: '#0A3972',
       fontWeight: '600',
       textAlign: 'right',
     },
@@ -2328,7 +2328,7 @@ const styles =
       marginTop: 4,
       fontSize: 17,
       fontWeight: '700',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     assignedCancellationNotice: {
@@ -2374,7 +2374,7 @@ const styles =
     trackingTitle: {
       fontSize: 16,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     freshness: {
@@ -2424,7 +2424,7 @@ const styles =
       marginTop: 6,
       fontSize: 36,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     button: {
@@ -2432,7 +2432,7 @@ const styles =
       marginBottom: 12,
       padding: 14,
       borderRadius: 10,
-      backgroundColor: '#00A7A7',
+      backgroundColor: '#0784FB',
       alignItems: 'center',
     },
 
@@ -2447,7 +2447,7 @@ const styles =
       padding: 14,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: '#00A7A7',
+      borderColor: '#0784FB',
       backgroundColor: '#E8F7F7',
       alignItems: 'center',
     },
@@ -2490,7 +2490,7 @@ const styles =
       marginTop: 6,
       fontSize: 28,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
       letterSpacing: 4,
     },
 

@@ -43,7 +43,7 @@ export default function LoginScreen({
               />
 
               <View style={styles.brandCopy}>
-                <Text style={styles.brandName}>TempStaff</Text>
+                <Text style={styles.brandName}>KvikStaff</Text>
                 <Text style={styles.brandTagline}>
                   On-demand workforce
                 </Text>
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
     letterSpacing: 0.1,
   },
 
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 11,
     fontWeight: '600',
-    color: '#00A7A7',
+    color: '#0784FB',
   },
 
   hero: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
     position: 'relative',
     flexDirection: 'row',
   },
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
     opacity: 0.18,
     right: 86,
     top: -28,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.2,
-    color: '#6FE0D8',
+    color: '#57E07D',
   },
 
   title: {
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2EDF2',
-    shadowColor: '#062F52',
+    shadowColor: '#0A3972',
     shadowOffset: {
       width: 0,
       height: 5,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   formSubtitle: {
@@ -311,14 +311,14 @@ const styles = StyleSheet.create({
   },
 
   inputShellValid: {
-    borderColor: '#00A7A7',
+    borderColor: '#0784FB',
   },
 
   countryCode: {
     paddingLeft: 14,
     fontSize: 16,
     fontWeight: '700',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   inputDivider: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     paddingVertical: 0,
     fontSize: 17,
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   securityRow: {
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   securityCheck: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#00A7A7',
+    color: '#0784FB',
   },
 
   securityCopy: {
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   footerTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   footerText: {

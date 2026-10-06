@@ -43,7 +43,7 @@ import {
   getUnreadCustomerNotificationCount,
 } from '../../services/notifications/customerNotifications.service'
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
+const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 const heroBannerImage = require('../../assets/home/hero-banner.png')
 const heroWorkerImage = require('../../assets/home/hero-worker.png')
 
@@ -652,7 +652,7 @@ const [
           <Text style={styles.loadingTitle}>
             {locationLoading
               ? 'Finding your location'
-              : 'Preparing TempStaff'}
+              : 'Preparing KvikStaff'}
           </Text>
 
           <Text style={styles.loadingText}>
@@ -701,7 +701,7 @@ const [
       >
         <View style={styles.topHeader}>
           <Image
-            source={tempStaffLogo}
+            source={KvikStaffLogo}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -1092,7 +1092,7 @@ const [
                 <View style={styles.sectionEyebrowRow}>
                   <View style={styles.sectionEyebrowLine} />
                   <Text style={styles.sectionEyebrow}>
-                    TEMPSTAFF UPDATES
+                    KvikStaff UPDATES
                   </Text>
                 </View>
                 <Text style={styles.sectionTitle}>
@@ -1419,12 +1419,12 @@ const [
           <View style={styles.bottomBannerTopRow}>
             <View style={styles.bottomBannerIcon}>
               <Text style={styles.bottomBannerIconText}>
-                TS
+                KS
               </Text>
             </View>
 
             <Text style={styles.bottomBannerTag}>
-              TEMPSTAFF
+              KVIKSTAFF
             </Text>
           </View>
 
@@ -1463,7 +1463,7 @@ const [
                 <View style={styles.modalKickerRow}>
                   <View style={styles.modalKickerDot} />
                   <Text style={styles.modalKicker}>
-                    TEMPSTAFF
+                    KvikStaff
                   </Text>
                 </View>
 
@@ -1846,13 +1846,13 @@ function formatAddress(
 }
 
 const COLORS = {
-  ink: '#0A2338',
-  inkSoft: '#456174',
-  primary: '#00A7A7',
-  primaryDark: '#007E80',
-  primarySoft: '#E8F8F8',
-  accent: '#FF9B32',
-  canvas: '#F5F8FA',
+  ink: '#071B2E',
+  inkSoft: '#4B6480',
+  primary: '#0784FB',
+  primaryDark: '#0A3972',
+  primarySoft: '#EEF6FF',
+  accent: '#57E07D',
+  canvas: '#F5F9FF',
   white: '#FFFFFF',
   border: '#E3EBEF',
   muted: '#71818C',

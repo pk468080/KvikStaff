@@ -97,7 +97,7 @@ export function buildReceiptHtml(invoice: CustomerInvoice): string {
     </style>
   </head>
   <body>
-    <h1>TempStaff</h1>
+    <h1>KvikStaff</h1>
     <div class="muted">Payment Receipt</div>
     <h2>${text(invoice.serviceName)}</h2>
     <div class="muted">Receipt Reference: ${text(invoice.invoiceReference)}</div>
@@ -252,7 +252,7 @@ export default function InvoiceReceiptScreen({
         </View>
 
         <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>TEMPSTAFF</Text>
+          <Text style={styles.eyebrow}>KvikStaff</Text>
           <Text style={styles.heroTitle}>Payment Receipt</Text>
           <Text style={styles.heroService}>{invoice.serviceName}</Text>
           <Text style={styles.heroAmount}>{money(invoice.totalAmount)}</Text>
@@ -300,7 +300,7 @@ export default function InvoiceReceiptScreen({
         </Pressable>
 
         <Text style={styles.disclaimer}>
-          This is a payment receipt based on the booking and payment records stored by TempStaff. It is not an official tax invoice.
+          This is a payment receipt based on the booking and payment records stored by KvikStaff. It is not an official tax invoice.
         </Text>
       </ScrollView>
     </ScreenContainer>
@@ -347,12 +347,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,
-    color: '#00A7A7',
+    color: '#0784FB',
   },
   heroCard: {
     padding: 20,
     borderRadius: 22,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
   eyebrow: {
     fontSize: 10,
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 15,
     fontWeight: '900',
-    color: '#00A7A7',
+    color: '#0784FB',
   },
   shareButton: {
     marginTop: 14,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
   disabledButton: {
     opacity: 0.55,

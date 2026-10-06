@@ -491,7 +491,7 @@ const styles = {
   serviceIconText: {
     fontSize: 17,
     fontWeight: '900' as const,
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   serviceCopy: {
@@ -502,7 +502,7 @@ const styles = {
   serviceName: {
     fontSize: 14,
     fontWeight: '800' as const,
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   statusTitle: {
@@ -550,13 +550,13 @@ const styles = {
   },
 
   stepCircleActive: {
-    borderColor: '#00A7A7',
+    borderColor: '#0784FB',
     backgroundColor: '#EAF7F7',
   },
 
   stepCircleCompleted: {
-    borderColor: '#00A7A7',
-    backgroundColor: '#00A7A7',
+    borderColor: '#0784FB',
+    backgroundColor: '#0784FB',
   },
 
   stepCircleText: {
@@ -566,7 +566,7 @@ const styles = {
   },
 
   stepCircleTextActive: {
-    color: '#00A7A7',
+    color: '#0784FB',
   },
 
   stepLabel: {
@@ -591,7 +591,7 @@ const styles = {
   },
 
   timelineLineActive: {
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   bottomRow: {
@@ -618,7 +618,7 @@ const styles = {
     paddingHorizontal: 11,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   trackButtonText: {

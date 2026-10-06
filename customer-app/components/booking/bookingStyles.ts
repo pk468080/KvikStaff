@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 30,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   subtitle: {
@@ -56,7 +56,7 @@ export const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderRadius: 18,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   serviceHeroImageWrap: {
@@ -83,7 +83,7 @@ export const styles = StyleSheet.create({
   serviceHeroFallbackText: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   serviceHeroContent: {
@@ -156,7 +156,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 19,
     fontWeight: '600',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   availabilityShell: {
@@ -214,7 +214,7 @@ export const styles = StyleSheet.create({
   },
 
   methodCardSelected: {
-    borderColor: '#062F52',
+    borderColor: '#0A3972',
     borderWidth: 2,
   },
 
@@ -233,7 +233,7 @@ export const styles = StyleSheet.create({
   },
 
   methodIconSelected: {
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   methodIconText: {
@@ -274,7 +274,7 @@ export const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   methodDescription: {
@@ -323,14 +323,14 @@ export const styles = StyleSheet.create({
   },
 
   radioOuterSelected: {
-    borderColor: '#062F52',
+    borderColor: '#0A3972',
   },
 
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   bottomTrustCard: {
@@ -390,14 +390,14 @@ export const styles = StyleSheet.create({
   headerActionText: {
     fontSize: 32,
     lineHeight: 36,
-    color: '#062F52',
+    color: '#0A3972',
     fontWeight: '400',
   },
 
   headerCloseText: {
     fontSize: 28,
     lineHeight: 32,
-    color: '#062F52',
+    color: '#0A3972',
     fontWeight: '400',
   },
 
@@ -410,7 +410,7 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 21,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   flowStepLabel: {
@@ -427,7 +427,7 @@ export const styles = StyleSheet.create({
 
   progressFill: {
     height: '100%',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
     borderRadius: 2,
   },
 
@@ -450,7 +450,7 @@ export const styles = StyleSheet.create({
   fontSize: 22,
   lineHeight: 27,
   fontWeight: '800',
-  color: '#062F52',
+  color: '#0A3972',
 },
 
   flowServiceName: {
@@ -508,7 +508,7 @@ export const styles = StyleSheet.create({
   emptySlotsTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
     textAlign: 'center',
   },
 
@@ -554,7 +554,7 @@ export const styles = StyleSheet.create({
   },
 
   slotTimeSelected: {
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   slotCheck: {
@@ -632,7 +632,7 @@ export const styles = StyleSheet.create({
   fontSize: 17,
   lineHeight: 22,
   fontWeight: '800',
-  color: '#062F52',
+  color: '#0A3972',
 },
 
   selectionHint: {
@@ -687,7 +687,7 @@ export const styles = StyleSheet.create({
     marginTop: 3,
     fontSize: 17,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   contextHint: {
@@ -701,7 +701,7 @@ export const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 16,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   durationGrid: {
@@ -736,7 +736,7 @@ export const styles = StyleSheet.create({
   },
 
   durationOptionTextSelected: {
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   checkCircle: {
@@ -799,7 +799,7 @@ export const styles = StyleSheet.create({
   previewTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
     marginBottom: 8,
   },
 
@@ -849,7 +849,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 19,
     fontWeight: '700',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   summaryDivider: {
@@ -892,7 +892,7 @@ export const styles = StyleSheet.create({
   liveCheckTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   liveCheckText: {
@@ -914,7 +914,7 @@ export const styles = StyleSheet.create({
   waitingPriceTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   waitingPriceText: {
@@ -956,7 +956,7 @@ export const styles = StyleSheet.create({
   pickerHeaderTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   pickerHeaderDone: {
@@ -995,13 +995,13 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 13,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   footerPrice: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
  primaryButton: {

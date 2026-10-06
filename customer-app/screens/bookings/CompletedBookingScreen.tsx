@@ -43,7 +43,7 @@ type CompletedBookingScreenProps = {
   onViewInvoice: (bookingId: string) => void
 }
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
+const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 
 function formatStatus(value: string): string {
   return value
@@ -313,7 +313,7 @@ export default function CompletedBookingScreen({
       <ScreenContainer>
         <View style={styles.centered}>
           <Image
-            source={tempStaffLogo}
+            source={KvikStaffLogo}
             style={styles.loadingLogo}
             resizeMode="contain"
           />
@@ -358,13 +358,13 @@ export default function CompletedBookingScreen({
             onRefresh={() => {
               void loadBooking(true)
             }}
-            tintColor="#00A7A7"
+            tintColor="#0784FB"
           />
         }
       >
         <View style={styles.brandRow}>
           <Image
-            source={tempStaffLogo}
+            source={KvikStaffLogo}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -753,12 +753,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,
-    color: '#00A7A7',
+    color: '#0784FB',
   },
   heroCard: {
     padding: 20,
     borderRadius: 22,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
   completedMark: {
     width: 54,
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
   completedMarkText: {
     fontSize: 28,
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
   submitReviewButtonDisabled: {
     opacity: 0.45,
@@ -1008,7 +1008,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     padding: 16,
     borderRadius: 18,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
   footerTitle: {
     fontSize: 13,
@@ -1041,7 +1041,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 13,
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
   retryButtonText: {
     color: '#FFFFFF',

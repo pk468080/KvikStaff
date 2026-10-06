@@ -91,7 +91,7 @@ export default function SplashScreen({
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/splash/tempstaff-splash.png')}
+        source={require('../../assets/splash/KvikStaff-splash.png')}
         style={styles.splashImage}
         resizeMode="contain"
       />

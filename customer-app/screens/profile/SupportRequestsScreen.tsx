@@ -121,7 +121,7 @@ export default function SupportRequestsScreen() {
             <Text
               style={styles.emptyText}
             >
-              Requests you send to TempStaff
+              Requests you send to KvikStaff
               will appear here with their
               current status.
             </Text>

@@ -130,7 +130,7 @@ export default function MyProfileScreen({
   function confirmSignOut() {
     Alert.alert(
       'Log out',
-      'Are you sure you want to log out of TempStaff?',
+      'Are you sure you want to log out of KvikStaff?',
       [
         {
           text: 'Cancel',
@@ -240,7 +240,7 @@ export default function MyProfileScreen({
               <CustomerIcon
                 name="location"
                 size={18}
-                color="#007E80"
+                color="#0A3972"
               />
             }
             title="Saved Addresses"
@@ -281,7 +281,7 @@ export default function MyProfileScreen({
           <ProfileAction
             icon="P"
             title="Privacy Policy"
-            subtitle="How TempStaff handles your data"
+            subtitle="How KvikStaff handles your data"
             onPress={onPrivacy}
             isLast
           />
@@ -321,7 +321,7 @@ export default function MyProfileScreen({
         <Text
           style={styles.version}
         >
-          TempStaff Customer
+          KvikStaff Customer
         </Text>
       </ScrollView>
     </ScreenContainer>

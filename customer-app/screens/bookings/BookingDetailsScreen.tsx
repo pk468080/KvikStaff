@@ -34,7 +34,7 @@ import {
 
 import type { HomeService } from '../../types/service'
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
+const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 
 type BookingDetailsScreenProps = {
   service: HomeService
@@ -292,7 +292,7 @@ export default function BookingDetailsScreen({
         <View style={styles.header}>
           <View style={styles.brandRow}>
             <Image
-              source={tempStaffLogo}
+              source={KvikStaffLogo}
               style={styles.brandLogo}
               resizeMode="contain"
             />
@@ -519,7 +519,7 @@ export default function BookingDetailsScreen({
               <CustomerIcon
                 name="location"
                 size={18}
-                color="#007E80"
+                color="#0A3972"
               />
             </View>
 
@@ -924,7 +924,7 @@ const styles =
       justifyContent:
         'center',
       backgroundColor:
-        '#062F52',
+        '#0A3972',
     },
 
     stepBadgeText: {
@@ -950,7 +950,7 @@ const styles =
   fontSize: 22,
   lineHeight: 28,
   fontWeight: '800',
-  color: '#062F52',
+  color: '#0A3972',
 },
     progressTrack: {
       height: 4,
@@ -965,7 +965,7 @@ const styles =
       height: '100%',
       borderRadius: 2,
       backgroundColor:
-        '#00A7A7',
+        '#0784FB',
     },
 
     progressLabels: {
@@ -979,7 +979,7 @@ const styles =
     progressActive: {
       fontSize: 10,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     progressLabel: {
@@ -998,7 +998,7 @@ const styles =
   padding: 15,
   borderRadius: 18,
   backgroundColor:
-    '#062F52',
+    '#0A3972',
 },
 
     serviceImageWrap: {
@@ -1029,7 +1029,7 @@ const styles =
     serviceImageFallbackText: {
       fontSize: 22,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     serviceHeroContent: {
@@ -1085,7 +1085,7 @@ const styles =
   fontSize: 13.5,
   lineHeight: 19,
   fontWeight: '700',
-  color: '#062F52',
+  color: '#0A3972',
 },
 
     locationCard: {
@@ -1137,7 +1137,7 @@ const styles =
       marginTop: 3,
       fontSize: 14,
       lineHeight: 20,
-      color: '#062F52',
+      color: '#0A3972',
       fontWeight: '600',
     },
 
@@ -1166,7 +1166,7 @@ const styles =
       marginTop: 2,
       fontSize: 14,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     priceIntroBadge: {
@@ -1226,7 +1226,7 @@ errorContainer: {
       paddingHorizontal: 18,
       borderRadius: 16,
       backgroundColor:
-        '#00A7A7',
+        '#0784FB',
       alignItems:
         'center',
       justifyContent:

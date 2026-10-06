@@ -59,7 +59,7 @@ async function configureAndroidNotifications(): Promise<void> {
     'booking-assignment',
     {
       name:
-        'TempStaff Customer',
+        'KvikStaff Customer',
       importance:
         Notifications.AndroidImportance.MAX,
       vibrationPattern: [

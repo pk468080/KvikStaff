@@ -158,7 +158,7 @@ export default function DeleteAccountScreen() {
             <Text
               style={styles.warningText}
             >
-              TempStaff will review the
+              KvikStaff will review the
               request before permanent
               deletion. Existing records may
               need to be retained where
@@ -250,7 +250,7 @@ export default function DeleteAccountScreen() {
                 }
               >
                 You do not need to submit
-                another request. TempStaff will
+                another request. KvikStaff will
                 process the existing request.
               </Text>
             </View>
@@ -295,7 +295,7 @@ export default function DeleteAccountScreen() {
                 onPress={() => {
                   Alert.alert(
                     'Delete account',
-                    'Submit a request to permanently delete your TempStaff account?',
+                    'Submit a request to permanently delete your KvikStaff account?',
                     [
                       {
                         text: 'Cancel',

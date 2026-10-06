@@ -22,7 +22,7 @@ type RescheduleBookingScreenProps = {
   onCompleted: () => void
 }
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
+const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 
 function parseDate(value: string) {
   const date = new Date(value)
@@ -243,7 +243,7 @@ export default function RescheduleBookingScreen({
       <View style={styles.container}>
         <View style={styles.brandRow}>
           <Image
-            source={tempStaffLogo}
+            source={KvikStaffLogo}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
 
   brandLabel: {
     marginLeft: 10,
-    color: '#00A7A7',
+    color: '#0784FB',
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1.1,
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
     marginRight: 12,
   },
 
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#062F52',
+    color: '#0A3972',
     fontSize: 27,
     fontWeight: '800',
   },
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   currentCard: {
     padding: 18,
     borderRadius: 18,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
     marginBottom: 16,
   },
 
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     marginBottom: 11,
-    color: '#062F52',
+    color: '#0A3972',
     fontSize: 17,
     fontWeight: '800',
   },
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
 
   selectorValue: {
     marginTop: 3,
-    color: '#062F52',
+    color: '#0A3972',
     fontSize: 16,
     fontWeight: '800',
   },
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
 
   previewDate: {
     marginTop: 8,
-    color: '#062F52',
+    color: '#0A3972',
     fontSize: 19,
     fontWeight: '800',
   },
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   primaryButtonDisabled: {

@@ -1251,7 +1251,7 @@ const styles =
     },
 
     eyebrow: {
-      color: '#00A7A7',
+      color: '#0784FB',
       fontSize: 10,
       fontWeight: '900',
       letterSpacing: 1.2,
@@ -1262,7 +1262,7 @@ const styles =
       fontSize: 28,
       lineHeight: 34,
       fontWeight: '800',
-      color: '#062F52',
+      color: '#0A3972',
     },
 
     subtitle: {
@@ -1325,7 +1325,7 @@ const styles =
 
     summaryService: {
       marginTop: 4,
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 19,
       fontWeight: '800',
     },
@@ -1352,7 +1352,7 @@ const styles =
 
     summaryValue: {
       marginTop: 4,
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 20,
       fontWeight: '800',
     },
@@ -1364,7 +1364,7 @@ const styles =
     },
 
     summaryMoney: {
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 20,
       fontWeight: '900',
     },
@@ -1375,7 +1375,7 @@ const styles =
       borderRadius: 16,
       backgroundColor: '#EEF5F8',
       borderWidth: 1,
-      borderColor: '#00A7A7',
+      borderColor: '#0784FB',
     },
 
     currentEyebrow: {
@@ -1387,14 +1387,14 @@ const styles =
 
     currentTitle: {
       marginTop: 6,
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 22,
       fontWeight: '900',
     },
 
     currentDate: {
       marginTop: 8,
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 15,
       fontWeight: '700',
     },
@@ -1438,7 +1438,7 @@ const styles =
 
     timer: {
       marginTop: 4,
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 30,
       fontWeight: '900',
       letterSpacing: 1,
@@ -1450,7 +1450,7 @@ const styles =
       borderRadius: 14,
       backgroundColor: '#FFFFFF',
       borderWidth: 1,
-      borderColor: '#00A7A7',
+      borderColor: '#0784FB',
       alignItems: 'center',
     },
 
@@ -1463,7 +1463,7 @@ const styles =
 
     otp: {
       marginTop: 8,
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 34,
       fontWeight: '900',
       letterSpacing: 8,
@@ -1481,7 +1481,7 @@ const styles =
       marginTop: 14,
       paddingVertical: 15,
       borderRadius: 12,
-      backgroundColor: '#062F52',
+      backgroundColor: '#0A3972',
       alignItems: 'center',
     },
 
@@ -1496,7 +1496,7 @@ const styles =
     },
 
     sectionTitle: {
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 20,
       fontWeight: '800',
     },
@@ -1533,7 +1533,7 @@ const styles =
     },
 
     occurrenceTitle: {
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 14,
       fontWeight: '800',
     },
@@ -1608,7 +1608,7 @@ const styles =
     },
 
     emptyTitle: {
-      color: '#062F52',
+      color: '#0A3972',
       fontSize: 17,
       fontWeight: '800',
     },

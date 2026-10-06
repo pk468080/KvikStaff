@@ -48,7 +48,7 @@ const CANCELLED_STATUSES = new Set<BookingStatus>([
   'payment_failed',
 ])
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
+const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 
 function formatStatus(status: BookingStatus) {
   return status
@@ -155,11 +155,11 @@ function getFilterDescription(filter: BookingFilter) {
     case 'active':
       return 'Bookings currently moving through worker assignment or service.'
     case 'completed':
-      return 'Your completed TempStaff services.'
+      return 'Your completed KvikStaff services.'
     case 'cancelled':
       return 'Cancelled, expired, or unsuccessful bookings.'
     default:
-      return 'All of your TempStaff bookings in one place.'
+      return 'All of your KvikStaff bookings in one place.'
   }
 }
 
@@ -193,7 +193,7 @@ function EmptyState({
           <CustomerIcon
             name="plus"
             size={22}
-            color="#007E80"
+            color="#0A3972"
           />
         )}
       </View>
@@ -258,7 +258,7 @@ function BookingCard({
           <Text style={styles.bookingType}>
             {booking.booking_type
               ? `${formatBookingType(booking.booking_type)} booking`
-              : 'TempStaff booking'}
+              : 'KvikStaff booking'}
           </Text>
         </View>
 
@@ -392,7 +392,7 @@ export default function MyBookingsScreen({
       <ScreenContainer>
         <View style={styles.loadingScreen}>
           <Image
-            source={tempStaffLogo}
+            source={KvikStaffLogo}
             style={styles.loadingLogo}
             resizeMode="contain"
           />
@@ -414,13 +414,13 @@ export default function MyBookingsScreen({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => void loadBookings(true)}
-            tintColor="#00A7A7"
+            tintColor="#0784FB"
           />
         }
       >
         <View style={styles.brandRow}>
           <Image
-            source={tempStaffLogo}
+            source={KvikStaffLogo}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -439,7 +439,7 @@ export default function MyBookingsScreen({
               My bookings
             </Text>
             <Text style={styles.subtitle}>
-              Manage every TempStaff booking from one place.
+              Manage every KvikStaff booking from one place.
             </Text>
           </View>
 
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.4,
-    color: '#00A7A7',
+    color: '#0784FB',
     marginBottom: 5,
   },
 
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     lineHeight: 35,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   subtitle: {
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 18,
     alignItems: 'center',
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   countNumber: {
@@ -714,8 +714,8 @@ const styles = StyleSheet.create({
   },
 
   filterChipSelected: {
-    borderColor: '#00A7A7',
-    backgroundColor: '#00A7A7',
+    borderColor: '#0784FB',
+    backgroundColor: '#0784FB',
   },
 
   filterChipText: {
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DFEAF0',
     backgroundColor: '#FFFFFF',
-    shadowColor: '#062F52',
+    shadowColor: '#0A3972',
     shadowOpacity: 0.06,
     shadowRadius: 16,
     shadowOffset: {
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   serviceImageFallbackText: {
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
     fontSize: 18,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   actionButton: {
@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
   emptyIconText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#00A7A7',
+    color: '#0784FB',
   },
 
   emptyTitle: {
@@ -973,7 +973,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     padding: 14,
     borderRadius: 18,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   footerIcon: {
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 11,
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   footerIconText: {

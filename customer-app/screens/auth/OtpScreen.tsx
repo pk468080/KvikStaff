@@ -21,7 +21,7 @@ type OtpScreenProps = {
   ) => void
 }
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
+const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 const otpHero = require('../../assets/home/hero-worker.png')
 
 export default function OtpScreen({
@@ -73,7 +73,7 @@ export default function OtpScreen({
           <View>
             <View style={styles.brandRow}>
               <Image
-                source={tempStaffLogo}
+                source={KvikStaffLogo}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -180,7 +180,7 @@ export default function OtpScreen({
 
             <Text style={styles.footerText}>
               Your mobile number is used to secure
-              your TempStaff account.
+              your KvikStaff account.
             </Text>
           </View>
         </View>
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderRadius: 26,
     overflow: 'hidden',
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
     marginBottom: 14,
   },
 
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2EDF2',
-    shadowColor: '#062F52',
+    shadowColor: '#0A3972',
     shadowOpacity: 0.07,
     shadowRadius: 18,
     shadowOffset: {
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: '800',
     letterSpacing: 7,
-    color: '#062F52',
+    color: '#0A3972',
     textAlign: 'center',
   },
 

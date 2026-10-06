@@ -146,8 +146,8 @@ export default function PaymentScreen({
           amount: order.amount,
           currency: order.currency,
           order_id: order.orderId,
-          name: 'TempStaff',
-          description: 'TempStaff booking',
+          name: 'KvikStaff',
+          description: 'KvikStaff booking',
         })
       } catch (checkoutError) {
         /*
@@ -223,7 +223,7 @@ export default function PaymentScreen({
             <View style={styles.headerCopy}>
               <Text style={styles.headerTitle}>Secure payment</Text>
               <Text style={styles.headerSubtitle}>
-                Complete your TempStaff booking
+                Complete your KvikStaff booking
               </Text>
             </View>
           </View>
@@ -269,7 +269,7 @@ export default function PaymentScreen({
             {loading ? (
               <ActivityIndicator
                 style={styles.amountLoader}
-                color="#00A7A7"
+                color="#0784FB"
               />
             ) : (
               <Text style={styles.amount}>
@@ -311,7 +311,7 @@ export default function PaymentScreen({
               </Text>
 
               <Text style={styles.securityText}>
-                Payment is processed through Razorpay. TempStaff does
+                Payment is processed through Razorpay. KvikStaff does
                 not treat the mobile screen as the final payment authority.
               </Text>
             </View>
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   headerSubtitle: {
@@ -510,11 +510,11 @@ const styles = StyleSheet.create({
   },
 
   progressDotActive: {
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   progressDotComplete: {
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   progressDotText: {
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   },
 
   progressLabelActive: {
-    color: '#00A7A7',
+    color: '#0784FB',
     fontWeight: '800',
   },
 
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 2,
     marginHorizontal: 3,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   progressLineMuted: {
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 18,
     borderRadius: 20,
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
   },
 
   heroIcon: {
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   heroIconText: {
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
     marginTop: 7,
     fontSize: 32,
     fontWeight: '900',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   amountLoader: {
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   securityBadgeText: {
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
   securityTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   securityText: {
@@ -745,7 +745,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
   },
 
   disabledButton: {

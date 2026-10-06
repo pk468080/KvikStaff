@@ -77,7 +77,7 @@ type BookingScreenProps = {
   ) => void
 }
 
-const tempStaffLogo =
+const KvikStaffLogo =
   require('../../assets/branding/tempstuff-logo.png')
 
 function getNextInstantStartTime(
@@ -1386,7 +1386,7 @@ export default function BookingScreen({
           >
             <Image
               source={
-                tempStaffLogo
+                KvikStaffLogo
               }
               style={
                 styles.brandLogo
@@ -1515,7 +1515,7 @@ export default function BookingScreen({
             <CustomerIcon
               name="location"
               size={18}
-              color="#007E80"
+              color="#0A3972"
             />
           </View>
 

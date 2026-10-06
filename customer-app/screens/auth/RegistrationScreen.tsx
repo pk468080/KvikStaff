@@ -23,7 +23,7 @@ type RegistrationScreenProps = {
 const MAX_NAME_LENGTH = 100
 const MAX_COMPANY_NAME_LENGTH = 150
 
-const tempStaffLogo = require('../../assets/branding/tempstuff-logo.png')
+const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 const registrationHero = require('../../assets/home/hero-worker.png')
 
 export default function RegistrationScreen({
@@ -95,7 +95,7 @@ export default function RegistrationScreen({
           <View>
             <View style={styles.brandRow}>
               <Image
-                source={tempStaffLogo}
+                source={KvikStaffLogo}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -118,7 +118,7 @@ export default function RegistrationScreen({
                 </Text>
 
                 <Text style={styles.subtitle}>
-                  Add a few details so TempStaff can
+                  Add a few details so KvikStaff can
                   personalize your booking experience.
                 </Text>
 
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderRadius: 26,
     overflow: 'hidden',
-    backgroundColor: '#062F52',
+    backgroundColor: '#0A3972',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A7A7',
+    backgroundColor: '#0784FB',
     marginBottom: 13,
   },
 
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2EDF2',
-    shadowColor: '#062F52',
+    shadowColor: '#0A3972',
     shadowOpacity: 0.07,
     shadowRadius: 18,
     shadowOffset: {
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: '#F9FCFD',
     fontSize: 15,
-    color: '#062F52',
+    color: '#0A3972',
   },
 
   errorBox: {
