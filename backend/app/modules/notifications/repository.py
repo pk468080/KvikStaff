@@ -23,8 +23,43 @@ class NotificationsRepository:
                 )
                 """
             ),
-            {"customer_id": str(customer_id)},
+            {
+                "customer_id": str(customer_id),
+            },
         )
+
+    async def get_customer_notifications(
+        self,
+        customer_id: UUID,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        result = await self.db.execute(
+            text(
+                """
+                SELECT
+                    id,
+                    booking_id,
+                    title,
+                    message,
+                    notification_type,
+                    is_read,
+                    created_at
+                FROM public.notifications
+                WHERE user_id = CAST(:customer_id AS uuid)
+                ORDER BY created_at DESC, id DESC
+                LIMIT :limit
+                """
+            ),
+            {
+                "customer_id": str(customer_id),
+                "limit": limit,
+            },
+        )
+
+        return [
+            dict(row)
+            for row in result.mappings().all()
+        ]
 
     async def mark_customer_notification_read(
         self,
@@ -33,7 +68,7 @@ class NotificationsRepository:
     ) -> dict[str, Any]:
         async with self.db.begin():
             await self._set_customer_auth_context(
-                customer_id
+                customer_id,
             )
 
             result = await self.db.execute(
@@ -47,7 +82,7 @@ class NotificationsRepository:
                 {
                     "notification_id": str(
                         notification_id
-                    )
+                    ),
                 },
             )
 
@@ -64,14 +99,18 @@ class NotificationsRepository:
                 """
                 SELECT count(*)::integer
                 FROM public.notifications
-                WHERE user_id = :customer_id
+                WHERE user_id = CAST(:customer_id AS uuid)
                   AND is_read = false
                 """
             ),
-            {"customer_id": str(customer_id)},
+            {
+                "customer_id": str(customer_id),
+            },
         )
 
-        return int(result.scalar_one() or 0)
+        return int(
+            result.scalar_one() or 0
+        )
 
     async def register_customer_push_token(
         self,
@@ -81,7 +120,7 @@ class NotificationsRepository:
     ) -> dict[str, Any]:
         async with self.db.begin():
             await self._set_customer_auth_context(
-                customer_id
+                customer_id,
             )
 
             if platform is None:
@@ -92,7 +131,10 @@ class NotificationsRepository:
                     ) AS result
                     """
                 )
-                params = {"token": token}
+
+                params = {
+                    "token": token,
+                }
             else:
                 query = text(
                     """
@@ -102,6 +144,7 @@ class NotificationsRepository:
                     ) AS result
                     """
                 )
+
                 params = {
                     "token": token,
                     "platform": platform,
@@ -122,7 +165,7 @@ class NotificationsRepository:
     ) -> None:
         async with self.db.begin():
             await self._set_customer_auth_context(
-                customer_id
+                customer_id,
             )
 
             await self.db.execute(
@@ -132,15 +175,21 @@ class NotificationsRepository:
                     SET
                         is_active = false,
                         updated_at = now()
-                    WHERE user_id = :customer_id
+                    WHERE user_id = CAST(:customer_id AS uuid)
                       AND is_active = true
                     """
                 ),
-                {"customer_id": str(customer_id)},
+                {
+                    "customer_id": str(
+                        customer_id
+                    ),
+                },
             )
 
     @staticmethod
-    def _to_dict(value: Any) -> dict[str, Any]:
+    def _to_dict(
+        value: Any,
+    ) -> dict[str, Any]:
         if isinstance(value, dict):
             return value
 
@@ -153,7 +202,9 @@ class NotificationsRepository:
                 return parsed
 
         if hasattr(value, "_mapping"):
-            return dict(value._mapping)
+            return dict(
+                value._mapping
+            )
 
         raise ValueError(
             "Notification function returned an invalid result."

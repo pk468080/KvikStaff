@@ -150,3 +150,39 @@ export async function deleteCustomerAddress(
     },
   )
 }
+export async function getCustomerAddress(
+  addressId: string,
+): Promise<CustomerSavedAddress | null> {
+  const normalizedId =
+    addressId.trim()
+
+  if (!normalizedId) {
+    return null
+  }
+
+  try {
+    const response =
+      await apiRequest<CustomerAddressApiResponse>(
+        `/addresses/${encodeURIComponent(
+          normalizedId,
+        )}`,
+      )
+
+    return mapAddress(response)
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : ''
+
+    if (
+      message.includes(
+        'Customer address not found',
+      )
+    ) {
+      return null
+    }
+
+    throw error
+  }
+}

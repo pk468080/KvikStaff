@@ -3,6 +3,16 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class CustomerNotificationResponse(BaseModel):
+    id: str
+    booking_id: str | None
+    title: str
+    message: str
+    notification_type: str | None
+    is_read: bool
+    created_at: str
+
+
 class CustomerPushTokenRequest(BaseModel):
     token: str = Field(
         min_length=1,

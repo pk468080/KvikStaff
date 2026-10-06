@@ -8,6 +8,7 @@ from app.modules.notifications.repository import (
     NotificationsRepository,
 )
 from app.modules.notifications.schemas import (
+    CustomerNotificationResponse,
     CustomerPushTokenResponse,
 )
 
@@ -24,6 +25,67 @@ class NotificationsService:
     ) -> None:
         self.repository = repository
 
+    async def get_customer_notifications(
+        self,
+        customer_id: UUID,
+        limit: int = 100,
+    ) -> list[CustomerNotificationResponse]:
+        safe_limit = min(
+            max(limit, 1),
+            100,
+        )
+
+        try:
+            rows = (
+                await self.repository
+                .get_customer_notifications(
+                    customer_id=customer_id,
+                    limit=safe_limit,
+                )
+            )
+
+            return [
+                CustomerNotificationResponse(
+                    id=str(row["id"]),
+                    booking_id=(
+                        str(row["booking_id"])
+                        if row.get("booking_id") is not None
+                        else None
+                    ),
+                    title=str(
+                        row["title"]
+                    ),
+                    message=str(
+                        row["message"]
+                    ),
+                    notification_type=(
+                        str(
+                            row["notification_type"]
+                        )
+                        if row.get("notification_type")
+                        is not None
+                        else None
+                    ),
+                    is_read=bool(
+                        row["is_read"]
+                    ),
+                    created_at=str(
+                        row["created_at"]
+                    ),
+                )
+                for row in rows
+            ]
+
+        except SQLAlchemyError as exc:
+            raise AppError(
+                "NOTIFICATIONS_LOAD_FAILED",
+                self._error_message(
+                    exc,
+                    "Unable to load notifications.",
+                ),
+                400,
+            ) from exc
+
     async def mark_customer_notification_read(
         self,
         customer_id: UUID,
@@ -34,7 +96,10 @@ class NotificationsService:
                 customer_id=customer_id,
                 notification_id=notification_id,
             )
-        except (ValueError, SQLAlchemyError) as exc:
+        except (
+            ValueError,
+            SQLAlchemyError,
+        ) as exc:
             raise AppError(
                 "NOTIFICATION_READ_FAILED",
                 self._error_message(
@@ -49,8 +114,11 @@ class NotificationsService:
         customer_id: UUID,
     ) -> int:
         try:
-            return await self.repository.get_unread_customer_notification_count(
-                customer_id=customer_id,
+            return (
+                await self.repository
+                .get_unread_customer_notification_count(
+                    customer_id=customer_id,
+                )
             )
         except SQLAlchemyError as exc:
             raise AppError(
@@ -98,13 +166,18 @@ class NotificationsService:
             )
 
         try:
-            row = await self.repository.register_customer_push_token(
-                customer_id=customer_id,
-                token=normalized_token,
-                platform=normalized_platform,
+            row = (
+                await self.repository
+                .register_customer_push_token(
+                    customer_id=customer_id,
+                    token=normalized_token,
+                    platform=normalized_platform,
+                )
             )
 
-            if str(row.get("user_id")) != str(customer_id):
+            if str(
+                row.get("user_id")
+            ) != str(customer_id):
                 raise AppError(
                     "PUSH_TOKEN_ACCOUNT_MISMATCH",
                     "Push token registration belongs to a different customer account.",
@@ -113,20 +186,33 @@ class NotificationsService:
 
             return CustomerPushTokenResponse(
                 id=str(row["id"]),
-                user_id=str(row["user_id"]),
+                user_id=str(
+                    row["user_id"]
+                ),
                 token=str(row["token"]),
                 platform=(
                     str(row["platform"])
                     if row.get("platform") is not None
                     else None
                 ),
-                is_active=bool(row["is_active"]),
-                created_at=str(row["created_at"]),
-                updated_at=str(row["updated_at"]),
+                is_active=bool(
+                    row["is_active"]
+                ),
+                created_at=str(
+                    row["created_at"]
+                ),
+                updated_at=str(
+                    row["updated_at"]
+                ),
             )
+
         except AppError:
             raise
-        except (ValueError, SQLAlchemyError) as exc:
+
+        except (
+            ValueError,
+            SQLAlchemyError,
+        ) as exc:
             raise AppError(
                 "PUSH_TOKEN_REGISTRATION_FAILED",
                 self._error_message(
@@ -141,8 +227,11 @@ class NotificationsService:
         customer_id: UUID,
     ) -> None:
         try:
-            await self.repository.deactivate_customer_push_tokens(
-                customer_id=customer_id,
+            await (
+                self.repository
+                .deactivate_customer_push_tokens(
+                    customer_id=customer_id,
+                )
             )
         except SQLAlchemyError as exc:
             raise AppError(
@@ -160,4 +249,8 @@ class NotificationsService:
         fallback: str,
     ) -> str:
         message = str(exc).strip()
-        return message or fallback
+
+        return (
+            message
+            or fallback
+        )

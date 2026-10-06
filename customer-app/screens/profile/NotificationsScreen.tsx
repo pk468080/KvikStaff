@@ -14,20 +14,12 @@ import {
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
-import { supabase } from '../../lib/supabase'
-import {
-  markCustomerNotificationRead,
-} from '../../services/notifications/customerNotifications.service'
 
-type CustomerNotification = {
-  id: string
-  bookingId: string | null
-  title: string
-  message: string
-  notificationType: string
-  isRead: boolean
-  createdAt: string
-}
+import {
+  getCustomerNotifications,
+  markCustomerNotificationRead,
+  type CustomerNotification,
+} from '../../services/notifications/customerNotifications.service'
 
 export default function NotificationsScreen({
   onOpenBooking,
@@ -42,8 +34,10 @@ export default function NotificationsScreen({
   ] = useState<
     CustomerNotification[]
   >([])
+
   const [loading, setLoading] =
     useState(true)
+
   const [error, setError] =
     useState<string | null>(null)
 
@@ -53,76 +47,10 @@ export default function NotificationsScreen({
         setLoading(true)
         setError(null)
 
-        const {
-          data: userData,
-          error: userError,
-        } =
-          await supabase.auth.getUser()
+        const data =
+          await getCustomerNotifications()
 
-        if (
-          userError ||
-          !userData.user
-        ) {
-          throw (
-            userError ??
-            new Error(
-              'A customer authentication session is required.',
-            )
-          )
-        }
-
-        const {
-          data,
-          error: queryError,
-        } = await supabase
-          .from('notifications')
-          .select(
-            `
-              id,
-              booking_id,
-              title,
-              message,
-              notification_type,
-              is_read,
-              created_at
-            `,
-          )
-          .eq(
-            'user_id',
-            userData.user.id,
-          )
-          .order(
-            'created_at',
-            {
-              ascending: false,
-            },
-          )
-          .limit(100)
-
-        if (queryError) {
-          throw queryError
-        }
-
-        setNotifications(
-          (data ?? []).map(
-            row => ({
-              id: row.id,
-              bookingId:
-                row.booking_id ??
-                null,
-              title:
-                row.title,
-              message:
-                row.message,
-             notificationType:
-  row.notification_type ?? '',
-              isRead:
-                row.is_read === true,
-              createdAt:
-                row.created_at,
-            }),
-          ),
-        )
+        setNotifications(data)
       } catch (nextError) {
         setError(
           nextError instanceof Error
@@ -164,7 +92,7 @@ export default function NotificationsScreen({
         )
       } catch {
         // The notification can still be opened
-        // even when marking it read fails.
+        // when marking it read fails.
       }
     }
 
@@ -299,9 +227,7 @@ export default function NotificationsScreen({
               </View>
 
               <Text
-                style={
-                  styles.message
-                }
+                style={styles.message}
                 numberOfLines={3}
               >
                 {item.message}
@@ -365,9 +291,14 @@ function getTypeIcon(
 function formatNotificationDate(
   value: string,
 ) {
-  const date = new Date(value)
+  const date =
+    new Date(value)
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
     return ''
   }
 
@@ -474,12 +405,6 @@ const styles = StyleSheet.create({
     color: '#A0A7B2',
     fontSize: 10,
     marginTop: 7,
-  },
-
-  chevron: {
-    color: '#AAB1BC',
-    fontSize: 28,
-    fontWeight: '300',
   },
 
   error: {

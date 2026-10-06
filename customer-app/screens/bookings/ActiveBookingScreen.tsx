@@ -3,7 +3,9 @@ import {
   useMemo,
   useState,
 } from 'react'
-
+import {
+  supabase,
+} from '../../lib/supabase'
 import {
   ActivityIndicator,
   Alert,
@@ -45,8 +47,8 @@ import {
 } from '../../services/booking/bookingCancellation.service'
 
 import {
-  supabase,
-} from '../../lib/supabase'
+  getCustomerAddress,
+} from '../../services/addresses/customerAddress.service'
 type BookingMapLocation = {
   latitude: number
   longitude: number
@@ -443,31 +445,37 @@ const [
         )
       }
 
-      /*
+      
+
+      setLocationNow(
+        Date.now(),
+      )
+
+      setError(null)
+    } catch (
+      nextError
+    ) {
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to load booking.',
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+        /*
        * The map needs the booking's saved
        * service address as its second coordinate.
        */
-      const {
-        data: address,
-        error: addressError,
-      } = await supabase
-        .from('addresses')
-        .select(
-          'latitude, longitude',
-        )
-        .eq(
-          'id',
+      const address =
+        await getCustomerAddress(
           nextBooking.address_id,
         )
-        .maybeSingle()
 
-      if (
-        addressError ||
-        !address
-      ) {
+      if (!address) {
         console.warn(
-          'Unable to load booking service location:',
-          addressError,
+          'Unable to load booking service location.',
         )
 
         setCustomerLocation(
@@ -505,24 +513,6 @@ const [
             : null,
         )
       }
-
-      setLocationNow(
-        Date.now(),
-      )
-
-      setError(null)
-    } catch (
-      nextError
-    ) {
-      setError(
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to load booking.',
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
     void refresh()
