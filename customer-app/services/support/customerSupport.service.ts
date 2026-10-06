@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type CustomerSupportCategory =
   | 'booking'
@@ -23,23 +23,40 @@ export type CustomerSupportTicket = {
   resolvedAt: string | null
 }
 
-async function getAuthenticatedUserId() {
-  const {
-    data,
-    error,
-  } = await supabase.auth.getUser()
+type CustomerSupportTicketApi = {
+  id: string
+  category: CustomerSupportCategory
+  subject: string
+  description: string
+  status:
+    | 'open'
+    | 'in_progress'
+    | 'resolved'
+    | 'closed'
+  booking_id: string | null
+  created_at: string
+  updated_at: string
+  resolved_at: string | null
+}
 
-  if (error) {
-    throw error
+function mapTicket(
+  row: CustomerSupportTicketApi,
+): CustomerSupportTicket {
+  return {
+    id: row.id,
+    category: row.category,
+    subject: row.subject,
+    description: row.description,
+    status: row.status,
+    bookingId:
+      row.booking_id ?? null,
+    createdAt:
+      row.created_at,
+    updatedAt:
+      row.updated_at,
+    resolvedAt:
+      row.resolved_at ?? null,
   }
-
-  if (!data.user) {
-    throw new Error(
-      'A customer authentication session is required.',
-    )
-  }
-
-  return data.user.id
 }
 
 export async function createCustomerSupportTicket(
@@ -54,10 +71,9 @@ export async function createCustomerSupportTicket(
     paymentRefundId?: string | null
   },
 ): Promise<CustomerSupportTicket> {
-  await getAuthenticatedUserId()
-
   const subject =
     input.subject.trim()
+
   const description =
     input.description.trim()
 
@@ -73,123 +89,42 @@ export async function createCustomerSupportTicket(
     )
   }
 
-  const {
-    data,
-    error,
-  } = await supabase.rpc(
-    'create_support_ticket',
-    {
-      p_category: input.category,
-      p_subject: subject,
-      p_description:
-        description,
-            ...(input.bookingId
-        ? {
-            p_booking_id:
-              input.bookingId,
-          }
-        : {}),
-
-      ...(input.paymentId
-        ? {
-            p_payment_id:
-              input.paymentId,
-          }
-        : {}),
-
-      ...(input.workerId
-        ? {
-            p_worker_id:
-              input.workerId,
-          }
-        : {}),
-
-      ...(input.refundRequestId
-        ? {
-            p_refund_request_id:
-              input.refundRequestId,
-          }
-        : {}),
-
-      ...(input.paymentRefundId
-        ? {
-            p_payment_refund_id:
-              input.paymentRefundId,
-          }
-        : {}),
-    },
-  )
-
-  if (error) {
-    throw error
-  }
-
-  if (!data) {
-    throw new Error(
-      'The support request was not created.',
+  const response =
+    await apiRequest<CustomerSupportTicketApi>(
+      '/support/tickets',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          category:
+            input.category,
+          subject,
+          description,
+          booking_id:
+            input.bookingId ?? null,
+          payment_id:
+            input.paymentId ?? null,
+          worker_id:
+            input.workerId ?? null,
+          refund_request_id:
+            input.refundRequestId ?? null,
+          payment_refund_id:
+            input.paymentRefundId ?? null,
+        }),
+      },
     )
-  }
 
-  return mapTicket(data)
+  return mapTicket(response)
 }
 
 export async function getCustomerSupportTickets(): Promise<
   CustomerSupportTicket[]
 > {
-  await getAuthenticatedUserId()
+  const response =
+    await apiRequest<
+      CustomerSupportTicketApi[]
+    >('/support/tickets')
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('support_tickets')
-    .select(
-      `
-        id,
-        category,
-        subject,
-        description,
-        status,
-        booking_id,
-        created_at,
-        updated_at,
-        resolved_at
-      `,
-    )
-    .order(
-      'created_at',
-      {
-        ascending: false,
-      },
-    )
-
-  if (error) {
-    throw error
-  }
-
-  return (data ?? []).map(
-    row => mapTicket(row),
+  return (response ?? []).map(
+    mapTicket,
   )
-}
-
-function mapTicket(
-  row: Record<string, any>,
-): CustomerSupportTicket {
-  return {
-    id: row.id,
-    category:
-      row.category as CustomerSupportCategory,
-    subject: row.subject,
-    description:
-      row.description,
-    status: row.status,
-    bookingId:
-      row.booking_id ?? null,
-    createdAt:
-      row.created_at,
-    updatedAt:
-      row.updated_at,
-    resolvedAt:
-      row.resolved_at ?? null,
-  }
 }
