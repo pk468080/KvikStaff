@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type AccountDeletionRequest = {
   id: string
@@ -11,201 +11,70 @@ export type AccountDeletionRequest = {
   reviewedAt: string | null
 }
 
-const ACCOUNT_DELETION_STATUSES = [
-  'pending',
-  'approved',
-  'rejected',
-] as const
-
-type AccountDeletionStatus =
-  (typeof ACCOUNT_DELETION_STATUSES)[number]
-
-function normalizeAccountDeletionStatus(
-  value: string,
-): AccountDeletionStatus {
-  if (
-    ACCOUNT_DELETION_STATUSES.includes(
-      value as AccountDeletionStatus,
-    )
-  ) {
-    return value as AccountDeletionStatus
-  }
-
-  throw new Error(
-    `Unexpected account deletion request status: ${value}`,
-  )
+type AccountDeletionRequestApi = {
+  id: string
+  reason: string | null
+  status: AccountDeletionRequest['status']
+  requested_at: string
+  reviewed_at: string | null
 }
 
-async function getAuthenticatedUserId() {
-  const {
-    data,
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) {
-    throw error
-  }
-
-  if (!data.user) {
+function normalizeAccountDeletionRequest(
+  value: AccountDeletionRequestApi,
+): AccountDeletionRequest {
+  if (
+    value.status !== 'pending' &&
+    value.status !== 'approved' &&
+    value.status !== 'rejected'
+  ) {
     throw new Error(
-      'A customer authentication session is required.',
+      `Unexpected account deletion request status: ${value.status}`,
     )
   }
 
-  return data.user.id
+  return {
+    id: value.id,
+    reason: value.reason ?? null,
+    status: value.status,
+    requestedAt: value.requested_at,
+    reviewedAt: value.reviewed_at ?? null,
+  }
 }
 
 export async function getLatestAccountDeletionRequest(): Promise<
   AccountDeletionRequest | null
 > {
-  const userId =
-    await getAuthenticatedUserId()
-
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('account_deletion_requests')
-    .select(
-      `
-        id,
-        reason,
-        status,
-        requested_at,
-        reviewed_at
-      `,
+  const data =
+    await apiRequest<
+      AccountDeletionRequestApi | null
+    >(
+      '/account/deletion-request',
     )
-    .eq('user_id', userId)
-    .order(
-      'requested_at',
-      {
-        ascending: false,
-      },
-    )
-    .limit(1)
-    .maybeSingle()
-
-  if (error) {
-    throw error
-  }
 
   if (!data) {
     return null
   }
 
-  return {
-    id: data.id,
-    reason:
-      data.reason ?? null,
-    status:
-      normalizeAccountDeletionStatus(
-        data.status,
-      ),
-    requestedAt:
-      data.requested_at,
-    reviewedAt:
-      data.reviewed_at ?? null,
-  }
+  return normalizeAccountDeletionRequest(
+    data,
+  )
 }
 
 export async function requestAccountDeletion(
   reason?: string,
 ): Promise<AccountDeletionRequest> {
-  const userId =
-    await getAuthenticatedUserId()
-
-  const {
-    data: existing,
-    error: existingError,
-  } = await supabase
-    .from('account_deletion_requests')
-    .select(
-      `
-        id,
-        reason,
-        status,
-        requested_at,
-        reviewed_at
-      `,
-    )
-    .eq('user_id', userId)
-    .eq('status', 'pending')
-    .order(
-      'requested_at',
+  const data =
+    await apiRequest<AccountDeletionRequestApi>(
+      '/account/deletion-request',
       {
-        ascending: false,
+        method: 'POST',
+        body: JSON.stringify({
+          reason: reason?.trim() || null,
+        }),
       },
     )
-    .limit(1)
-    .maybeSingle()
 
-  if (existingError) {
-    throw existingError
-  }
-
-  if (existing) {
-    return {
-      id: existing.id,
-      reason:
-        existing.reason ?? null,
-      status:
-        normalizeAccountDeletionStatus(
-          existing.status,
-        ),
-      requestedAt:
-        existing.requested_at,
-      reviewedAt:
-        existing.reviewed_at ?? null,
-    }
-  }
-
-  const trimmedReason =
-    reason?.trim() || null
-
-  const {
+  return normalizeAccountDeletionRequest(
     data,
-    error,
-  } = await supabase
-    .from(
-      'account_deletion_requests',
-    )
-    .insert({
-      user_id: userId,
-      reason: trimmedReason,
-      status: 'pending',
-    })
-    .select(
-      `
-        id,
-        reason,
-        status,
-        requested_at,
-        reviewed_at
-      `,
-    )
-    .single()
-
-  if (error) {
-    throw error
-  }
-
-  if (!data) {
-    throw new Error(
-      'Your deletion request could not be submitted.',
-    )
-  }
-
-  return {
-    id: data.id,
-    reason:
-      data.reason ?? null,
-    status:
-      normalizeAccountDeletionStatus(
-        data.status,
-      ),
-    requestedAt:
-      data.requested_at,
-    reviewedAt:
-      data.reviewed_at ?? null,
-  }
+  )
 }
