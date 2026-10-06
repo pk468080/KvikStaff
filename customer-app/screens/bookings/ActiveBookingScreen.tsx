@@ -439,32 +439,13 @@ const [
         setLocation(
           nextLocation,
         )
-      } else {
+            } else {
         setLocation(
           null,
         )
       }
 
-      
-
-      setLocationNow(
-        Date.now(),
-      )
-
-      setError(null)
-    } catch (
-      nextError
-    ) {
-      setError(
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to load booking.',
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-        /*
+      /*
        * The map needs the booking's saved
        * service address as its second coordinate.
        */
@@ -513,6 +494,25 @@ const [
             : null,
         )
       }
+
+      setLocationNow(
+        Date.now(),
+      )
+
+      setError(null)
+    } catch (
+      nextError
+    ) {
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Unable to load booking.',
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+    
 
   useEffect(() => {
     void refresh()
