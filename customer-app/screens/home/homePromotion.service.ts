@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { publicApiRequest } from '../../lib/api'
 
 export type HomePromotion = {
   id: string
@@ -10,7 +10,7 @@ export type HomePromotion = {
   sortOrder: number
 }
 
-type HomePromotionRow = {
+type HomePromotionApi = {
   id: string
   title: string
   subtitle: string | null
@@ -23,33 +23,10 @@ type HomePromotionRow = {
 export async function getHomePromotions(): Promise<
   HomePromotion[]
 > {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('home_promotions')
-    .select(
-      `
-        id,
-        title,
-        subtitle,
-        cta_text,
-        service_id,
-        image_url,
-        sort_order
-      `,
-    )
-    .eq('is_active', true)
-    .order('sort_order', {
-      ascending: true,
-    })
-
-  if (error) {
-    throw error
-  }
-
   const rows =
-    (data ?? []) as HomePromotionRow[]
+    await publicApiRequest<
+      HomePromotionApi[]
+    >('/home/promotions')
 
   return rows.map(row => ({
     id: row.id,

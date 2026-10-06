@@ -7,6 +7,7 @@ from app.api.v1.availability import router as availability_router
 from app.api.v1.bookings import router as bookings_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.health import router as health_router
+from app.api.v1.home import router as home_router
 from app.api.v1.invoices import router as invoices_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.payments import router as payments_router
@@ -16,6 +17,7 @@ from app.api.v1.support import router as support_router
 
 
 api_router = APIRouter()
+
 
 api_router.include_router(
     health_router,
@@ -86,6 +88,12 @@ api_router.include_router(
     account_router,
     prefix="/account",
     tags=["account"],
+)
+
+api_router.include_router(
+    home_router,
+    prefix="/home",
+    tags=["home"],
 )
 
 api_router.include_router(
