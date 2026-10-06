@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native'
 import {
-  deactivateCurrentCustomerPushTokens,
+  deactivateCustomerPushTokens,
 } from '../../services/notifications/customerNotifications.service'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
@@ -107,7 +107,7 @@ export default function MyProfileScreen({
 
    try {
   try {
-    await deactivateCurrentCustomerPushTokens()
+    await deactivateCustomerPushTokens()
   } catch (tokenError) {
     console.warn(
       'Unable to deactivate customer push tokens during logout:',
