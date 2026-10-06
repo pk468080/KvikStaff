@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 export type BookingChatMessage = {
   id: string
@@ -13,53 +13,12 @@ export type CustomerBookingChatSession = {
   currentUserId: string
 }
 
-type BookingChatMessageRow = {
-  id: string
-  sender_id: string
-  sender_role: 'customer' | 'worker'
-  body: string
-  created_at: string
-}
-
-function mapMessage(
-  row: BookingChatMessageRow,
-): BookingChatMessage {
-  return {
-    id: row.id,
-    senderId: row.sender_id,
-    senderRole: row.sender_role,
-    body: row.body,
-    createdAt: row.created_at,
-  }
-}
-
-async function getCurrentCustomerId(): Promise<string> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) {
-    throw error
-  }
-
-  if (!user) {
-    throw new Error(
-      'A customer authentication session is required to use chat.',
-    )
-  }
-
-  return user.id
-}
-
 function validateId(
   value: string,
   label: string,
 ): void {
   if (!value.trim()) {
-    throw new Error(
-      `${label} is required.`,
-    )
+    throw new Error(`${label} is required.`)
   }
 }
 
@@ -83,29 +42,39 @@ function normalizeMessage(
   return body
 }
 
-async function findConversation(
-  bookingId: string,
-  occurrenceId: string | null,
-): Promise<string | null> {
-  let query = supabase
-    .from('conversations')
-    .select('id')
-    .eq('booking_id', bookingId)
-
-  query = occurrenceId
-    ? query.eq('occurrence_id', occurrenceId)
-    : query.is('occurrence_id', null)
-
-  const {
-    data,
-    error,
-  } = await query.maybeSingle()
-
-  if (error) {
-    throw error
+function mapMessage(
+  row: Record<string, unknown>,
+): BookingChatMessage {
+  if (
+    typeof row.id !== 'string' ||
+    typeof row.sender_id !== 'string' ||
+    typeof row.body !== 'string' ||
+    typeof row.created_at !== 'string'
+  ) {
+    throw new Error(
+      'The backend returned an invalid chat message.',
+    )
   }
 
-  return data?.id ?? null
+  const senderRole =
+    row.sender_role === 'customer' ||
+    row.sender_role === 'worker'
+      ? row.sender_role
+      : null
+
+  if (!senderRole) {
+    throw new Error(
+      'The backend returned an invalid chat sender role.',
+    )
+  }
+
+  return {
+    id: row.id,
+    senderId: row.sender_id,
+    senderRole,
+    body: row.body,
+    createdAt: row.created_at,
+  }
 }
 
 export async function getOrCreateCustomerBookingChat(
@@ -113,113 +82,57 @@ export async function getOrCreateCustomerBookingChat(
   workerId: string,
   occurrenceId: string | null = null,
 ): Promise<CustomerBookingChatSession> {
-  validateId(
-    bookingId,
-    'Booking id',
-  )
+  validateId(bookingId, 'Booking id')
+  validateId(workerId, 'Worker id')
 
-  validateId(
-    workerId,
-    'Worker id',
-  )
-
-  const customerId =
-    await getCurrentCustomerId()
-
-  const existingConversationId =
-    await findConversation(
-      bookingId,
-      occurrenceId,
+  const result =
+    await apiRequest<{
+      conversation_id: string
+      current_user_id: string
+    }>(
+      `/chat/bookings/${encodeURIComponent(
+        bookingId.trim(),
+      )}/conversation`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          worker_id: workerId.trim(),
+          occurrence_id: occurrenceId ?? null,
+        }),
+      },
     )
 
-  if (existingConversationId) {
-    return {
-      conversationId:
-        existingConversationId,
-      currentUserId: customerId,
-    }
+  if (
+    typeof result.conversation_id !== 'string' ||
+    typeof result.current_user_id !== 'string'
+  ) {
+    throw new Error(
+      'The backend returned an invalid chat session.',
+    )
   }
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('conversations')
-    .insert({
-      booking_id: bookingId,
-      occurrence_id: occurrenceId,
-      customer_id: customerId,
-      worker_id: workerId,
-    })
-    .select('id')
-    .single()
-
-  if (!error && data?.id) {
-    return {
-      conversationId: data.id,
-      currentUserId: customerId,
-    }
+  return {
+    conversationId: result.conversation_id,
+    currentUserId: result.current_user_id,
   }
-
-  /*
-   * Customer and worker can open chat at
-   * the same time. The database's unique
-   * booking/occurrence index resolves that race.
-   */
-  if (error?.code === '23505') {
-    const conversationId =
-      await findConversation(
-        bookingId,
-        occurrenceId,
-      )
-
-    if (conversationId) {
-      return {
-        conversationId,
-        currentUserId: customerId,
-      }
-    }
-  }
-
-  throw error ?? new Error(
-    'Unable to start the booking chat.',
-  )
 }
 
 export async function getBookingChatMessages(
   conversationId: string,
 ): Promise<BookingChatMessage[]> {
-  validateId(
-    conversationId,
-    'Conversation id',
-  )
+  validateId(conversationId, 'Conversation id')
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('messages')
-    .select(
-      'id, sender_id, sender_role, body, created_at',
+  const result =
+    await apiRequest<unknown[]>(
+      `/chat/conversations/${encodeURIComponent(
+        conversationId.trim(),
+      )}/messages`,
     )
-    .eq(
-      'conversation_id',
-      conversationId,
-    )
-    .is('deleted_at', null)
-    .order('created_at', {
-      ascending: true,
-    })
-    .limit(100)
 
-  if (error) {
-    throw error
-  }
-
-  return (data ?? []).map(
+  return result.map(
     row =>
       mapMessage(
-        row as BookingChatMessageRow,
+        row as Record<string, unknown>,
       ),
   )
 }
@@ -228,30 +141,22 @@ export async function sendCustomerBookingChatMessage(
   conversationId: string,
   value: string,
 ): Promise<BookingChatMessage> {
-  const customerId =
-    await getCurrentCustomerId()
+  validateId(conversationId, 'Conversation id')
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: customerId,
-      sender_role: 'customer',
-      body: normalizeMessage(value),
-    })
-    .select(
-      'id, sender_id, sender_role, body, created_at',
+  const result =
+    await apiRequest<unknown>(
+      `/chat/conversations/${encodeURIComponent(
+        conversationId.trim(),
+      )}/messages`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          body: normalizeMessage(value),
+        }),
+      },
     )
-    .single()
-
-  if (error) {
-    throw error
-  }
 
   return mapMessage(
-    data as BookingChatMessageRow,
+    result as Record<string, unknown>,
   )
 }
