@@ -1,8 +1,8 @@
 from functools import lru_cache
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     app_name: str = "KvikStaff API"
@@ -11,7 +11,12 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     log_level: str = "INFO"
-    cors_origins: list[str] = Field(default_factory=list)
+    cors_origins: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:5173",
+            "http://localhost:8081",
+        ]
+    )
 
     database_url: str
 
@@ -32,14 +37,16 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
-@model_validator(mode="after")
-def validate_production_cors(self) -> "Settings":
-    if self.environment == "production" and not self.cors_origins:
-        raise ValueError(
-            "CORS_ORIGINS must be configured in production."
-        )
 
-    return self
+    @model_validator(mode="after")
+    def validate_production_cors(self) -> "Settings":
+        if self.environment == "production" and not self.cors_origins:
+            raise ValueError(
+                "CORS_ORIGINS must be configured in production."
+            )
+
+        return self
+
 
 @lru_cache
 def get_settings() -> Settings:
