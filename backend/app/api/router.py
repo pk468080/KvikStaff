@@ -14,7 +14,9 @@ from app.api.v1.payments import router as payments_router
 from app.api.v1.reviews import router as reviews_router
 from app.api.v1.services import router as services_router
 from app.api.v1.support import router as support_router
-
+from app.api.v1.worker_presence import (
+    router as worker_presence_router,
+)
 
 api_router = APIRouter()
 
@@ -100,4 +102,9 @@ api_router.include_router(
     payments_router,
     prefix="/payments",
     tags=["payments"],
+)
+api_router.include_router(
+    worker_presence_router,
+    prefix="/worker/presence",
+    tags=["worker-presence"],
 )

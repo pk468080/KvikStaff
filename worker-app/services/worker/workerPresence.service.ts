@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 import type {
   WorkerLocation,
@@ -6,197 +6,74 @@ import type {
   WorkerStatus,
 } from '../../types/worker'
 
-type PresenceRow = {
+type WorkerPresenceResponse = {
   worker_id: string
-  is_available: boolean
-  last_seen_at: string | null
-  expires_at: string | null
+  status: WorkerStatus
+  latitude: number | null
+  longitude: number | null
+  last_heartbeat_at: string | null
+  presence_expires_at: string | null
 }
 
-type LocationRow = {
+type WorkerLocationResponse = {
   latitude: number
   longitude: number
   recorded_at: string
 }
 
-type PresenceRpcResult = {
-  success?: boolean
-  worker_id?: string
-  is_available?: boolean
-  expires_at?: string | null
-  recorded_at?: string
-  latitude?: number
-  longitude?: number
-}
-
-async function getCurrentWorkerId(): Promise<string> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) {
-    throw error
-  }
-
-  if (!user) {
-    throw new Error(
-      'A worker authentication session is required.',
-    )
-  }
-
-  return user.id
-}
-
 function mapPresence(
-  row: PresenceRow,
-  location: LocationRow | null,
+  data: WorkerPresenceResponse,
 ): WorkerPresence {
-  let status: WorkerStatus = 'offline'
-
-  if (row.is_available) {
-    status = 'available'
-  }
-
   return {
-    workerId: row.worker_id,
-    status,
+    workerId: data.worker_id,
+    status: data.status,
 
     latitude:
-      location?.latitude ?? null,
+      data.latitude,
 
     longitude:
-      location?.longitude ?? null,
+      data.longitude,
 
     lastHeartbeatAt:
-      row.last_seen_at,
+      data.last_heartbeat_at,
 
     presenceExpiresAt:
-      row.expires_at,
+      data.presence_expires_at,
   }
-}
-
-async function getLatestWorkerLocation(
-  workerId: string,
-): Promise<LocationRow | null> {
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('worker_locations')
-    .select(
-      'latitude, longitude, recorded_at',
-    )
-    .eq('worker_id', workerId)
-    .is('booking_id', null)
-    .order('recorded_at', {
-      ascending: false,
-    })
-    .limit(1)
-    .maybeSingle()
-
-  if (error) {
-    throw error
-  }
-
-  return data
-    ? {
-        latitude: Number(
-          data.latitude,
-        ),
-        longitude: Number(
-          data.longitude,
-        ),
-        recorded_at:
-          data.recorded_at,
-      }
-    : null
 }
 
 export async function getWorkerPresence(): Promise<
   WorkerPresence | null
 > {
-  const workerId =
-    await getCurrentWorkerId()
-
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('worker_presence')
-    .select(
-      'worker_id, is_available, last_seen_at, expires_at',
-    )
-    .eq('worker_id', workerId)
-    .maybeSingle()
-
-  if (error) {
-    throw error
-  }
-
-  if (!data) {
-    return null
-  }
-
-  const latestLocation =
-    await getLatestWorkerLocation(
-      workerId,
+  const data =
+    await apiRequest<
+      WorkerPresenceResponse | null
+    >(
+      '/worker/presence',
     )
 
-  return mapPresence(
-    data,
-    latestLocation,
-  )
+  return data
+    ? mapPresence(data)
+    : null
 }
 
 export async function setWorkerPresence(
   available: boolean,
 ): Promise<WorkerPresence> {
-  const workerId =
-    await getCurrentWorkerId()
-
-  const {
-    data,
-    error,
-  } = await supabase.rpc(
-    'worker_set_presence',
-    {
-      p_available: available,
-    },
-  )
-
-  if (error) {
-    throw error
-  }
-
-  const result =
-    (data ?? {}) as PresenceRpcResult
-
-  if (result.success !== true) {
-    throw new Error(
-      'Worker presence could not be updated.',
+  const data =
+    await apiRequest<
+      WorkerPresenceResponse
+    >(
+      '/worker/presence',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          available,
+        }),
+      },
     )
-  }
 
-  if (
-    result.worker_id &&
-    result.worker_id !== workerId
-  ) {
-    throw new Error(
-      'Presence update belongs to a different worker account.',
-    )
-  }
-
-  const presence =
-    await getWorkerPresence()
-
-  if (!presence) {
-    throw new Error(
-      'Worker presence could not be loaded after updating.',
-    )
-  }
-
-  return presence
+  return mapPresence(data)
 }
 
 export async function goOnline(): Promise<WorkerPresence> {
@@ -211,57 +88,26 @@ export async function sendWorkerPresenceHeartbeat(
   latitude: number,
   longitude: number,
 ): Promise<WorkerPresence> {
-  const workerId =
-    await getCurrentWorkerId()
-
   validateCoordinates(
     latitude,
     longitude,
   )
 
-  const {
-    data,
-    error,
-  } = await supabase.rpc(
-    'worker_presence_heartbeat',
-    {
-      p_latitude: latitude,
-      p_longitude: longitude,
-    },
-  )
-
-  if (error) {
-    throw error
-  }
-
-  const result =
-    (data ?? {}) as PresenceRpcResult
-
-  if (result.success !== true) {
-    throw new Error(
-      'Worker presence heartbeat failed.',
+  const data =
+    await apiRequest<
+      WorkerPresenceResponse
+    >(
+      '/worker/presence/heartbeat',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          latitude,
+          longitude,
+        }),
+      },
     )
-  }
 
-  if (
-    result.worker_id &&
-    result.worker_id !== workerId
-  ) {
-    throw new Error(
-      'Presence heartbeat belongs to a different worker account.',
-    )
-  }
-
-  const presence =
-    await getWorkerPresence()
-
-  if (!presence) {
-    throw new Error(
-      'Worker presence could not be loaded after heartbeat.',
-    )
-  }
-
-  return presence
+  return mapPresence(data)
 }
 
 export async function updateWorkerLocation(
@@ -274,77 +120,57 @@ export async function updateWorkerLocation(
     longitude,
   )
 
-  const {
-    data,
-    error,
-  } = await supabase.rpc(
-    'worker_update_location',
-    {
-      p_latitude: latitude,
-      p_longitude: longitude,
-      p_booking_id: bookingId,
-    },
-  )
-
-  if (error) {
-    throw error
-  }
-
-  const result =
-    (data ?? {}) as PresenceRpcResult
-
-  if (result.success !== true) {
-    throw new Error(
-      'Worker location could not be updated.',
+  const data =
+    await apiRequest<
+      WorkerLocationResponse
+    >(
+      '/worker/presence/location',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          booking_id: bookingId,
+        }),
+      },
     )
-  }
-
-  if (
-    typeof result.latitude !== 'number' ||
-    typeof result.longitude !== 'number' ||
-    !result.recorded_at
-  ) {
-    throw new Error(
-      'Worker location update returned invalid data.',
-    )
-  }
 
   return {
     latitude:
-      result.latitude,
+      data.latitude,
 
     longitude:
-      result.longitude,
+      data.longitude,
 
     recordedAt:
-      result.recorded_at,
+      data.recorded_at,
   }
 }
 
 export async function getLatestLocation(): Promise<
   WorkerLocation | null
 > {
-  const workerId =
-    await getCurrentWorkerId()
+  const presence =
+    await getWorkerPresence()
 
-  const location =
-    await getLatestWorkerLocation(
-      workerId,
-    )
-
-  if (!location) {
+  if (
+    !presence ||
+    presence.latitude === null ||
+    presence.longitude === null ||
+    !presence.lastHeartbeatAt
+  ) {
     return null
   }
 
   return {
     latitude:
-      location.latitude,
+      presence.latitude,
 
     longitude:
-      location.longitude,
+      presence.longitude,
 
     recordedAt:
-      location.recorded_at,
+      presence.lastHeartbeatAt,
   }
 }
 
