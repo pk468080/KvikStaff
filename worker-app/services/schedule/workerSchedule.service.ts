@@ -10,27 +10,16 @@ import type {
   WorkerWeeklyScheduleInput,
 } from '../../types/schedule'
 
-
 import {
   getWorkerScheduleExceptions,
 } from './workerScheduleExceptions.service'
+
 import {
   isScheduleDurationValid,
   isSlotIntervalValid,
   isValidTimeRange,
   isValidTimeString,
 } from '../../lib/workerScheduleUtils'
-
-type WorkerWeeklyScheduleRow = {
-  id: string
-  worker_id: string
-  day_of_week: number
-  start_time: string
-  end_time: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
 
 type WorkerScheduleSettingsRow = {
   worker_id: string
@@ -39,6 +28,7 @@ type WorkerScheduleSettingsRow = {
   created_at: string
   updated_at: string
 }
+
 type WorkerWeeklyScheduleApiResponse = {
   id: string
   worker_id: string
@@ -49,29 +39,9 @@ type WorkerWeeklyScheduleApiResponse = {
   created_at: string
   updated_at: string
 }
+
 function mapWeeklyScheduleApiResponse(
   row: WorkerWeeklyScheduleApiResponse,
-): WorkerWeeklySchedule {
-  return {
-    id: row.id,
-    workerId: row.worker_id,
-    dayOfWeek:
-      row.day_of_week as WorkerDayOfWeek,
-    startTime:
-      row.start_time,
-    endTime:
-      row.end_time,
-    isActive:
-      row.is_active,
-    createdAt:
-      row.created_at,
-    updatedAt:
-      row.updated_at,
-  }
-}
-
-function mapWeeklySchedule(
-  row: WorkerWeeklyScheduleRow,
 ): WorkerWeeklySchedule {
   return {
     id: row.id,
@@ -228,54 +198,12 @@ function validateScheduleSettingsInput(
   }
 }
 
-async function validateNoScheduleOverlap(
-  workerId: string,
-  input: WorkerWeeklyScheduleInput,
-  excludeScheduleId?: string,
-): Promise<void> {
-  if (!input.isActive) {
-    return
-  }
-
-  let query = supabase
-    .from('worker_weekly_schedules')
-    .select(
-      'id, day_of_week, start_time, end_time, is_active',
-    )
-    .eq('worker_id', workerId)
-    .eq('day_of_week', input.dayOfWeek)
-    .eq('is_active', true)
-
-  if (excludeScheduleId) {
-    query = query.neq(
-      'id',
-      excludeScheduleId,
-    )
-  }
-
-  const {
-    data,
-    error,
-  } = await query
-
-  if (error) {
-    throw error
-  }
-
-  const overlaps = (data ?? []).some(
-    schedule =>
-      input.startTime <
-        schedule.end_time &&
-      input.endTime >
-        schedule.start_time,
-  )
-
-  if (overlaps) {
-    throw new Error(
-      'Worker schedule windows cannot overlap on the same day.',
-    )
-  }
-}
+/*
+ * Weekly schedules are now managed through FastAPI.
+ * Supabase remains here only for authentication,
+ * schedule settings, and schedule exceptions until
+ * those modules are migrated.
+ */
 
 export async function getWorkerWeeklySchedules(): Promise<
   WorkerWeeklySchedule[]
@@ -306,13 +234,17 @@ export async function createWorkerWeeklySchedule(
       '/worker/schedule/weekly',
       {
         method: 'POST',
+
         body: JSON.stringify({
           day_of_week:
             input.dayOfWeek,
+
           start_time:
             input.startTime,
+
           end_time:
             input.endTime,
+
           is_active:
             input.isActive,
         }),
@@ -345,13 +277,17 @@ export async function updateWorkerWeeklySchedule(
       `/worker/schedule/weekly/${scheduleId}`,
       {
         method: 'PATCH',
+
         body: JSON.stringify({
           day_of_week:
             input.dayOfWeek,
+
           start_time:
             input.startTime,
+
           end_time:
             input.endTime,
+
           is_active:
             input.isActive,
         }),
@@ -441,16 +377,20 @@ export async function replaceWorkerWeeklySchedules(
       '/worker/schedule/weekly',
       {
         method: 'PUT',
+
         body: JSON.stringify({
           schedules:
             schedules.map(
               schedule => ({
                 day_of_week:
                   schedule.dayOfWeek,
+
                 start_time:
                   schedule.startTime,
+
                 end_time:
                   schedule.endTime,
+
                 is_active:
                   schedule.isActive,
               }),
@@ -500,8 +440,11 @@ export async function getWorkerSchedule(): Promise<
     settings,
   ] = await Promise.all([
     getCurrentWorkerId(),
+
     getWorkerWeeklySchedules(),
+
     getWorkerScheduleExceptions(),
+
     getWorkerScheduleSettings(),
   ])
 
@@ -513,138 +456,6 @@ export async function getWorkerSchedule(): Promise<
     exceptions,
 
     settings,
-  }
-}
-
-export async function createWorkerWeeklySchedule(
-  input: WorkerWeeklyScheduleInput,
-): Promise<WorkerWeeklySchedule> {
-  validateWeeklyScheduleInput(
-    input,
-  )
-
-  const workerId =
-    await getCurrentWorkerId()
-
-  await validateNoScheduleOverlap(
-    workerId,
-    input,
-  )
-
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('worker_weekly_schedules')
-    .insert({
-      worker_id:
-        workerId,
-
-      day_of_week:
-        input.dayOfWeek,
-
-      start_time:
-        input.startTime,
-
-      end_time:
-        input.endTime,
-
-      is_active:
-        input.isActive,
-    })
-    .select(
-      'id, worker_id, day_of_week, start_time, end_time, is_active, created_at, updated_at',
-    )
-    .single()
-
-  if (error) {
-    throw error
-  }
-
-  return mapWeeklySchedule(
-    data,
-  )
-}
-
-export async function updateWorkerWeeklySchedule(
-  scheduleId: string,
-  input: WorkerWeeklyScheduleInput,
-): Promise<WorkerWeeklySchedule> {
-  if (!scheduleId.trim()) {
-    throw new Error(
-      'Schedule id is required.',
-    )
-  }
-
-  validateWeeklyScheduleInput(
-    input,
-  )
-
-  const workerId =
-    await getCurrentWorkerId()
-
-  await validateNoScheduleOverlap(
-    workerId,
-    input,
-    scheduleId,
-  )
-
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('worker_weekly_schedules')
-    .update({
-      day_of_week:
-        input.dayOfWeek,
-
-      start_time:
-        input.startTime,
-
-      end_time:
-        input.endTime,
-
-      is_active:
-        input.isActive,
-    })
-    .eq('id', scheduleId)
-    .eq('worker_id', workerId)
-    .select(
-      'id, worker_id, day_of_week, start_time, end_time, is_active, created_at, updated_at',
-    )
-    .single()
-
-  if (error) {
-    throw error
-  }
-
-  return mapWeeklySchedule(
-    data,
-  )
-}
-
-export async function deleteWorkerWeeklySchedule(
-  scheduleId: string,
-): Promise<void> {
-  if (!scheduleId.trim()) {
-    throw new Error(
-      'Schedule id is required.',
-    )
-  }
-
-  const workerId =
-    await getCurrentWorkerId()
-
-  const {
-    error,
-  } = await supabase
-    .from('worker_weekly_schedules')
-    .delete()
-    .eq('id', scheduleId)
-    .eq('worker_id', workerId)
-
-  if (error) {
-    throw error
   }
 }
 
@@ -708,106 +519,4 @@ export async function deleteWorkerScheduleSettings(): Promise<void> {
   if (error) {
     throw error
   }
-}
-
-export async function replaceWorkerWeeklySchedules(
-  schedules: WorkerWeeklyScheduleInput[],
-): Promise<WorkerWeeklySchedule[]> {
-  const workerId =
-    await getCurrentWorkerId()
-
-  for (const schedule of schedules) {
-    validateWeeklyScheduleInput(
-      schedule,
-    )
-  }
-
-  const activeSchedules =
-    schedules.filter(
-      schedule =>
-        schedule.isActive,
-    )
-
-  for (
-    let index = 0;
-    index <
-    activeSchedules.length;
-    index += 1
-  ) {
-    const current =
-      activeSchedules[index]
-
-    for (
-      let nextIndex =
-        index + 1;
-      nextIndex <
-      activeSchedules.length;
-      nextIndex += 1
-    ) {
-      const next =
-        activeSchedules[nextIndex]
-
-      if (
-        current.dayOfWeek !==
-        next.dayOfWeek
-      ) {
-        continue
-      }
-
-      if (
-        current.startTime <
-          next.endTime &&
-        current.endTime >
-          next.startTime
-      ) {
-        throw new Error(
-          'Worker schedule windows cannot overlap on the same day.',
-        )
-      }
-    }
-  }
-
-  const {
-    error: deleteError,
-  } = await supabase
-    .from('worker_weekly_schedules')
-    .delete()
-    .eq('worker_id', workerId)
-
-  if (deleteError) {
-    throw deleteError
-  }
-
-  if (schedules.length > 0) {
-    const {
-      error: insertError,
-    } = await supabase
-      .from('worker_weekly_schedules')
-      .insert(
-        schedules.map(
-          schedule => ({
-            worker_id:
-              workerId,
-
-            day_of_week:
-              schedule.dayOfWeek,
-
-            start_time:
-              schedule.startTime,
-
-            end_time:
-              schedule.endTime,
-
-            is_active:
-              schedule.isActive,
-          }),
-        ),
-      )
-
-    if (insertError) {
-      throw insertError
-    }
-  }
-
-  return getWorkerWeeklySchedules()
 }
