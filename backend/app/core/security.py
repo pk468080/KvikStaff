@@ -8,8 +8,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.core.config import settings
+from app.core.database import get_db
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -70,7 +70,9 @@ async def _fetch_jwks(force_refresh: bool = False) -> dict[str, dict]:
     keys = payload.get("keys")
 
     if not isinstance(keys, list):
-        raise ValueError("Supabase JWKS response does not contain a valid keys list.")
+       raise TypeError(
+    "Supabase JWKS response does not contain a valid keys list."
+)
 
     indexed_keys: dict[str, dict] = {}
 
