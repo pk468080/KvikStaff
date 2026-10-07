@@ -69,3 +69,10 @@ def test_development_has_local_cors_origins() -> None:
 
     assert "http://localhost:5173" in settings.cors_origins
     assert "http://localhost:8081" in settings.cors_origins
+
+
+def test_development_default_settings() -> None:
+    settings = Settings(_env_file=None, environment="development")
+    assert settings.environment == "development"
+    assert settings.database_url != ""
+    assert settings.supabase_url != ""
