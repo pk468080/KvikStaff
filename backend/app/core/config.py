@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     log_level: str = "INFO"
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
@@ -39,10 +40,38 @@ class Settings(BaseSettings):
     )
 
     @model_validator(mode="after")
-    def validate_production_cors(self) -> "Settings":
-        if self.environment == "production" and not self.cors_origins:
+    def validate_production_config(self) -> "Settings":
+        if self.environment != "production":
+            return self
+
+        if not self.database_url.strip():
+            raise ValueError(
+                "DATABASE_URL must be configured in production."
+            )
+
+        if not self.supabase_url.strip():
+            raise ValueError(
+                "SUPABASE_URL must be configured in production."
+            )
+
+        if not self.redis_url.strip():
+            raise ValueError(
+                "REDIS_URL must be configured in production."
+            )
+
+        if self.redis_url == "redis://localhost:6379/0":
+            raise ValueError(
+                "REDIS_URL must not use the local default in production."
+            )
+
+        if not self.cors_origins:
             raise ValueError(
                 "CORS_ORIGINS must be configured in production."
+            )
+
+        if "*" in self.cors_origins:
+            raise ValueError(
+                "Wildcard CORS origins are not allowed in production."
             )
 
         return self
