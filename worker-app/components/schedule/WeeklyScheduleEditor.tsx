@@ -223,11 +223,18 @@ export default function WeeklyScheduleEditor({
     'start' | 'end'
   >('start')
 
-  useEffect(() => {
-    const incoming =
-      buildDaysFromValue(
-        value,
-      )
+ useEffect(() => {
+  let active = true
+
+  const incoming =
+    buildDaysFromValue(
+      value,
+    )
+
+  queueMicrotask(() => {
+    if (!active) {
+      return
+    }
 
     setDays(current =>
       areDaysEqual(
@@ -237,7 +244,12 @@ export default function WeeklyScheduleEditor({
         ? current
         : incoming,
     )
-  }, [value])
+  })
+
+  return () => {
+    active = false
+  }
+}, [value])
 
   function publishDays(
     nextDays: Record<

@@ -119,18 +119,24 @@ export default function BookingChatPanel({
   )
 
   useEffect(() => {
-    let active = true
-    let channel:
-      | ReturnType<typeof supabase.channel>
-      | null = null
+  let active = true
+  let channel:
+    | ReturnType<typeof supabase.channel>
+    | null = null
+
+  queueMicrotask(() => {
+    if (!active) {
+      return
+    }
 
     setConversationId(null)
     setCurrentUserId(null)
     setMessages([])
     setError(null)
     setLoading(true)
+  })
 
-    void (async () => {
+  void (async () => {
       try {
         const session =
           await getOrCreateWorkerBookingChat(

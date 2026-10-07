@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { adminAction } from '../lib/adminAction'
 import { supabase } from '../lib/supabase'
 
 type Stats = {
