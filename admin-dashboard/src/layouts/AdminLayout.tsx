@@ -88,7 +88,7 @@ export default function AdminLayout() {
 
           <div>
             <div className="brand-name">
-              KvikStaff
+              TempStaff
             </div>
 
             <div className="brand-role">
@@ -154,7 +154,7 @@ export default function AdminLayout() {
 
           <div>
             <div className="header-title">
-              KvikStaff Admin
+              TempStaff Admin
             </div>
 
             <div className="header-subtitle">

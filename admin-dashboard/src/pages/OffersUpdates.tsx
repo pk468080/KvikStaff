@@ -460,7 +460,7 @@ export default function OffersUpdates() {
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
         {(['all', 'offer', 'update'] as const).map(value => (
-          <button key={value} type="button" onClick={() => setTab(value)} style={{ border: '1px solid #D9E5E8', borderRadius: 999, padding: '9px 14px', background: tab === value ? '#0A3972' : '#FFF', color: tab === value ? '#FFF' : '#4B6480', fontWeight: 800, cursor: 'pointer' }}>
+          <button key={value} type="button" onClick={() => setTab(value)} style={{ border: '1px solid #D9E5E8', borderRadius: 999, padding: '9px 14px', background: tab === value ? '#062F52' : '#FFF', color: tab === value ? '#FFF' : '#456174', fontWeight: 800, cursor: 'pointer' }}>
             {value === 'all' ? 'All' : value === 'offer' ? 'Offers' : 'Updates'}
           </button>
         ))}
@@ -480,16 +480,16 @@ export default function OffersUpdates() {
               </div>
               <div>
                 <div style={{ display: 'flex', gap: 7, alignItems: 'center', marginBottom: 5 }}>
-                  <span style={{ padding: '4px 8px', borderRadius: 999, fontSize: 10, fontWeight: 900, letterSpacing: .6, background: item.type === 'offer' ? '#FFF4E7' : '#EAF5F7', color: item.type === 'offer' ? '#A85E00' : '#0A3972' }}>{item.type === 'offer' ? 'OFFER' : 'UPDATE'}</span>
-                  <span style={{ fontSize: 11, color: item.is_active ? '#0A3972' : '#9AAAB2', fontWeight: 800 }}>{item.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
+                  <span style={{ padding: '4px 8px', borderRadius: 999, fontSize: 10, fontWeight: 900, letterSpacing: .6, background: item.type === 'offer' ? '#FFF4E7' : '#EAF5F7', color: item.type === 'offer' ? '#A85E00' : '#007E80' }}>{item.type === 'offer' ? 'OFFER' : 'UPDATE'}</span>
+                  <span style={{ fontSize: 11, color: item.is_active ? '#007E80' : '#9AAAB2', fontWeight: 800 }}>{item.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
                 </div>
-                <h3 style={{ margin: 0, color: '#0A3972' }}>{item.title}</h3>
-                {item.subtitle && <div style={{ marginTop: 4, color: '#4B6480' }}>{item.subtitle}</div>}
-                {item.body && <div style={{ marginTop: 4, color: '#4B6480' }}>{item.body}</div>}
+                <h3 style={{ margin: 0, color: '#062F52' }}>{item.title}</h3>
+                {item.subtitle && <div style={{ marginTop: 4, color: '#456174' }}>{item.subtitle}</div>}
+                {item.body && <div style={{ marginTop: 4, color: '#456174' }}>{item.body}</div>}
                 <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11, color: '#71818C' }}>
                   <span>Order {item.sort_order}</span>
                   {item.service_name && <span>Service: {item.service_name}</span>}
-                  {item.type === 'offer' && item.discount_type && <span style={{ color: '#0A3972', fontWeight: 900 }}>{item.discount_type === 'percent' ? `${item.discount_value}% off` : `${item.discount_currency || 'INR'} ${item.discount_value} off`}{item.minimum_hours && item.minimum_hours > 0 ? ` · min ${item.minimum_hours}h` : ''}</span>}
+                  {item.type === 'offer' && item.discount_type && <span style={{ color: '#007E80', fontWeight: 900 }}>{item.discount_type === 'percent' ? `${item.discount_value}% off` : `${item.discount_currency || 'INR'} ${item.discount_value} off`}{item.minimum_hours && item.minimum_hours > 0 ? ` · min ${item.minimum_hours}h` : ''}</span>}
                   <span>From: {formatDate(item.starts_at)}</span>
                   <span>To: {formatDate(item.ends_at)}</span>
                   {item.cta_text && <span>CTA: {item.cta_text}</span>}
@@ -524,7 +524,7 @@ export default function OffersUpdates() {
                   <label>Content type</label>
                   <div style={{ display: 'flex', gap: 8, marginTop: 7 }}>
                     {(['offer', 'update'] as ContentType[]).map(value => (
-                      <button key={value} type="button" onClick={() => !editing && setType(value)} disabled={Boolean(editing)} style={{ flex: 1, padding: '11px 12px', borderRadius: 10, border: '1px solid #D9E5E8', background: type === value ? '#0A3972' : '#FFF', color: type === value ? '#FFF' : '#4B6480', fontWeight: 800 }}>{value === 'offer' ? 'Offer / promotion banner' : 'Customer update'}</button>
+                      <button key={value} type="button" onClick={() => !editing && setType(value)} disabled={Boolean(editing)} style={{ flex: 1, padding: '11px 12px', borderRadius: 10, border: '1px solid #D9E5E8', background: type === value ? '#062F52' : '#FFF', color: type === value ? '#FFF' : '#456174', fontWeight: 800 }}>{value === 'offer' ? 'Offer / promotion banner' : 'Customer update'}</button>
                     ))}
                   </div>
                 </div>
@@ -566,14 +566,14 @@ export default function OffersUpdates() {
               <div>
                 <label>Home image</label>
                 <div style={{ marginTop: 7, minHeight: 250, borderRadius: 16, border: '1px dashed #B8D2D9', background: '#F7FBFC', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {imagePreview ? <><img src={imagePreview} alt="Preview" style={{ width: '100%', height: 250, objectFit: 'contain', padding: 10 }} /><button type="button" onClick={() => handleImageChange(null)} disabled={saving} style={{ position: 'absolute', right: 9, top: 9, width: 34, height: 34, border: 0, borderRadius: 10, background: 'rgba(6,47,82,.88)', color: '#FFF' }}><X size={16} /></button></> : <label style={{ width: '100%', minHeight: 250, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Upload size={28} color="#0A3972" /><strong style={{ marginTop: 10 }}>Upload image</strong><span style={{ marginTop: 5, color: '#71818C', fontSize: 12 }}>JPG, PNG or WebP · max 5 MB</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => handleImageChange(e.target.files?.[0] || null)} style={{ display: 'none' }} /></label>}
+                  {imagePreview ? <><img src={imagePreview} alt="Preview" style={{ width: '100%', height: 250, objectFit: 'contain', padding: 10 }} /><button type="button" onClick={() => handleImageChange(null)} disabled={saving} style={{ position: 'absolute', right: 9, top: 9, width: 34, height: 34, border: 0, borderRadius: 10, background: 'rgba(6,47,82,.88)', color: '#FFF' }}><X size={16} /></button></> : <label style={{ width: '100%', minHeight: 250, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Upload size={28} color="#007E80" /><strong style={{ marginTop: 10 }}>Upload image</strong><span style={{ marginTop: 5, color: '#71818C', fontSize: 12 }}>JPG, PNG or WebP · max 5 MB</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => handleImageChange(e.target.files?.[0] || null)} style={{ display: 'none' }} /></label>}
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
               <button className="dashboard-refresh" onClick={() => { setModalOpen(false); clearForm() }} disabled={saving}>Cancel</button>
-              <button className="dashboard-refresh" onClick={() => void save()} disabled={saving} style={{ background: '#0A3972', color: '#FFF', minWidth: 150 }}>{saving ? 'Saving...' : editing ? 'Save changes' : `Create ${type}`}</button>
+              <button className="dashboard-refresh" onClick={() => void save()} disabled={saving} style={{ background: '#062F52', color: '#FFF', minWidth: 150 }}>{saving ? 'Saving...' : editing ? 'Save changes' : `Create ${type}`}</button>
             </div>
           </div>
         </div>

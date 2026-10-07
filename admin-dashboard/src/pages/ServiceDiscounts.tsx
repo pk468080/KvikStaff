@@ -822,7 +822,7 @@ export default function ServiceDiscounts() {
                           ? '#EAF7F7'
                           : 'transparent',
                       color:
-                        '#0A3972',
+                        '#062F52',
                     }}
                   >
                     <div
@@ -879,7 +879,7 @@ export default function ServiceDiscounts() {
                   '5px 0 0',
                 fontSize: 22,
                 color:
-                  '#0A3972',
+                  '#062F52',
               }}
             >
               {selectedService
@@ -987,7 +987,7 @@ export default function ServiceDiscounts() {
                               fontWeight:
                                 800,
                               color:
-                                '#0A3972',
+                                '#062F52',
                             }}
                           >
                             {
@@ -1239,7 +1239,7 @@ export default function ServiceDiscounts() {
                     margin:
                       '4px 0 0',
                     color:
-                      '#0A3972',
+                      '#062F52',
                   }}
                 >
                   {editing

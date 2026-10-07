@@ -1138,7 +1138,7 @@ export default function Services() {
               alignItems:
                 'center',
               background:
-                '#0A3972',
+                '#062F52',
               color:
                 '#FFFFFF',
             }}
@@ -1445,9 +1445,9 @@ export default function Services() {
                               borderRadius:
                                 12,
                               background:
-                                '#EEF6FF',
+                                '#E8F8F8',
                               color:
-                                '#0A3972',
+                                '#007E80',
                               alignItems:
                                 'center',
                               justifyContent:
@@ -1607,7 +1607,7 @@ export default function Services() {
                     letterSpacing:
                       1,
                     color:
-                      '#0A3972',
+                      '#007E80',
                   }}
                 >
                   SERVICE CATALOG
@@ -1619,7 +1619,7 @@ export default function Services() {
                     margin:
                       '5px 0 4px',
                     color:
-                      '#0A3972',
+                      '#062F52',
                   }}
                 >
                   {formMode ===
@@ -1670,7 +1670,7 @@ export default function Services() {
                   size={
                     18
                   }
-                  color="#4B6480"
+                  color="#456174"
                 />
               </button>
             </div>
@@ -2253,7 +2253,7 @@ export default function Services() {
                                           fontWeight:
                                             800,
                                           color:
-                                            '#0A3972',
+                                            '#062F52',
                                         }}
                                       >
                                         {
@@ -2272,7 +2272,7 @@ export default function Services() {
                                           fontSize:
                                             11,
                                           color:
-                                            '#4B6480',
+                                            '#456174',
                                         }}
                                       >
                                         {formatDate(
@@ -2287,7 +2287,7 @@ export default function Services() {
                                           fontSize:
                                             11,
                                           color:
-                                            '#4B6480',
+                                            '#456174',
                                         }}
                                       >
                                         {formatDate(
@@ -2305,7 +2305,7 @@ export default function Services() {
                                             800,
                                           color:
                                             row.is_active
-                                              ? '#0A3972'
+                                              ? '#007E80'
                                               : '#71818C',
                                         }}
                                       >
@@ -2440,7 +2440,7 @@ export default function Services() {
                         size={
                           30
                         }
-                        color="#0A3972"
+                        color="#007E80"
                       />
 
                       <strong
@@ -2448,7 +2448,7 @@ export default function Services() {
                           marginTop:
                             12,
                           color:
-                            '#0A3972',
+                            '#062F52',
                         }}
                       >
                         {formMode ===
@@ -2561,7 +2561,7 @@ export default function Services() {
                   minWidth:
                     160,
                   background:
-                    '#0A3972',
+                    '#062F52',
                   color:
                     '#FFFFFF',
                 }}

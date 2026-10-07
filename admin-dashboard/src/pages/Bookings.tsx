@@ -615,7 +615,7 @@ export default function Bookings() {
           <h1>Bookings</h1>
 
           <p>
-            Manage KvikStaff bookings,
+            Manage TempStaff bookings,
             assignments and cancellations.
           </p>
         </div>

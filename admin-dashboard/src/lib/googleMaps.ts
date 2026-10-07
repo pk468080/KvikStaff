@@ -30,7 +30,7 @@ export function loadGoogleMaps(): Promise<void> {
 
   mapsPromise = new Promise<void>((resolve, reject) => {
     const existingScript = document.getElementById(
-      'KvikStaff-google-maps-script'
+      'tempstaff-google-maps-script'
     )
 
     if (existingScript) {
@@ -56,7 +56,7 @@ export function loadGoogleMaps(): Promise<void> {
 
     const script = document.createElement('script')
 
-    script.id = 'KvikStaff-google-maps-script'
+    script.id = 'tempstaff-google-maps-script'
 
     script.src =
       `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}` +

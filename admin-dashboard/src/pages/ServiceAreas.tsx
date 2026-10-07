@@ -183,7 +183,7 @@ export default function ServiceAreas() {
       )
     } catch (err) {
       console.error(
-        '[KvikStaff] Failed to load service areas:',
+        '[TempStaff] Failed to load service areas:',
         err,
       )
 
@@ -252,7 +252,7 @@ export default function ServiceAreas() {
           position: initialCenter,
           map,
           draggable: true,
-          title: 'KvikStaff service area center',
+          title: 'TempStaff service area center',
         })
 
         markerRef.current = marker
@@ -400,7 +400,7 @@ export default function ServiceAreas() {
         setMapLoading(false)
       } catch (err) {
         console.error(
-          '[KvikStaff] Failed to initialize Google Maps:',
+          '[TempStaff] Failed to initialize Google Maps:',
           err,
         )
 
@@ -741,7 +741,7 @@ export default function ServiceAreas() {
       await loadData()
     } catch (err) {
       console.error(
-        '[KvikStaff] Failed to save service area:',
+        '[TempStaff] Failed to save service area:',
         err,
       )
 
@@ -782,7 +782,7 @@ export default function ServiceAreas() {
                 height: 40,
                 borderRadius: 12,
                 background: '#EAF7F7',
-                color: '#0A3972',
+                color: '#007E80',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -836,7 +836,7 @@ export default function ServiceAreas() {
             className="dashboard-refresh"
             onClick={openCreate}
             style={{
-              background: '#0A3972',
+              background: '#062F52',
               color: '#FFFFFF',
             }}
           >
@@ -885,7 +885,7 @@ export default function ServiceAreas() {
               fontSize: 30,
               fontWeight: 900,
               marginTop: 6,
-              color: '#0A3972',
+              color: '#062F52',
             }}
           >
             {areas.length}
@@ -942,7 +942,7 @@ export default function ServiceAreas() {
               fontSize: 30,
               fontWeight: 900,
               marginTop: 6,
-              color: '#0A3972',
+              color: '#062F52',
             }}
           >
             {serviceAssignmentCount}
@@ -975,7 +975,7 @@ export default function ServiceAreas() {
                   fontSize: 11,
                   fontWeight: 900,
                   letterSpacing: 1,
-                  color: '#0A3972',
+                  color: '#007E80',
                 }}
               >
                 {form.id
@@ -1414,7 +1414,7 @@ export default function ServiceAreas() {
                                     14,
                                   border:
                                     selected
-                                      ? '1px solid #0784FB'
+                                      ? '1px solid #00A7A7'
                                       : '1px solid #E3EBEF',
                                   background:
                                     selected
@@ -1438,11 +1438,11 @@ export default function ServiceAreas() {
                                       7,
                                     border:
                                       selected
-                                        ? '1px solid #0784FB'
+                                        ? '1px solid #00A7A7'
                                         : '1px solid #CBD5E1',
                                     background:
                                       selected
-                                        ? '#0784FB'
+                                        ? '#00A7A7'
                                         : '#FFFFFF',
                                     color:
                                       '#FFFFFF',
@@ -1480,7 +1480,7 @@ export default function ServiceAreas() {
                                       display:
                                         'block',
                                       color:
-                                        '#0A3972',
+                                        '#062F52',
                                       fontSize:
                                         13,
                                     }}
@@ -1656,7 +1656,7 @@ export default function ServiceAreas() {
                         fontWeight:
                           700,
                         color:
-                          '#0A3972',
+                          '#062F52',
                       }}
                     >
                       Loading Google
@@ -1756,7 +1756,7 @@ export default function ServiceAreas() {
                         fontSize:
                           12,
                         color:
-                          '#0A3972',
+                          '#062F52',
                         fontWeight:
                           700,
                       }}
@@ -1801,7 +1801,7 @@ export default function ServiceAreas() {
                         fontSize:
                           12,
                         color:
-                          '#0A3972',
+                          '#062F52',
                         fontWeight:
                           700,
                       }}
@@ -1858,7 +1858,7 @@ export default function ServiceAreas() {
                 style={{
                   minWidth: 150,
                   background:
-                    '#0A3972',
+                    '#062F52',
                   color:
                     '#FFFFFF',
                 }}
