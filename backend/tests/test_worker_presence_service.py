@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
@@ -22,7 +22,7 @@ class FakeRepository:
                 7,
                 8,
                 0,
-                tzinfo=timezone.utc,
+                tzinfo=UTC,
             ),
         }
 
@@ -46,5 +46,5 @@ async def test_get_latest_worker_location() -> None:
         7,
         8,
         0,
-        tzinfo=timezone.utc,
+        tzinfo=UTC,
     )
