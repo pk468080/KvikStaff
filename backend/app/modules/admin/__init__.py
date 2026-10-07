@@ -1,1 +1,1 @@
-"""admin domain module."""
+# Admin domain package.
