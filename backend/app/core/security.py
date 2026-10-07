@@ -5,7 +5,10 @@ import httpx
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import get_db
 from app.core.config import settings
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -176,17 +179,60 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(
         bearer_scheme
     ),
+    db: AsyncSession = Depends(get_db),
 ) -> CurrentUser:
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise _unauthorized()
 
-    return await verify_access_token(credentials.credentials)
+    token_user = await verify_access_token(
+        credentials.credentials
+    )
+
+    result = await db.execute(
+        text("""
+            SELECT
+                role,
+                is_active
+            FROM public.profiles
+            WHERE id = CAST(:user_id AS uuid)
+            LIMIT 1
+        """),
+        {"user_id": token_user.id},
+    )
+
+    profile = result.mappings().first()
+
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account profile not found.",
+        )
+
+    if profile["is_active"] is not True:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is inactive.",
+        )
+
+    role = profile["role"]
+
+    if not isinstance(role, str) or not role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account role is not configured.",
+        )
+
+    return CurrentUser(
+        id=token_user.id,
+        role=role,
+        email=token_user.email,
+    )
 
 
 async def get_customer(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> CurrentUser:
-    if current_user.role not in {None, "customer"}:
+    if current_user.role != "customer":
         raise HTTPException(
             status_code=403,
             detail="Customer access required.",
@@ -198,7 +244,7 @@ async def get_customer(
 async def get_worker(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> CurrentUser:
-    if current_user.role not in {None, "worker"}:
+    if current_user.role != "worker":
         raise HTTPException(
             status_code=403,
             detail="Worker access required.",
