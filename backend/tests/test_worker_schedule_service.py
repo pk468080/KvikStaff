@@ -11,7 +11,6 @@ from app.modules.worker_schedule.service import (
     WorkerScheduleService,
 )
 
-
 WORKER_ID = UUID(
     "11111111-1111-1111-1111-111111111111"
 )
