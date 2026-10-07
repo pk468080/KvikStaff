@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { apiRequest } from '../../lib/api'
 
 import type {
   WorkerDayOfWeek,
@@ -37,6 +38,36 @@ type WorkerScheduleSettingsRow = {
   slot_interval_minutes: number | null
   created_at: string
   updated_at: string
+}
+type WorkerWeeklyScheduleApiResponse = {
+  id: string
+  worker_id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+function mapWeeklyScheduleApiResponse(
+  row: WorkerWeeklyScheduleApiResponse,
+): WorkerWeeklySchedule {
+  return {
+    id: row.id,
+    workerId: row.worker_id,
+    dayOfWeek:
+      row.day_of_week as WorkerDayOfWeek,
+    startTime:
+      row.start_time,
+    endTime:
+      row.end_time,
+    isActive:
+      row.is_active,
+    createdAt:
+      row.created_at,
+    updatedAt:
+      row.updated_at,
+  }
 }
 
 function mapWeeklySchedule(
@@ -249,31 +280,187 @@ async function validateNoScheduleOverlap(
 export async function getWorkerWeeklySchedules(): Promise<
   WorkerWeeklySchedule[]
 > {
-  const workerId =
-    await getCurrentWorkerId()
-
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('worker_weekly_schedules')
-    .select(
-      'id, worker_id, day_of_week, start_time, end_time, is_active, created_at, updated_at',
+  const data =
+    await apiRequest<
+      WorkerWeeklyScheduleApiResponse[]
+    >(
+      '/worker/schedule/weekly',
     )
-    .eq('worker_id', workerId)
-    .order('day_of_week', {
-      ascending: true,
-    })
-    .order('start_time', {
-      ascending: true,
-    })
 
-  if (error) {
-    throw error
+  return data.map(
+    mapWeeklyScheduleApiResponse,
+  )
+}
+
+export async function createWorkerWeeklySchedule(
+  input: WorkerWeeklyScheduleInput,
+): Promise<WorkerWeeklySchedule> {
+  validateWeeklyScheduleInput(
+    input,
+  )
+
+  const data =
+    await apiRequest<
+      WorkerWeeklyScheduleApiResponse
+    >(
+      '/worker/schedule/weekly',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          day_of_week:
+            input.dayOfWeek,
+          start_time:
+            input.startTime,
+          end_time:
+            input.endTime,
+          is_active:
+            input.isActive,
+        }),
+      },
+    )
+
+  return mapWeeklyScheduleApiResponse(
+    data,
+  )
+}
+
+export async function updateWorkerWeeklySchedule(
+  scheduleId: string,
+  input: WorkerWeeklyScheduleInput,
+): Promise<WorkerWeeklySchedule> {
+  if (!scheduleId.trim()) {
+    throw new Error(
+      'Schedule id is required.',
+    )
   }
 
-  return (data ?? []).map(
-    mapWeeklySchedule,
+  validateWeeklyScheduleInput(
+    input,
+  )
+
+  const data =
+    await apiRequest<
+      WorkerWeeklyScheduleApiResponse
+    >(
+      `/worker/schedule/weekly/${scheduleId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          day_of_week:
+            input.dayOfWeek,
+          start_time:
+            input.startTime,
+          end_time:
+            input.endTime,
+          is_active:
+            input.isActive,
+        }),
+      },
+    )
+
+  return mapWeeklyScheduleApiResponse(
+    data,
+  )
+}
+
+export async function deleteWorkerWeeklySchedule(
+  scheduleId: string,
+): Promise<void> {
+  if (!scheduleId.trim()) {
+    throw new Error(
+      'Schedule id is required.',
+    )
+  }
+
+  await apiRequest<void>(
+    `/worker/schedule/weekly/${scheduleId}`,
+    {
+      method: 'DELETE',
+    },
+  )
+}
+
+export async function replaceWorkerWeeklySchedules(
+  schedules: WorkerWeeklyScheduleInput[],
+): Promise<WorkerWeeklySchedule[]> {
+  for (const schedule of schedules) {
+    validateWeeklyScheduleInput(
+      schedule,
+    )
+  }
+
+  const activeSchedules =
+    schedules.filter(
+      schedule =>
+        schedule.isActive,
+    )
+
+  for (
+    let index = 0;
+    index <
+    activeSchedules.length;
+    index += 1
+  ) {
+    const current =
+      activeSchedules[index]
+
+    for (
+      let nextIndex =
+        index + 1;
+      nextIndex <
+      activeSchedules.length;
+      nextIndex += 1
+    ) {
+      const next =
+        activeSchedules[nextIndex]
+
+      if (
+        current.dayOfWeek !==
+        next.dayOfWeek
+      ) {
+        continue
+      }
+
+      if (
+        current.startTime <
+          next.endTime &&
+        current.endTime >
+          next.startTime
+      ) {
+        throw new Error(
+          'Worker schedule windows cannot overlap on the same day.',
+        )
+      }
+    }
+  }
+
+  const data =
+    await apiRequest<
+      WorkerWeeklyScheduleApiResponse[]
+    >(
+      '/worker/schedule/weekly',
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          schedules:
+            schedules.map(
+              schedule => ({
+                day_of_week:
+                  schedule.dayOfWeek,
+                start_time:
+                  schedule.startTime,
+                end_time:
+                  schedule.endTime,
+                is_active:
+                  schedule.isActive,
+              }),
+            ),
+        }),
+      },
+    )
+
+  return data.map(
+    mapWeeklyScheduleApiResponse,
   )
 }
 

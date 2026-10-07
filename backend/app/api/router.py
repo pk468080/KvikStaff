@@ -17,7 +17,9 @@ from app.api.v1.support import router as support_router
 from app.api.v1.worker_presence import (
     router as worker_presence_router,
 )
-
+from app.api.v1.worker_schedule import (
+    router as worker_schedule_router,
+)
 api_router = APIRouter()
 
 
@@ -107,4 +109,9 @@ api_router.include_router(
     worker_presence_router,
     prefix="/worker/presence",
     tags=["worker-presence"],
+)
+api_router.include_router(
+    worker_schedule_router,
+    prefix="/worker/schedule",
+    tags=["worker-schedule"],
 )
