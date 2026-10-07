@@ -334,7 +334,7 @@ export default function Customers() {
           </h1>
 
           <p>
-            Manage TempStaff customers
+            Manage KvikStaff customers
             and account access.
           </p>
         </div>

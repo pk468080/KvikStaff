@@ -3,9 +3,9 @@ requires = ["setuptools>=75", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tempstaff-api"
+name = "KvikStaff-api"
 version = "0.1.0"
-description = "TempStaff FastAPI backend"
+description = "KvikStaff FastAPI backend"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.120,<1.0",

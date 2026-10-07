@@ -196,7 +196,7 @@ export async function createWorkerApplication(): Promise<
 
   if (!application) {
     throw new Error(
-      'No worker application exists for this account. Please contact TempStaff support.',
+      'No worker application exists for this account. Please contact KvikStaff support.',
     )
   }
 

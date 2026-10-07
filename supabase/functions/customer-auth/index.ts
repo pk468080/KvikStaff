@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error(
-      "[TempStaff] customer-auth error:",
+      "[KvikStaff] customer-auth error:",
       error,
     );
 

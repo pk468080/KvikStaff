@@ -193,7 +193,7 @@ Deno.serve(async (req: Request) => {
 
     if (error) {
       console.error(
-        `[TempStaff] admin-action ${action}:`,
+        `[KvikStaff] admin-action ${action}:`,
         error,
       );
 
@@ -212,7 +212,7 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     console.error(
-      "[TempStaff] admin-action error:",
+      "[KvikStaff] admin-action error:",
       error,
     );
 

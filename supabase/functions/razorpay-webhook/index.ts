@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
       !razorpayKeyId ||
       !razorpayKeySecret
     ) {
-      console.error("[TempStaff] Razorpay webhook configuration is incomplete.");
+      console.error("[KvikStaff] Razorpay webhook configuration is incomplete.");
       return jsonResponse(
         { success: false, error: "Webhook configuration is incomplete." },
         500,
@@ -276,7 +276,7 @@ if (providerPaymentId) {
     1
   ) {
     throw new Error(
-      "Razorpay order has multiple captured payments and the webhook does not identify which payment belongs to TempStaff. Manual reconciliation is required.",
+      "Razorpay order has multiple captured payments and the webhook does not identify which payment belongs to KvikStaff. Manual reconciliation is required.",
     );
   }
 
@@ -403,7 +403,7 @@ if (
     });
   } catch (error) {
     console.error(
-      "[TempStaff] razorpay-webhook error:",
+      "[KvikStaff] razorpay-webhook error:",
       error,
     );
 

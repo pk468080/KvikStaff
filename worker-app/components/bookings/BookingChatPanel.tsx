@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    color: '#062F52',
+    color: '#0A3972',
     fontSize: 16,
     fontWeight: '800',
   },
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 3,
   },
   messageBody: {
-    color: '#062F52',
+    color: '#0A3972',
     fontSize: 13,
     lineHeight: 18,
   },
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#C7D9DF',
-    color: '#062F52',
+    color: '#0A3972',
     fontSize: 14,
     textAlignVertical: 'top',
   },

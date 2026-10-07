@@ -351,7 +351,7 @@ export default function ServicesScreen({
                             styles.serviceDescription
                           }
                         >
-                          TempStaff worker service
+                          KvikStaff worker service
                         </Text>
                       )}
                     </View>

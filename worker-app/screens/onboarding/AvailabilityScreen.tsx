@@ -506,7 +506,7 @@ export default function AvailabilityScreen({
           </Text>
 
           <Text style={styles.subtitle}>
-            Tell TempStaff when you are normally
+            Tell KvikStaff when you are normally
             available to accept jobs.
           </Text>
         </View>

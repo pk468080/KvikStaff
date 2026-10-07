@@ -14,7 +14,7 @@ import {
 } from '../worker/workerPresence.service'
 
 export const WORKER_BACKGROUND_LOCATION_TASK =
-  'tempstaff-worker-background-location'
+  'KvikStaff-worker-background-location'
 
 type BackgroundLocationTaskData = {
   locations?: Location.LocationObject[]

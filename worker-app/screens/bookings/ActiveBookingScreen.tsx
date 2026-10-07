@@ -1003,7 +1003,7 @@ export default function ActiveBookingScreen({
 
           <View style={styles.topBarCenter}>
             <Text style={styles.topBarEyebrow}>
-              TEMPSTAFF
+              KvikStaff
             </Text>
 
             <Text style={styles.topBarTitle}>
@@ -1666,7 +1666,7 @@ export default function ActiveBookingScreen({
         ) : null}
 
         <Text style={styles.footerText}>
-          TempStaff active job
+          KvikStaff active job
         </Text>
 
         <View style={styles.bottomSpacing} />

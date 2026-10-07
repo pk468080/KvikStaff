@@ -796,7 +796,7 @@ export default function BookingOfferScreen({
                 styles.topBarEyebrow
               }
             >
-              TEMPSTAFF
+              KvikStaff
             </Text>
 
             <Text

@@ -1067,7 +1067,7 @@ export default function BookingOccurrenceScreen({
 
           <View style={styles.topBarCenter}>
             <Text style={styles.topBarEyebrow}>
-              TEMPSTAFF
+              KvikStaff
             </Text>
             <Text style={styles.topBarTitle}>
               {operational
@@ -1316,7 +1316,7 @@ export default function BookingOccurrenceScreen({
               </Text>
 
               <Text style={styles.customerSubtitle}>
-                Only information required to complete or review this TempStaff occurrence is shown.
+                Only information required to complete or review this KvikStaff occurrence is shown.
               </Text>
             </View>
           </View>
@@ -1647,7 +1647,7 @@ export default function BookingOccurrenceScreen({
       
 
         <Text style={styles.footerText}>
-          TempStaff worker occurrence
+          KvikStaff worker occurrence
         </Text>
 
         <View style={styles.bottomSpacing} />

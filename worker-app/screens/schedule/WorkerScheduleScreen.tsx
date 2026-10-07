@@ -827,7 +827,7 @@ export default function WorkerScheduleScreen({
 
             <View style={styles.topBarCenter}>
               <Text style={styles.topBarEyebrow}>
-                TEMPSTAFF
+                KvikStaff
               </Text>
 
               <Text style={styles.topBarTitle}>

@@ -721,7 +721,7 @@ export default function SupportScreen({
                   styles.headerEyebrow
                 }
               >
-                TEMPSTAFF
+                KvikStaff
               </Text>
 
               <Text
@@ -1256,7 +1256,7 @@ export default function SupportScreen({
                     styles.submitSubtitle
                   }
                 >
-                  Send this request to TempStaff support
+                  Send this request to KvikStaff support
                 </Text>
               </View>
 
@@ -1614,7 +1614,7 @@ export default function SupportScreen({
             }
           >
             Support tickets are associated with your authenticated
-            TempStaff worker account.
+            KvikStaff worker account.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

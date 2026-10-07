@@ -57,10 +57,10 @@ app/shared/__init__.py
 app/workers/__init__.py
 migrations/__init__.py
 migrations/env.py
-tempstaff_api.egg-info/PKG-INFO
-tempstaff_api.egg-info/SOURCES.txt
-tempstaff_api.egg-info/dependency_links.txt
-tempstaff_api.egg-info/requires.txt
-tempstaff_api.egg-info/top_level.txt
+KvikStaff_api.egg-info/PKG-INFO
+KvikStaff_api.egg-info/SOURCES.txt
+KvikStaff_api.egg-info/dependency_links.txt
+KvikStaff_api.egg-info/requires.txt
+KvikStaff_api.egg-info/top_level.txt
 tests/__init__.py
 tests/test_health.py

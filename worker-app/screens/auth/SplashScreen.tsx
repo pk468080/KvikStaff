@@ -121,7 +121,7 @@ export default function SplashScreen({
         style={styles.image}
         resizeMode="cover"
         accessible
-        accessibilityLabel="TempStaff Worker"
+        accessibilityLabel="KvikStaff Worker"
       />
     </View>
   )

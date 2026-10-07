@@ -835,7 +835,7 @@ export default function PersonalInformationScreen({
 
             <Text style={styles.locationText}>
               Your service location helps
-              TempStaff determine where you can
+              KvikStaff determine where you can
               accept work.
             </Text>
 

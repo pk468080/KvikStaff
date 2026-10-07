@@ -210,7 +210,7 @@ export default function EditProfileScreen({
 
             <Text style={styles.subtitle}>
               Update the basic contact details used
-              for your TempStaff worker account.
+              for your KvikStaff worker account.
             </Text>
           </View>
 

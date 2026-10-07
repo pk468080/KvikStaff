@@ -415,7 +415,7 @@ class PaymentsService:
                     currency=currency,
                     receipt=f"ts_{booking_id}",
                     notes={
-                        "tempstaff_booking_id":
+                        "KvikStaff_booking_id":
                             str(booking_id),
                         "fulfillment_type":
                             fulfillment_type,

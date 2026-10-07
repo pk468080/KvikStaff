@@ -126,7 +126,7 @@ class InvoicesService:
         booking_id: UUID,
     ) -> str:
         return (
-            "TEMPSTAFF-REC-"
+            "KvikStaff-REC-"
             f"{str(booking_id)[:8].upper()}"
         )
 

@@ -1,6 +1,6 @@
-# TempStaff FastAPI Backend
+# KvikStaff FastAPI Backend
 
-Production-oriented FastAPI backend for TempStaff.
+Production-oriented FastAPI backend for KvikStaff.
 
 ## Architecture
 

@@ -627,7 +627,7 @@ export default function WorkerHomeScreen({
       ? 'Your availability is active and your location can be used for new assignments.'
       : workerStatus ===
           'suspended'
-        ? 'Please contact TempStaff support for assistance.'
+        ? 'Please contact KvikStaff support for assistance.'
         : 'Go online when you are ready to receive work opportunities.'
 
   return (
@@ -689,7 +689,7 @@ export default function WorkerHomeScreen({
                   styles.greetingEyebrow
                 }
               >
-                TEMPSTAFF
+                KvikStaff
               </Text>
 
               <Text

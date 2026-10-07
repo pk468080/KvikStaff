@@ -47,7 +47,7 @@ const CONSENT_ITEMS = [
   'I confirm that the information provided in my worker application is accurate.',
   'I confirm that the documents I submitted belong to me and are valid.',
   'I understand that job assignments depend on my availability, location, service coverage and worker status.',
-  'I agree to follow TempStaff job requirements and provide services professionally.',
+  'I agree to follow KvikStaff job requirements and provide services professionally.',
 ]
 
 export default function ConsentScreen({

@@ -173,7 +173,7 @@ export default function WorkerRegistrationScreen({
 
             <View style={styles.headerCopy}>
               <Text style={styles.brandName}>
-                TempStaff
+                KvikStaff
               </Text>
 
               <Text style={styles.brandTagline}>
@@ -214,7 +214,7 @@ export default function WorkerRegistrationScreen({
                 styles.confirmationText
               }
             >
-              Your TempStaff worker account has
+              Your KvikStaff worker account has
               been created successfully.
             </Text>
 
@@ -296,7 +296,7 @@ export default function WorkerRegistrationScreen({
 
             <View style={styles.headerCopy}>
               <Text style={styles.brandName}>
-                TempStaff
+                KvikStaff
               </Text>
 
               <Text style={styles.brandTagline}>
@@ -307,7 +307,7 @@ export default function WorkerRegistrationScreen({
 
           <View style={styles.hero}>
             <Text style={styles.eyebrow}>
-              JOIN TEMPSTAFF
+              JOIN KvikStaff
             </Text>
 
             <Text style={styles.title}>
@@ -573,7 +573,7 @@ export default function WorkerRegistrationScreen({
                   }
                 >
                   Your account is created through
-                  TempStaff authentication.
+                  KvikStaff authentication.
                 </Text>
               </View>
             </View>

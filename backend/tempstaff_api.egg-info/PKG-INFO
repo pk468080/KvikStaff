@@ -1,7 +1,7 @@
 Metadata-Version: 2.4
-Name: tempstaff-api
+Name: KvikStaff-api
 Version: 0.1.0
-Summary: TempStaff FastAPI backend
+Summary: KvikStaff FastAPI backend
 Requires-Python: >=3.12
 Requires-Dist: fastapi<1.0,>=0.120
 Requires-Dist: uvicorn[standard]<1.0,>=0.38

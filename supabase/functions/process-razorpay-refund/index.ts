@@ -4,7 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-tempstaff-refund-secret",
+    "authorization, x-client-info, apikey, content-type, x-KvikStaff-refund-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -46,7 +46,7 @@ async function isInternalServiceRequest(
 ): Promise<boolean> {
   const processorSecret =
     req.headers.get(
-      "x-tempstaff-refund-secret",
+      "x-KvikStaff-refund-secret",
     ) ??
     "";
 
@@ -90,7 +90,7 @@ async function isInternalServiceRequest(
     return result === true;
   } catch (error) {
     console.error(
-      "[TempStaff] Internal refund secret validation failed:",
+      "[KvikStaff] Internal refund secret validation failed:",
       error,
     );
 
@@ -329,7 +329,7 @@ function findMatchingRefund(
             unknown
           >
         )
-          .tempstaff_refund_id ||
+          .KvikStaff_refund_id ||
           "",
       ) === refundId,
   );
@@ -762,7 +762,7 @@ Deno.serve(
      * First reconcile against Razorpay.
      *
      * A previous request may already have succeeded even if
-     * TempStaff never received the provider response.
+     * KvikStaff never received the provider response.
      */
     const gatewayRefunds =
       await fetchRazorpayRefunds(
@@ -785,10 +785,10 @@ Deno.serve(
         : null;
 
     /*
-     * Otherwise match using the TempStaff refund ID embedded
+     * Otherwise match using the KvikStaff refund ID embedded
      * in Razorpay refund notes.
      */
-    const tempStaffMatchedRefund =
+    const KvikStaffMatchedRefund =
       findMatchingRefund(
         gatewayRefunds,
         refundId,
@@ -796,7 +796,7 @@ Deno.serve(
 
     const matchingRefund =
       providerMatchedRefund ||
-      tempStaffMatchedRefund;
+      KvikStaffMatchedRefund;
 
     /*
      * Provider already contains this refund.
@@ -908,7 +908,7 @@ Deno.serve(
     error
   ) {
     console.error(
-      "[TempStaff] Razorpay refund reconciliation failed:",
+      "[KvikStaff] Razorpay refund reconciliation failed:",
       error,
     );
 
@@ -1001,7 +1001,7 @@ if (
     error
   ) {
     console.error(
-      "[TempStaff] Pending refund provider-ID reconciliation failed:",
+      "[KvikStaff] Pending refund provider-ID reconciliation failed:",
       error,
     );
 
@@ -1048,7 +1048,7 @@ if (
         error
       ) {
         console.error(
-          "[TempStaff] Razorpay payment verification failed:",
+          "[KvikStaff] Razorpay payment verification failed:",
           error,
         );
 
@@ -1197,7 +1197,7 @@ if (
               processing:
                 true,
               error:
-                "Razorpay reports the payment as refunded, but this TempStaff refund was not matched. Manual reconciliation is required and no new refund was submitted.",
+                "Razorpay reports the payment as refunded, but this KvikStaff refund was not matched. Manual reconciliation is required and no new refund was submitted.",
             },
             409,
           );
@@ -1205,7 +1205,7 @@ if (
           error
         ) {
           console.error(
-            "[TempStaff] Failed to reconcile already-refunded Razorpay payment:",
+            "[KvikStaff] Failed to reconcile already-refunded Razorpay payment:",
             error,
           );
 
@@ -1261,7 +1261,7 @@ if (
         claimError
       ) {
         console.error(
-          "[TempStaff] Refund claim failed:",
+          "[KvikStaff] Refund claim failed:",
           claimError,
         );
 
@@ -1345,7 +1345,7 @@ if (
                   amount:
                     refundAmountPaise,
                   notes: {
-                    tempstaff_refund_id:
+                    KvikStaff_refund_id:
                       refundId,
                     refund_request_id:
                       refund.refund_request_id ||
@@ -1358,7 +1358,7 @@ if (
         error
       ) {
         console.error(
-          "[TempStaff] Razorpay refund request outcome is unknown:",
+          "[KvikStaff] Razorpay refund request outcome is unknown:",
           error,
         );
 
@@ -1486,7 +1486,7 @@ if (
         error
       ) {
         console.error(
-          "[TempStaff] Refund succeeded at Razorpay but local finalization failed:",
+          "[KvikStaff] Refund succeeded at Razorpay but local finalization failed:",
           error,
         );
 
@@ -1506,7 +1506,7 @@ if (
       error
     ) {
       console.error(
-        "[TempStaff] process-razorpay-refund error:",
+        "[KvikStaff] process-razorpay-refund error:",
         error,
       );
 

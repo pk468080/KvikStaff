@@ -10,8 +10,8 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow TempStaff Worker to use your location while the app is in use.",
-          "locationAlwaysAndWhenInUsePermission": "Allow TempStaff Worker to use your location while you are available for work, including in the background.",
+          "locationWhenInUsePermission": "Allow KvikStaff Worker to use your location while the app is in use.",
+          "locationAlwaysAndWhenInUsePermission": "Allow KvikStaff Worker to use your location while you are available for work, including in the background.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
@@ -22,7 +22,7 @@
         {
           "url": "https://sentry.io/",
           "project": "worker-app",
-          "organization": "tempstaff"
+          "organization": "KvikStaff"
         }
       ]
     ],

@@ -421,7 +421,7 @@ const styles =
 
     overlayText: {
       color:
-        '#062F52',
+        '#0A3972',
       fontSize: 11,
       fontWeight:
         '700',

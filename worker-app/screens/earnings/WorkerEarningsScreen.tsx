@@ -637,7 +637,7 @@ export default function WorkerEarningsScreen({
             styles.footerText
           }
         >
-          Earnings are loaded from the authenticated TempStaff worker account.
+          Earnings are loaded from the authenticated KvikStaff worker account.
         </Text>
       </ScrollView>
     </ScreenContainer>

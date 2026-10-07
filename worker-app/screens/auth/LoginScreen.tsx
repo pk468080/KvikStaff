@@ -147,7 +147,7 @@ export default function LoginScreen({
 
               <View style={styles.headerCopy}>
                 <Text style={styles.brandName}>
-                  TempStaff
+                  KvikStaff
                 </Text>
 
                 <Text style={styles.brandTagline}>
@@ -295,7 +295,7 @@ export default function LoginScreen({
 
                   <Text style={styles.securityText}>
                     Your credentials are handled through
-                    TempStaff authentication.
+                    KvikStaff authentication.
                   </Text>
                 </View>
               </View>
@@ -303,7 +303,7 @@ export default function LoginScreen({
 
             <View style={styles.footer}>
               <Text style={styles.footerPrompt}>
-                New to TempStaff?
+                New to KvikStaff?
               </Text>
 
               <AppButton

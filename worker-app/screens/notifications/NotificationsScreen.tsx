@@ -164,7 +164,7 @@ export default function NotificationsScreen({
               styles.loadingText
             }
           >
-            Fetching your latest TempStaff updates...
+            Fetching your latest KvikStaff updates...
           </Text>
         </View>
       </ScreenContainer>
@@ -257,7 +257,7 @@ export default function NotificationsScreen({
                 styles.topBarEyebrow
               }
             >
-              TEMPSTAFF
+              KvikStaff
             </Text>
 
             <Text

@@ -515,7 +515,7 @@ export default function BookingDetailsScreen({
             <Text
               style={styles.topBarEyebrow}
             >
-              TEMPSTAFF
+              KvikStaff
             </Text>
 
             <Text
@@ -1158,7 +1158,7 @@ export default function BookingDetailsScreen({
         ) : null}
 
         <Text style={styles.footerText}>
-          TempStaff booking history
+          KvikStaff booking history
         </Text>
 
         <View style={styles.bottomSpacing} />

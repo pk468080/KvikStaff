@@ -516,7 +516,7 @@ export default function EarningDetailsScreen({
               styles.infoText
             }
           >
-            This screen shows the worker earning record stored against your authenticated TempStaff account.
+            This screen shows the worker earning record stored against your authenticated KvikStaff account.
           </Text>
         </View>
 

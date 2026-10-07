@@ -151,7 +151,7 @@ export default function SettingsScreen({
 
     Alert.alert(
       'Sign out',
-      'Are you sure you want to sign out of the TempStaff worker app?',
+      'Are you sure you want to sign out of the KvikStaff worker app?',
       [
         {
           text: 'Cancel',
@@ -238,7 +238,7 @@ export default function SettingsScreen({
             <Text
               style={styles.headerEyebrow}
             >
-              TEMPSTAFF
+              KvikStaff
             </Text>
 
             <Text
@@ -477,7 +477,7 @@ export default function SettingsScreen({
               <Text
                 style={styles.appName}
               >
-                TempStaff Worker
+                KvikStaff Worker
               </Text>
 
               <Text
@@ -544,7 +544,7 @@ export default function SettingsScreen({
           style={styles.footerText}
         >
           Keep your account and availability information
-          up to date so TempStaff can match you with work.
+          up to date so KvikStaff can match you with work.
         </Text>
       </ScrollView>
     </ScreenContainer>

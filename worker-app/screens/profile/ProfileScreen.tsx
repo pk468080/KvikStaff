@@ -372,7 +372,7 @@ export default function ProfileScreen({
 
   const displayName =
     worker.fullName?.trim() ||
-    'TempStaff Worker'
+    'KvikStaff Worker'
 
   const initials =
     getInitials(
@@ -1037,7 +1037,7 @@ export default function ProfileScreen({
             styles.footerText
           }
         >
-          TempStaff worker account
+          KvikStaff worker account
         </Text>
 
         <View
