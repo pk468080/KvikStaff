@@ -150,27 +150,26 @@ export async function updateWorkerLocation(
 export async function getLatestLocation(): Promise<
   WorkerLocation | null
 > {
-  const presence =
-    await getWorkerPresence()
+  const data =
+    await apiRequest<
+      WorkerLocationResponse | null
+    >(
+      '/worker/presence/location',
+    )
 
-  if (
-    !presence ||
-    presence.latitude === null ||
-    presence.longitude === null ||
-    !presence.lastHeartbeatAt
-  ) {
+  if (!data) {
     return null
   }
 
   return {
     latitude:
-      presence.latitude,
+      data.latitude,
 
     longitude:
-      presence.longitude,
+      data.longitude,
 
     recordedAt:
-      presence.lastHeartbeatAt,
+      data.recorded_at,
   }
 }
 

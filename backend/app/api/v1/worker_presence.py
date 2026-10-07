@@ -42,7 +42,21 @@ async def get_worker_presence(
     return await service.get_presence(
         UUID(current_user.id)
     )
+@router.get(
+    "/location",
+    response_model=WorkerLocationResponse | None,
+)
+async def get_latest_worker_location(
+    current_user: CurrentUser = Depends(get_worker),
+    service: WorkerPresenceService = Depends(
+        get_worker_presence_service
+    ),
+) -> WorkerLocationResponse | None:
+    from uuid import UUID
 
+    return await service.get_latest_location(
+        UUID(current_user.id)
+    )
 
 @router.post(
     "",

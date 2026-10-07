@@ -11,6 +11,7 @@ from app.modules.worker_presence.schemas import (
 
 
 class WorkerPresenceService:
+
     def __init__(
         self,
         repository: WorkerPresenceRepository,
@@ -171,3 +172,22 @@ class WorkerPresenceService:
                 "expires_at"
             ],
         )
+    async def get_latest_location(
+        self,
+        worker_id: UUID,
+    ) -> WorkerLocationResponse | None:
+        location = (
+            await self.repository.get_latest_location_any_booking(
+                worker_id
+            )
+        )
+
+        if location is None:
+            return None
+
+        return WorkerLocationResponse(
+            latitude=location["latitude"],
+            longitude=location["longitude"],
+            recorded_at=location["recorded_at"],
+        )
+    

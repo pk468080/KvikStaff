@@ -73,6 +73,38 @@ class WorkerPresenceRepository:
             "recorded_at": row["recorded_at"],
         }
 
+    async def get_latest_location_any_booking(
+        self,
+        worker_id: UUID,
+    ) -> dict[str, Any] | None:
+        result = await self.db.execute(
+            text(
+                """
+                SELECT
+                    latitude,
+                    longitude,
+                    recorded_at
+                FROM public.worker_locations
+                WHERE worker_id = :worker_id
+                ORDER BY recorded_at DESC
+                LIMIT 1
+                """
+            ),
+            {
+                "worker_id": str(worker_id),
+            },
+        )
+
+        row = result.mappings().first()
+
+        if row is None:
+            return None
+
+        return {
+            "latitude": float(row["latitude"]),
+            "longitude": float(row["longitude"]),
+            "recorded_at": row["recorded_at"],
+        }
     async def set_presence(
         self,
         worker_id: UUID,
