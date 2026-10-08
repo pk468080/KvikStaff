@@ -177,11 +177,7 @@ class BookingsRepository:
 
         booking_type: str,
 
-        idempotency_key: str,
-
-        request_hash: str,
-
-    ) -> dict[str, Any]:
+        ) -> dict[str, Any]:
 
         async with self.db.begin():
 

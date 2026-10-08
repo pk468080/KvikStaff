@@ -5,7 +5,8 @@ from datetime import datetime, date, time
 from typing import Any
 from fastapi import HTTPException
 from unittest.mock import AsyncMock, MagicMock
-
+from app.modules.bookings.service import BookingsService
+from app.modules.bookings.schemas import MultiOccurrenceBookingPriceRequest
 from app.modules.bookings.repository import BookingsRepository
 
 class MockRow:
@@ -48,7 +49,49 @@ class FakeSession:
 
     def begin(self):
         return AsyncContextManagerMock(self)
+@pytest.mark.asyncio
+async def test_multi_occurrence_pricing_does_not_require_idempotency(
+    monkeypatch,
+):
+    repository = MagicMock()
+    repository.calculate_customer_multi_occurrence_booking_price = (
+        AsyncMock(
+            return_value={
+                "total_amount": 1000,
+                "total_working_hours": 2,
+            }
+        )
+    )
 
+    service = BookingsService(repository)
+
+    request = MultiOccurrenceBookingPriceRequest(
+        service_variant_id=uuid.uuid4(),
+        schedule_start_date=date(2026, 10, 10),
+        schedule_end_date=date(2026, 10, 10),
+        daily_start_time=time(9, 0),
+        daily_end_time=time(11, 0),
+        selected_weekdays=[5],
+        off_dates=[],
+        booking_type="scheduled",
+    )
+
+    result = await service.calculate_customer_multi_occurrence_booking_price(
+        customer_id=uuid.uuid4(),
+        request=request,
+    )
+
+    assert result["total_amount"] == 1000
+
+    repository.calculate_customer_multi_occurrence_booking_price.assert_awaited_once()
+
+    call_kwargs = (
+        repository.calculate_customer_multi_occurrence_booking_price
+        .await_args.kwargs
+    )
+
+    assert "idempotency_key" not in call_kwargs
+    assert "request_hash" not in call_kwargs
 @pytest.fixture
 def fake_db():
     return FakeSession()
