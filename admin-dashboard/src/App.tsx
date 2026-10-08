@@ -24,6 +24,7 @@ import Support from './pages/Support'
 import Analytics from './pages/Analytics'
 import WorkerEarnings from './pages/WorkerEarnings'
 import Settings from './pages/Settings'
+import LiveMap from './pages/LiveMap'
 
 import AdminLayout from './layouts/AdminLayout'
 import AdminGuard from './components/AdminGuard'
@@ -128,6 +129,11 @@ export default function App() {
             <Route
               path="/settings"
               element={<Settings />}
+            />
+
+            <Route
+              path="/live-map"
+              element={<LiveMap />}
             />
 
           </Route>

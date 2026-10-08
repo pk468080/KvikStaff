@@ -11,6 +11,7 @@ const navGroups = [
     label: 'MANAGEMENT',
     items: [
       { label: 'Overview',           path: '/dashboard',          icon: '▦' },
+      { label: 'Live Map',           path: '/live-map',           icon: '⌖' },
       { label: 'Bookings',           path: '/bookings',           icon: '▣' },
       { label: 'Workers',            path: '/workers',            icon: '◉' },
       { label: 'Customers',          path: '/customers',          icon: '◎' },
