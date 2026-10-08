@@ -2,6 +2,7 @@ import math
 from uuid import UUID
 
 from app.modules.services.repository import (
+    ServiceAreaRow,
     ServiceCatalogRow,
     ServicesRepository,
 )

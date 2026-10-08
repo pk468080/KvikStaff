@@ -7,9 +7,9 @@ from app.core.database import get_db
 from app.core.security import CurrentUser, get_customer
 from app.modules.reviews.repository import ReviewsRepository
 from app.modules.reviews.schemas import (
-    CustomerReviewableOccurrenceResponse,
     CustomerReviewResponse,
     CustomerReviewSubmissionRequest,
+    CustomerReviewableOccurrenceResponse,
 )
 from app.modules.reviews.service import ReviewsService
 

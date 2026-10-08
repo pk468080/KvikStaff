@@ -1,22 +1,20 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
-
-from sqlalchemy.exc import SQLAlchemyError
-
-from app.core.exceptions import AppError
-from app.modules.bookings.repository import (
-    BookingsRepository,
-)
 from app.modules.bookings.schemas import (
     CustomerBookingCancellationRequest,
     CustomerBookingOccurrenceCancellationRequest,
     CustomerBookingRescheduleRequest,
     InstantBookingCreateRequest,
+    InstantBookingPriceRequest,
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
 )
-
+from sqlalchemy.exc import SQLAlchemyError
+from app.core.exceptions import AppError
+from app.modules.bookings.repository import (
+    BookingsRepository,
+)
 OCCURRENCE_LIFECYCLE_STATUSES = {
     "assigned",
     "on_the_way",
@@ -672,7 +670,7 @@ class BookingsService:
     ) -> dict[str, Any] | None:
         if not occurrences:
             return None
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         lifecycle = [
             occurrence
             for occurrence in occurrences
@@ -710,7 +708,7 @@ class BookingsService:
                     start = scheduled_start
                     if start.tzinfo is None:
                         start = start.replace(
-                            tzinfo=UTC
+                            tzinfo=timezone.utc
                         )
                     distance = abs(
                         (
@@ -739,7 +737,7 @@ class BookingsService:
             start = scheduled_start
             if start.tzinfo is None:
                 start = start.replace(
-                    tzinfo=UTC
+                    tzinfo=timezone.utc
                 )
             if start >= now:
                 future.append(
@@ -761,7 +759,7 @@ class BookingsService:
                     "scheduled_start"
                 )
                 or datetime.min.replace(
-                    tzinfo=UTC
+                    tzinfo=timezone.utc
                 )
             ),
             reverse=True,
@@ -777,7 +775,7 @@ class BookingsService:
             key=lambda item: (
                 item.get("created_at")
                 or datetime.min.replace(
-                    tzinfo=UTC
+                    tzinfo=timezone.utc
                 ),
                 str(item.get("id") or ""),
             ),

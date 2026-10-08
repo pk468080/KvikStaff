@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -59,7 +59,7 @@ class HomeService:
             .get_active_home_promotions()
         )
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
 
         result: list[dict[str, Any]] = []
 

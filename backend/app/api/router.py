@@ -20,7 +20,6 @@ from app.api.v1.worker_presence import (
 from app.api.v1.worker_schedule import (
     router as worker_schedule_router,
 )
-
 api_router = APIRouter()
 
 

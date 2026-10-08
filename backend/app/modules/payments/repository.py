@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -366,7 +366,7 @@ class PaymentsRepository:
                     "paid_at":
                         paid_at
                         or datetime.now(
-                            UTC
+                            timezone.utc
                         ),
                 },
             )

@@ -1,7 +1,10 @@
-from unittest.mock import AsyncMock, MagicMock
+import asyncio
+import json
+import uuid
 
 import pytest
 from fastapi import HTTPException
+from pydantic import BaseModel
 
 from app.core.idempotency import idempotent
 from app.core.security import CurrentUser
@@ -20,100 +23,235 @@ class MockResult:
         return MockRow(self.row)
 
 class AsyncContextManagerMock:
+    def __init__(self, test_mock):
+        self.test_mock = test_mock
     async def __aenter__(self):
-        return self
+        return self.test_mock
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
 
-@pytest.fixture
-def mock_db():
-    db = AsyncMock()
-    db.begin = MagicMock(return_value=AsyncContextManagerMock())
-    return db
+# Fake session mimicking AsyncSession for the test
+class FakeSession:
+    def __init__(self):
+        self.execute = asyncio.Future() # Will be replaced by AsyncMock per test
+
+    def begin(self):
+        return AsyncContextManagerMock(self)
 
 @pytest.fixture
 def dummy_user():
     return CurrentUser(id="123e4567-e89b-12d3-a456-426614174000", role="customer", email="test@test.com")
 
+class ResponseModel(BaseModel):
+    id: uuid.UUID
+    status: str
+
 @pytest.mark.asyncio
-async def test_idempotent_missing_key(mock_db, dummy_user):
+async def test_idempotent_missing_key(dummy_user):
     @idempotent(action="test_action")
     async def my_func(*args, **kwargs):
         return {"status": "ok"}
 
     with pytest.raises(HTTPException) as exc:
-        await my_func(current_user=dummy_user, db=mock_db)
+        await my_func(current_user=dummy_user)
 
     assert exc.value.status_code == 400
     assert "Idempotency-Key header is missing" in exc.value.detail
 
 @pytest.mark.asyncio
-async def test_idempotent_duplicate_successful_request(mock_db, dummy_user):
+async def test_idempotent_invalid_key_length(dummy_user):
     @idempotent(action="test_action")
     async def my_func(*args, **kwargs):
         return {"status": "ok"}
 
-    mock_db.execute = AsyncMock(side_effect=[
-        MockResult(None),
+    with pytest.raises(HTTPException) as exc:
+        await my_func(current_user=dummy_user, idempotency_key="a" * 256)
+
+    assert exc.value.status_code == 400
+    assert "maximum length" in exc.value.detail
+
+@pytest.mark.asyncio
+async def test_idempotent_success_and_response_serialization(dummy_user, monkeypatch):
+    import app.core.idempotency.decorator as dec
+
+    fake_session = FakeSession()
+
+    # We mock AsyncSessionLocal to return our fake session
+    def get_fake_session():
+        class FakeSessionLocal:
+            async def __aenter__(self):
+                return fake_session
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+        return FakeSessionLocal()
+
+    monkeypatch.setattr(dec, "AsyncSessionLocal", get_fake_session)
+
+    test_uuid = uuid.uuid4()
+
+    @idempotent(action="test_action")
+    async def my_func(*args, **kwargs):
+        return ResponseModel(id=test_uuid, status="created")
+
+    # Sequence of DB calls:
+    # 1. First loop: execute INSERT returns row (lock acquired)
+    # 2. Finally block: execute UPDATE completed
+
+    from unittest.mock import AsyncMock
+    fake_session.execute = AsyncMock(side_effect=[
+        MockResult({"status": "in_progress"}), # Acquired
+        MockResult(None) # Final update
+    ])
+
+    res = await my_func(idempotency_key="key1", current_user=dummy_user)
+    assert res.id == test_uuid
+    assert res.status == "created"
+
+    # Verify the JSON update
+    last_call = fake_session.execute.call_args_list[-1]
+    query = last_call[0][0].text
+    params = last_call[0][1]
+
+    assert "UPDATE public.idempotency_keys" in query
+    assert "status = 'completed'" in query
+    assert "response_body = CAST(:response_body AS jsonb)" in query
+
+    # Check that UUID was serialized correctly
+    saved_body = json.loads(params["response_body"])
+    assert saved_body["id"] == str(test_uuid)
+    assert saved_body["status"] == "created"
+
+@pytest.mark.asyncio
+async def test_idempotent_duplicate_successful_request(dummy_user, monkeypatch):
+    import app.core.idempotency.decorator as dec
+
+    fake_session = FakeSession()
+
+    def get_fake_session():
+        class FakeSessionLocal:
+            async def __aenter__(self):
+                return fake_session
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+        return FakeSessionLocal()
+
+    monkeypatch.setattr(dec, "AsyncSessionLocal", get_fake_session)
+
+    @idempotent(action="test_action")
+    async def my_func(*args, **kwargs):
+        return {"status": "ok"}
+
+    # Sequence of DB calls:
+    # 1. INSERT fails (returns None)
+    # 2. SELECT returns 'completed' with payload
+
+    from unittest.mock import AsyncMock
+    fake_session.execute = AsyncMock(side_effect=[
+        MockResult(None), # Conflict
         MockResult({"status": "completed", "response_body": '{"status": "ok"}'})
     ])
 
-    res = await my_func(idempotency_key="key1", current_user=dummy_user, db=mock_db)
+    res = await my_func(idempotency_key="key1", current_user=dummy_user)
     assert res == {"status": "ok"}
-    assert mock_db.execute.call_count == 2
+    assert fake_session.execute.call_count == 2
 
 @pytest.mark.asyncio
-async def test_idempotent_concurrent_duplicate_request(mock_db, dummy_user):
+async def test_idempotent_concurrent_duplicate_request(dummy_user, monkeypatch):
+    import app.core.idempotency.decorator as dec
+
+    fake_session = FakeSession()
+
+    def get_fake_session():
+        class FakeSessionLocal:
+            async def __aenter__(self):
+                return fake_session
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+        return FakeSessionLocal()
+
+    monkeypatch.setattr(dec, "AsyncSessionLocal", get_fake_session)
+    monkeypatch.setattr(dec, "MAX_WAIT_TIME", 1) # Reduce wait time for test
+
     @idempotent(action="test_action")
     async def my_func(*args, **kwargs):
         return {"status": "ok"}
 
-    side_effects = [MockResult(None)]
-    for _ in range(10):
-        side_effects.append(MockResult({"status": "in_progress", "response_body": None}))
-        side_effects.append(MockResult(None))
+    from unittest.mock import AsyncMock
+    side_effects = []
+    # 2 loops if wait is 1 sec and interval is 0.5 sec
+    for _ in range(2):
+        side_effects.append(MockResult(None)) # Insert fails
+        side_effects.append(MockResult({"status": "in_progress", "response_body": None})) # Select shows in progress
 
-    mock_db.execute = AsyncMock(side_effect=side_effects)
+    fake_session.execute = AsyncMock(side_effect=side_effects)
 
     with pytest.raises(HTTPException) as exc:
-        await my_func(idempotency_key="key1", current_user=dummy_user, db=mock_db)
+        await my_func(idempotency_key="key1", current_user=dummy_user)
 
     assert exc.value.status_code == 409
     assert "Concurrent request processing" in exc.value.detail
 
 @pytest.mark.asyncio
-async def test_idempotent_failed_request_followed_by_retry(mock_db, dummy_user):
-    calls = []
+async def test_idempotent_stale_recovery(dummy_user, monkeypatch):
+    import app.core.idempotency.decorator as dec
+
+    fake_session = FakeSession()
+
+    def get_fake_session():
+        class FakeSessionLocal:
+            async def __aenter__(self):
+                return fake_session
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+        return FakeSessionLocal()
+
+    monkeypatch.setattr(dec, "AsyncSessionLocal", get_fake_session)
 
     @idempotent(action="test_action")
     async def my_func(*args, **kwargs):
-        calls.append(1)
-        return {"status": "ok"}
+        return {"status": "recovered"}
 
-    mock_db.execute = AsyncMock(side_effect=[
-        MockResult({"status": "in_progress"}),
-        MockResult(None)
+    from unittest.mock import AsyncMock
+    fake_session.execute = AsyncMock(side_effect=[
+        MockResult({"status": "in_progress"}), # Acquired (stale timeout kicked in)
+        MockResult(None) # Final update
     ])
 
-    res = await my_func(idempotency_key="key1", current_user=dummy_user, db=mock_db)
-    assert res == {"status": "ok"}
-    assert len(calls) == 1
+    res = await my_func(idempotency_key="key1", current_user=dummy_user)
+    assert res == {"status": "recovered"}
+    assert fake_session.execute.call_count == 2
 
 @pytest.mark.asyncio
-async def test_idempotent_new_request_saves_failure(mock_db, dummy_user):
+async def test_idempotent_business_failure_saves_failed_state(dummy_user, monkeypatch):
+    import app.core.idempotency.decorator as dec
+
+    fake_session = FakeSession()
+
+    def get_fake_session():
+        class FakeSessionLocal:
+            async def __aenter__(self):
+                return fake_session
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+        return FakeSessionLocal()
+
+    monkeypatch.setattr(dec, "AsyncSessionLocal", get_fake_session)
+
     @idempotent(action="test_action")
     async def my_func(*args, **kwargs):
-        raise ValueError("Something broke")
+        raise ValueError("Business validation failed")
 
-    mock_db.execute = AsyncMock(side_effect=[
-        MockResult({"status": "in_progress"}),
-        MockResult(None)
+    from unittest.mock import AsyncMock
+    fake_session.execute = AsyncMock(side_effect=[
+        MockResult({"status": "in_progress"}), # Acquired
+        MockResult(None) # Final failed update
     ])
 
-    with pytest.raises(ValueError):
-        await my_func(idempotency_key="key1", current_user=dummy_user, db=mock_db)
+    with pytest.raises(ValueError, match="Business validation failed"):
+        await my_func(idempotency_key="key1", current_user=dummy_user)
 
-    last_call = mock_db.execute.call_args_list[-1]
+    last_call = fake_session.execute.call_args_list[-1]
     query = last_call[0][0].text
-    assert "UPDATE idempotency_keys" in query
-    assert "SET status = 'failed'" in query
+
+    assert "UPDATE public.idempotency_keys" in query
+    assert "status = 'failed'" in query

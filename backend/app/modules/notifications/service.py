@@ -12,6 +12,7 @@ from app.modules.notifications.schemas import (
     CustomerPushTokenResponse,
 )
 
+
 _EXPO_PUSH_TOKEN_PATTERN = re.compile(
     r"^ExponentPushToken\[[^\]]+\]$"
 )

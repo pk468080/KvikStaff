@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -18,6 +19,7 @@ from app.modules.notifications.schemas import (
 from app.modules.notifications.service import (
     NotificationsService,
 )
+
 
 router = APIRouter()
 
