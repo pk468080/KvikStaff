@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 
 export function DataTable({ children, className = '', style }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
