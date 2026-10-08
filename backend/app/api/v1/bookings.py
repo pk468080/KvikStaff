@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header
 
 from app.core.database import get_db
-from app.core.idempotency import idempotent
+
 from app.core.security import CurrentUser, get_customer
 from app.modules.bookings.repository import BookingsRepository
 from app.modules.bookings.schemas import (
@@ -17,7 +17,14 @@ from app.modules.bookings.schemas import (
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
 )
+from fastapi import (
+    APIRouter,
+    Depends,
+    Header,
+    HTTPException,
+)
 from app.modules.bookings.service import BookingsService
+
 
 router = APIRouter()
 
@@ -72,7 +79,7 @@ async def calculate_multi_occurrence_booking_price(
 
 
 @router.post("/instant")
-@idempotent(action="create_instant_booking")
+
 async def create_instant_booking(
     request: InstantBookingCreateRequest,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
@@ -86,7 +93,7 @@ async def create_instant_booking(
 
 
 @router.post("/scheduled")
-@idempotent(action="create_scheduled_booking")
+
 async def create_scheduled_booking(
     request: MultiOccurrenceBookingCreateRequest,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
@@ -100,7 +107,7 @@ async def create_scheduled_booking(
 
 
 @router.post("/recurring")
-@idempotent(action="create_recurring_booking")
+
 async def create_recurring_booking(
     request: MultiOccurrenceBookingCreateRequest,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),

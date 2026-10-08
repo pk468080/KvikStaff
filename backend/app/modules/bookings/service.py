@@ -17,6 +17,9 @@ from app.modules.bookings.schemas import (
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
 )
+from app.core.idempotency.atomic import (
+    get_request_hash,
+)
 
 
 OCCURRENCE_LIFECYCLE_STATUSES = {
@@ -120,20 +123,23 @@ class BookingsService:
             ) from exc
 
     async def create_instant_booking(
-        self,
-        request: InstantBookingCreateRequest,
-        customer_id: UUID,
-    ) -> dict[str, Any]:
+    self,
+    request: InstantBookingCreateRequest,
+    customer_id: UUID,
+    idempotency_key: str,
+) -> dict[str, Any]:
         try:
             return await self.repository.create_hourly_booking(
-                customer_id=customer_id,
-                service_variant_id=request.service_variant_id,
-                address_id=request.address_id,
-                booking_type="instant",
-                scheduled_start=request.scheduled_start,
-                scheduled_end=request.scheduled_end,
-                notes=request.notes,
-            )
+    customer_id=customer_id,
+    service_variant_id=request.service_variant_id,
+    address_id=request.address_id,
+    booking_type="instant",
+    scheduled_start=request.scheduled_start,
+    scheduled_end=request.scheduled_end,
+    notes=request.notes,
+    idempotency_key=idempotency_key,
+    request_hash=get_request_hash(request),
+)
 
         except ValueError as exc:
             raise AppError(
@@ -169,10 +175,11 @@ class BookingsService:
             ) from exc
 
     async def create_scheduled_booking(
-        self,
-        request: MultiOccurrenceBookingCreateRequest,
-        customer_id: UUID,
-    ) -> dict[str, Any]:
+    self,
+    request: MultiOccurrenceBookingCreateRequest,
+    customer_id: UUID,
+    idempotency_key: str,
+) -> dict[str, Any]:
         if (
             request.schedule_start_date
             != request.schedule_end_date
@@ -209,6 +216,8 @@ class BookingsService:
                     off_dates=request.off_dates,
                     notes=request.notes,
                     booking_type="scheduled",
+                    idempotency_key=idempotency_key,
+request_hash=get_request_hash(request),
                 )
             )
 
@@ -246,10 +255,11 @@ class BookingsService:
             ) from exc
 
     async def create_recurring_booking(
-        self,
-        request: MultiOccurrenceBookingCreateRequest,
-        customer_id: UUID,
-    ) -> dict[str, Any]:
+    self,
+    request: MultiOccurrenceBookingCreateRequest,
+    customer_id: UUID,
+    idempotency_key: str,
+) -> dict[str, Any]:
         try:
             return await (
                 self.repository.create_multi_occurrence_booking(
@@ -276,6 +286,8 @@ class BookingsService:
                     off_dates=request.off_dates,
                     notes=request.notes,
                     booking_type="recurring",
+                    idempotency_key=idempotency_key,
+request_hash=get_request_hash(request),
                 )
             )
 
