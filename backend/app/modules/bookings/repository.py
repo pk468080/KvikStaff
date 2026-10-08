@@ -177,7 +177,7 @@ class BookingsRepository:
 
         booking_type: str,
 
-        ) -> dict[str, Any]:
+            ) -> dict[str, Any]:
 
         async with self.db.begin():
 

@@ -50,9 +50,7 @@ class FakeSession:
     def begin(self):
         return AsyncContextManagerMock(self)
 @pytest.mark.asyncio
-async def test_multi_occurrence_pricing_does_not_require_idempotency(
-    monkeypatch,
-):
+async def test_multi_occurrence_pricing_does_not_require_idempotency():
     repository = MagicMock()
     repository.calculate_customer_multi_occurrence_booking_price = (
         AsyncMock(
