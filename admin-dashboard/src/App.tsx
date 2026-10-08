@@ -12,6 +12,7 @@ import Bookings from './pages/Bookings'
 import Workers from './pages/Workers'
 import WorkerDetail from './pages/WorkerDetail'
 import Customers from './pages/Customers'
+import CustomerDetail from './pages/CustomerDetail'
 import Services from './pages/Services'
 import ServiceAreas from './pages/ServiceAreas'
 import Payments from './pages/Payments'
@@ -19,6 +20,10 @@ import Reviews from './pages/Reviews'
 import Notifications from './pages/Notifications'
 import OffersUpdates from './pages/OffersUpdates'
 import ServiceDiscounts from './pages/ServiceDiscounts'
+import Support from './pages/Support'
+import Analytics from './pages/Analytics'
+import WorkerEarnings from './pages/WorkerEarnings'
+import Settings from './pages/Settings'
 
 import AdminLayout from './layouts/AdminLayout'
 import AdminGuard from './components/AdminGuard'
@@ -98,6 +103,31 @@ export default function App() {
             <Route
               path="/notifications"
               element={<Notifications />}
+            />
+
+            <Route
+              path="/customers/:customerId"
+              element={<CustomerDetail />}
+            />
+
+            <Route
+              path="/support"
+              element={<Support />}
+            />
+
+            <Route
+              path="/analytics"
+              element={<Analytics />}
+            />
+
+            <Route
+              path="/worker-earnings"
+              element={<WorkerEarnings />}
+            />
+
+            <Route
+              path="/settings"
+              element={<Settings />}
             />
 
           </Route>

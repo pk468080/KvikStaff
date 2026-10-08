@@ -10,14 +10,7 @@ import {
 } from 'lucide-react'
 
 import { adminAction } from '../lib/adminAction'
-import { PageHeader } from '../components/ui/PageHeader'
-import { DataTable, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/DataTable'
-import { Badge } from '../components/ui/Badge'
-import { Button } from '../components/ui/Button'
-import { Input } from '../components/ui/Input'
-import { LoadingState } from '../components/ui/LoadingState'
-import { ErrorState } from '../components/ui/ErrorState'
-
+import { DataTable, TableHeader, TableBody, TableRow, TableCell } from '../components/ui/DataTable'
 import { loadGoogleMaps } from '../lib/googleMaps'
 
 import { supabase } from '../lib/supabase'

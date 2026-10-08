@@ -2,11 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { adminAction } from '../lib/adminAction'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
-import { Badge } from '../components/ui/Badge'
-import { Button } from '../components/ui/Button'
-import { LoadingState } from '../components/ui/LoadingState'
-import { ErrorState } from '../components/ui/ErrorState'
 
 
 type Worker = {

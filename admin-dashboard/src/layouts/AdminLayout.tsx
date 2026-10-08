@@ -6,61 +6,46 @@ import {
 
 import { supabase } from '../lib/supabase'
 
-const navigation = [
+const navGroups = [
   {
-    label: 'Overview',
-    path: '/dashboard',
-    icon: '▦',
+    label: 'MANAGEMENT',
+    items: [
+      { label: 'Overview',           path: '/dashboard',          icon: '▦' },
+      { label: 'Bookings',           path: '/bookings',           icon: '▣' },
+      { label: 'Workers',            path: '/workers',            icon: '◉' },
+      { label: 'Customers',          path: '/customers',          icon: '◎' },
+      { label: 'Services',           path: '/services',           icon: '◆' },
+      { label: 'Service Areas',      path: '/service-areas',      icon: '⌖' },
+      { label: 'Offers & Updates',   path: '/offers-updates',     icon: '✦' },
+      { label: 'Duration Discounts', path: '/duration-discounts', icon: '%' },
+    ],
   },
   {
-    label: 'Bookings',
-    path: '/bookings',
-    icon: '▣',
+    label: 'FINANCE',
+    items: [
+      { label: 'Payments',        path: '/payments',        icon: '₹' },
+      { label: 'Worker Earnings', path: '/worker-earnings', icon: '◈' },
+    ],
   },
   {
-    label: 'Workers',
-    path: '/workers',
-    icon: '◉',
+    label: 'ENGAGEMENT',
+    items: [
+      { label: 'Reviews',       path: '/reviews',       icon: '★' },
+      { label: 'Notifications', path: '/notifications', icon: '●' },
+      { label: 'Support',       path: '/support',       icon: '◑' },
+    ],
   },
   {
-    label: 'Customers',
-    path: '/customers',
-    icon: '◎',
+    label: 'INSIGHTS',
+    items: [
+      { label: 'Analytics', path: '/analytics', icon: '▦' },
+    ],
   },
   {
-    label: 'Services',
-    path: '/services',
-    icon: '◆',
-  },
-  {
-    label: 'Service Areas',
-    path: '/service-areas',
-    icon: '⌖',
-  },
-  {
-    label: 'Offers & Updates',
-    path: '/offers-updates',
-    icon: '✦',
-  },
-  {
-    label: 'Duration Discounts',
-    path: '/duration-discounts',
-    icon: '%',
-  },
-  {
-    label: 'Payments',
-    path: '/payments',
-    icon: '₹',
-  },
-  {
-    label: 'Reviews',
-    path: '/reviews',
-    icon: '★',
-  },
-  {
-    label: 'Notifications',
-    path: '/notifications',
-    icon: '●',
+    label: 'CONFIGURATION',
+    items: [
+      { label: 'Settings', path: '/settings', icon: '⚙' },
+    ],
   },
 ]
 
@@ -99,30 +84,34 @@ export default function AdminLayout() {
 
         <nav className="sidebar-nav">
 
-          <div className="nav-section-title">
-            MANAGEMENT
-          </div>
+          {navGroups.map(group => (
+            <div key={group.label}>
+              <div className="nav-section-title">
+                {group.label}
+              </div>
 
-          {navigation.map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `nav-item ${
-                  isActive
-                    ? 'active'
-                    : ''
-                }`
-              }
-            >
-              <span className="nav-icon">
-                {item.icon}
-              </span>
+              {group.items.map(item => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `nav-item ${
+                      isActive
+                        ? 'active'
+                        : ''
+                    }`
+                  }
+                >
+                  <span className="nav-icon">
+                    {item.icon}
+                  </span>
 
-              <span>
-                {item.label}
-              </span>
-            </NavLink>
+                  <span>
+                    {item.label}
+                  </span>
+                </NavLink>
+              ))}
+            </div>
           ))}
 
         </nav>
