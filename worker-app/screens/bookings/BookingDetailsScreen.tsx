@@ -18,7 +18,14 @@ import { Ionicons } from '@expo/vector-icons'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import ErrorState from '../../components/ui/ErrorState'
-import StatusBadge from '../../components/ui/StatusBadge'
+import StatusBadge from '../../components/ui/StatusBadge';
+import { AppCard } from '../../components/ui/AppCard';
+import { Divider } from '../../components/ui/Divider';
+import { BookingCustomerCard } from '../../components/bookings/BookingCustomerCard';
+import { BookingLocationCard } from '../../components/bookings/BookingLocationCard';
+import { BookingScheduleCard } from '../../components/bookings/BookingScheduleCard';
+import { BookingSummaryCard } from '../../components/bookings/BookingSummaryCard';
+
 import { UI } from '../../constants/ui'
 
 import {
@@ -139,7 +146,7 @@ function InfoRow({
         <Ionicons
           name={icon}
           size={18}
-          color={UI.colors.secondary}
+          color={UI.colors.primaryBlue}
         />
       </View>
 
@@ -159,9 +166,7 @@ function InfoRow({
   )
 }
 
-function InfoDivider() {
-  return <View style={styles.infoDivider} />
-}
+
 
 function HistoryRow({
   icon,
@@ -372,7 +377,7 @@ export default function BookingDetailsScreen({
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             size="large"
-            color={UI.colors.secondary}
+            color={UI.colors.primaryBlue}
           />
 
           <Text style={styles.loadingTitle}>
@@ -472,7 +477,7 @@ export default function BookingDetailsScreen({
               )
             }}
             tintColor={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
         }
@@ -662,200 +667,15 @@ export default function BookingDetailsScreen({
           </View>
         ) : null}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>
-            CUSTOMER
-          </Text>
+        <BookingCustomerCard booking={booking} customerName={customerName} />
 
-          <Text style={styles.sectionTitle}>
-            Booking contact
-          </Text>
+        <BookingSummaryCard booking={booking} serviceName={serviceName} variantName={variantName} getBookingTypeLabel={getBookingTypeLabel} />
 
-          <View style={styles.customerCard}>
-            <View
-              style={styles.customerIcon}
-            >
-              <Ionicons
-                name="person-outline"
-                size={21}
-                color={
-                  UI.colors.secondary
-                }
-              />
-            </View>
+        <BookingLocationCard addressLabel={addressLabel} addressLine={addressLine} />
 
-            <View
-              style={styles.customerCopy}
-            >
-              <Text
-                style={styles.customerName}
-              >
-                {customerName}
-              </Text>
+        <BookingScheduleCard booking={booking} formatBookingDateTime={formatBookingDateTime} formatDuration={formatDuration} formatDateOnly={(iso) => new Date(iso).toLocaleDateString()} />
 
-              <Text
-                style={
-                  styles.customerSubtitle
-                }
-              >
-                Historical booking information only. No customer phone number is displayed here.
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>
-            SERVICE
-          </Text>
-
-          <Text style={styles.sectionTitle}>
-            What was delivered
-          </Text>
-
-          <View style={styles.infoCard}>
-            <InfoRow
-              icon="briefcase-outline"
-              label="Service"
-              value={
-                serviceName
-              }
-            />
-
-            {variantName ? (
-              <>
-                <InfoDivider />
-
-                <InfoRow
-                  icon="layers-outline"
-                  label="Variant"
-                  value={
-                    variantName
-                  }
-                />
-              </>
-            ) : null}
-
-            <InfoDivider />
-
-            <InfoRow
-              icon="calendar-outline"
-              label="Booking type"
-              value={
-                getBookingTypeLabel(
-                  booking.bookingType,
-                )
-              }
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>
-            SERVICE LOCATION
-          </Text>
-
-          <Text style={styles.sectionTitle}>
-            Recorded service location
-          </Text>
-
-          <View style={styles.locationCard}>
-            <View
-              style={
-                styles.locationIcon
-              }
-            >
-              <Ionicons
-                name="location-outline"
-                size={22}
-                color={
-                  UI.colors.secondary
-                }
-              />
-            </View>
-
-            <View
-              style={
-                styles.locationCopy
-              }
-            >
-              <Text
-                style={
-                  styles.locationLabel
-                }
-              >
-                {addressLabel}
-              </Text>
-
-              <Text
-                style={
-                  styles.locationAddress
-                }
-              >
-                {addressLine}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>
-            SCHEDULE
-          </Text>
-
-          <Text style={styles.sectionTitle}>
-            Recorded booking timing
-          </Text>
-
-          <View style={styles.infoCard}>
-            <InfoRow
-              icon="calendar-outline"
-              label="Scheduled start"
-              value={
-                formatBookingDateTime(
-                  booking.scheduledStart,
-                )
-              }
-            />
-
-            <InfoDivider />
-
-            <InfoRow
-              icon="timer-outline"
-              label="Duration"
-              value={formatDuration(
-                booking,
-              )}
-            />
-
-            <InfoDivider />
-
-            <InfoRow
-              icon="stopwatch-outline"
-              label="Scheduled end"
-              value={
-                formatBookingDateTime(
-                  booking.scheduledEnd,
-                )
-              }
-            />
-
-            {booking.scheduleStartDate &&
-            booking.scheduleEndDate ? (
-              <>
-                <InfoDivider />
-
-                <InfoRow
-                  icon="repeat-outline"
-                  label="Recurring period"
-                  value={`${booking.scheduleStartDate} → ${booking.scheduleEndDate}`}
-                />
-              </>
-            ) : null}
-          </View>
-        </View>
-
-        <View style={styles.section}>
+        <AppCard style={styles.section}>
           <Text style={styles.sectionEyebrow}>
             OUTCOME
           </Text>
@@ -923,7 +743,7 @@ export default function BookingDetailsScreen({
               )}
             />
 
-            <InfoDivider />
+            <Divider />
 
             <InfoRow
               icon="time-outline"
@@ -936,9 +756,9 @@ export default function BookingDetailsScreen({
               }
             />
           </View>
-        </View>
+        </AppCard>
 
-        <View style={styles.section}>
+        <AppCard style={styles.section}>
           <Text style={styles.sectionEyebrow}>
             JOB HISTORY
           </Text>
@@ -988,36 +808,12 @@ export default function BookingDetailsScreen({
               }
             />
           </View>
-        </View>
+        </AppCard>
 
-        {booking.notes ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionEyebrow}>
-              CUSTOMER NOTES
-            </Text>
 
-            <Text style={styles.sectionTitle}>
-              Saved instructions
-            </Text>
-
-            <View style={styles.notesCard}>
-              <Ionicons
-                name="document-text-outline"
-                size={20}
-                color={
-                  UI.colors.secondary
-                }
-              />
-
-              <Text style={styles.notesText}>
-                {booking.notes}
-              </Text>
-            </View>
-          </View>
-        ) : null}
 
         {occurrences.length > 0 ? (
-          <View style={styles.section}>
+          <AppCard style={styles.section}>
             <Text style={styles.sectionEyebrow}>
               RECURRING HISTORY
             </Text>
@@ -1065,7 +861,7 @@ export default function BookingDetailsScreen({
                           name="calendar-outline"
                           size={19}
                           color={
-                            UI.colors.secondary
+                            UI.colors.primaryBlue
                           }
                         />
                       </View>
@@ -1145,7 +941,7 @@ export default function BookingDetailsScreen({
                           name="chevron-forward"
                           size={17}
                           color={
-                            UI.colors.secondary
+                            UI.colors.primaryBlue
                           }
                         />
                       </Pressable>
@@ -1154,7 +950,7 @@ export default function BookingDetailsScreen({
                 ),
               )}
             </View>
-          </View>
+          </AppCard>
         ) : null}
 
         <Text style={styles.footerText}>
@@ -1223,7 +1019,7 @@ const styles = StyleSheet.create({
       '800',
     letterSpacing: 1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   topBarTitle: {
@@ -1392,7 +1188,7 @@ const styles = StyleSheet.create({
     borderWidth:
       1,
     borderColor:
-      '#FDE68A',
+      UI.colors.warningBackground,
   },
 
   warningText: {
@@ -1450,7 +1246,7 @@ const styles = StyleSheet.create({
     letterSpacing:
       1.05,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   sectionTitle: {
@@ -1649,7 +1445,7 @@ const styles = StyleSheet.create({
     fontWeight:
       '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   locationAddress: {
@@ -1932,7 +1728,7 @@ const styles = StyleSheet.create({
     fontWeight:
       '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   footerText: {

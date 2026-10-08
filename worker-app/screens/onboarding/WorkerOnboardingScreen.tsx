@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native'
 
+
 import {
   ScreenContainer,
 } from '../../components/layout/ScreenContainer'
@@ -204,7 +205,7 @@ export default function WorkerOnboardingScreen({
           <ActivityIndicator
             size="large"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -339,7 +340,7 @@ export default function WorkerOnboardingScreen({
             <ActivityIndicator
               size="small"
               color={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
             />
 
@@ -424,7 +425,7 @@ const styles = StyleSheet.create({
     borderWidth:
       1,
     borderColor:
-      '#FECACA',
+      UI.colors.errorBackground,
   },
 
   submitErrorTitle: {

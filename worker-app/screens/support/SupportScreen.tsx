@@ -31,7 +31,8 @@ import EmptyState from '../../components/ui/EmptyState'
 
 import ErrorState from '../../components/ui/ErrorState'
 
-import StatusBadge from '../../components/ui/StatusBadge'
+import StatusBadge from '../../components/ui/StatusBadge';
+
 
 import {
   UI,
@@ -151,7 +152,7 @@ function getCategoryIconColors(
         backgroundColor:
           UI.colors.infoBackground,
         color:
-          UI.colors.secondary,
+          UI.colors.primaryBlue,
       }
 
     case 'payment':
@@ -268,7 +269,7 @@ function SupportCategoryButton({
           {
             backgroundColor:
               selected
-                ? UI.colors.secondary
+                ? UI.colors.primaryBlue
                 : iconStyle.backgroundColor,
           },
         ]}
@@ -303,7 +304,7 @@ function SupportCategoryButton({
           <Ionicons
             name="checkmark"
             size={12}
-            color={UI.colors.secondary}
+            color={UI.colors.primaryBlue}
           />
         </View>
       ) : null}
@@ -593,7 +594,7 @@ export default function SupportScreen({
               name="headset-outline"
               size={27}
               color={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
             />
           </View>
@@ -601,7 +602,7 @@ export default function SupportScreen({
           <ActivityIndicator
             size="small"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -669,7 +670,7 @@ export default function SupportScreen({
                 )
               }}
               tintColor={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
             />
           }
@@ -958,7 +959,7 @@ export default function SupportScreen({
                   name="create-outline"
                   size={19}
                   color={
-                    UI.colors.secondary
+                    UI.colors.primaryBlue
                   }
                 />
               </View>
@@ -1340,7 +1341,7 @@ export default function SupportScreen({
                     name="chatbubbles-outline"
                     size={28}
                     color={
-                      UI.colors.secondary
+                      UI.colors.primaryBlue
                     }
                   />
                 </View>
@@ -1467,7 +1468,7 @@ export default function SupportScreen({
                               name="briefcase-outline"
                               size={15}
                               color={
-                                UI.colors.secondary
+                                UI.colors.primaryBlue
                               }
                             />
 
@@ -1578,7 +1579,7 @@ export default function SupportScreen({
                 name="information-circle-outline"
                 size={21}
                 color={
-                  UI.colors.secondary
+                  UI.colors.primaryBlue
                 }
               />
             </View>
@@ -1653,7 +1654,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   headerTitle: {
@@ -1711,7 +1712,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   heroEyebrow: {
@@ -1800,7 +1801,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: UI.colors.warningBackground,
   },
 
   warningIcon: {
@@ -1839,18 +1840,18 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    marginTop:
-      UI.spacing.lg,
-    padding:
-      UI.spacing.lg,
-    borderRadius:
-      UI.radius.xl,
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
+      backgroundColor: UI.colors.surface,
+      borderRadius: UI.radius.lg,
+      padding: UI.spacing.lg,
+      marginBottom: UI.spacing.md,
+      borderColor: UI.colors.border,
+      borderWidth: 1,
+      elevation: 2,
+      shadowColor: UI.colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
 
   sectionHeader: {
     flexDirection: 'row',
@@ -1870,7 +1871,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   sectionTitle: {
@@ -1923,7 +1924,7 @@ const styles = StyleSheet.create({
       UI.typography.small,
     fontWeight: '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   field: {
@@ -1988,7 +1989,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       '#F4FFFD',
     borderColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   categoryCardPressed: {
@@ -2023,7 +2024,7 @@ const styles = StyleSheet.create({
 
   categoryTitleSelected: {
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   selectedMark: {
@@ -2116,7 +2117,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       UI.colors.errorBackground,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: UI.colors.errorBackground,
   },
 
   formErrorText: {
@@ -2143,7 +2144,7 @@ const styles = StyleSheet.create({
     borderRadius:
       UI.radius.xl,
     backgroundColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   submitButtonPressed: {
@@ -2280,7 +2281,7 @@ const styles = StyleSheet.create({
       UI.typography.caption,
     fontWeight: '700',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   adminNotes: {

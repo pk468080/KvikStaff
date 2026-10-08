@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native'
 
+
 import { AppButton } from '../../components/ui/AppButton'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import { UI } from '../../constants/ui'
@@ -271,7 +272,7 @@ export default function LoginScreen({
                   <ActivityIndicator
                     size="small"
                     color={
-                      UI.colors.secondary
+                      UI.colors.primaryBlue
                     }
                   />
 
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
       UI.typography.small,
     fontWeight: '600',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   hero: {
@@ -400,7 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.2,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   title: {
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
 
   inputValid: {
     borderColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   errorBox: {
@@ -505,7 +506,7 @@ const styles = StyleSheet.create({
       UI.colors.errorBackground,
     borderWidth: 1,
     borderColor:
-      '#FECACA',
+      UI.colors.errorBackground,
   },
 
   errorTitle: {

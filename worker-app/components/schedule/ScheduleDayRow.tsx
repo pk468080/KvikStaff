@@ -114,7 +114,7 @@ export default function ScheduleDayRow({
             false:
               UI.colors.border,
             true:
-              UI.colors.secondary,
+              UI.colors.primaryBlue,
           }}
           thumbColor={
             UI.colors.surface

@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native'
 
+
 import { AppButton } from '../../components/ui/AppButton'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import { UI } from '../../constants/ui'
@@ -471,7 +472,7 @@ export default function PersonalInformationScreen({
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             size="large"
-            color={UI.colors.secondary}
+            color={UI.colors.primaryBlue}
           />
 
           <Text style={styles.loadingTitle}>
@@ -971,7 +972,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.1,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   title: {
@@ -1061,7 +1062,7 @@ const styles = StyleSheet.create({
   },
 
   genderOptionSelected: {
-    borderColor: UI.colors.secondary,
+    borderColor: UI.colors.primaryBlue,
     backgroundColor: UI.colors.successBackground,
   },
 
@@ -1076,14 +1077,14 @@ const styles = StyleSheet.create({
   },
 
   radioSelected: {
-    borderColor: UI.colors.secondary,
+    borderColor: UI.colors.primaryBlue,
   },
 
   radioDot: {
     width: 10,
     height: 10,
     borderRadius: UI.radius.pill,
-    backgroundColor: UI.colors.secondary,
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   genderLabel: {
@@ -1166,7 +1167,7 @@ const styles = StyleSheet.create({
     borderRadius: UI.radius.md,
     backgroundColor: UI.colors.errorBackground,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: UI.colors.errorBackground,
   },
 
   errorTitle: {

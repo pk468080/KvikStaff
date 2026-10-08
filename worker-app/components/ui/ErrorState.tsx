@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: UI.colors.errorBackground,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: UI.colors.errorBackground,
   },
 
   iconText: {
