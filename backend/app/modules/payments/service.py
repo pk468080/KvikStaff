@@ -1,8 +1,8 @@
 import hashlib
 import hmac
 import json
-from datetime import date, datetime, timezone
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from datetime import UTC, date, datetime
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 from uuid import UUID
 
@@ -207,7 +207,7 @@ class PaymentsService:
                     datetime,
                 )
                 and scheduled_start
-                <= datetime.now(timezone.utc)
+                <= datetime.now(UTC)
             ):
                 await self.repository.expire_payment_booking(
                     customer_id=customer_id,
@@ -817,7 +817,7 @@ class PaymentsService:
         value: Any,
     ) -> Decimal:
         if value is None:
-            return Decimal("0")
+            return Decimal(0)
 
         try:
             if isinstance(
@@ -834,16 +834,16 @@ class PaymentsService:
             TypeError,
             ValueError,
         ):
-            return Decimal("0")
+            return Decimal(0)
 
     @staticmethod
     def _to_paise(
         amount: Decimal,
     ) -> int:
         value = (
-            amount * Decimal("100")
+            amount * Decimal(100)
         ).quantize(
-            Decimal("1"),
+            Decimal(1),
             rounding=ROUND_HALF_UP,
         )
 
@@ -1070,11 +1070,11 @@ class PaymentsService:
         ):
             return datetime.fromtimestamp(
                 created_at,
-                tz=timezone.utc,
+                tz=UTC,
             )
 
         return datetime.now(
-            timezone.utc
+            UTC
         )
 
     @staticmethod

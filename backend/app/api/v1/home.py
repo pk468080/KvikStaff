@@ -13,7 +13,6 @@ from app.modules.home.schemas import (
 )
 from app.modules.home.service import HomeService
 
-
 router = APIRouter()
 
 

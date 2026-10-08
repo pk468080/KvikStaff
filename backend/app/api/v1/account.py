@@ -19,7 +19,6 @@ from app.modules.account.service import (
     AccountDeletionService,
 )
 
-
 router = APIRouter()
 
 

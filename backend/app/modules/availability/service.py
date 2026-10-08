@@ -1,5 +1,5 @@
 import math
-from datetime import datetime, time, timedelta, timezone
+from datetime import UTC, datetime, time, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -89,7 +89,7 @@ class AvailabilityService:
         latitude: float,
         longitude: float,
     ) -> InstantAvailabilityCheckResponse:
-        checked_at = datetime.now(timezone.utc)
+        checked_at = datetime.now(UTC)
 
         service_area_available = (
             await self.repository.is_service_area_available(
@@ -214,7 +214,7 @@ class AvailabilityService:
             "operations.default_end_time",
         )
 
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         local_date = now_utc.astimezone(tz).date()
 
         operating_start = datetime.combine(
@@ -235,8 +235,7 @@ class AvailabilityService:
             now_utc + timedelta(minutes=15)
         )
 
-        if cursor < operating_start:
-            cursor = operating_start
+        cursor = max(cursor, operating_start)
 
         last_start = min(
             operating_end - duration,
@@ -328,7 +327,7 @@ class AvailabilityService:
 
         tz = self._timezone(timezone_name)
 
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
 
         local_date = now_utc.astimezone(tz).date()
 

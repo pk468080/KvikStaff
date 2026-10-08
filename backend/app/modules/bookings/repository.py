@@ -1,31 +1,16 @@
 from datetime import date, datetime, time
-
 from typing import Any
-
 from uuid import UUID
 
-
-
 from sqlalchemy import (
-
     Date,
-
     SmallInteger,
-
     Time,
-
     bindparam,
-
     text,
-
 )
-
 from sqlalchemy.dialects.postgresql import ARRAY
-
 from sqlalchemy.ext.asyncio import AsyncSession
-
-
-
 
 
 class BookingsRepository:
@@ -1197,9 +1182,7 @@ class BookingsRepository:
     ) -> dict[str, Any]:
 
         import hashlib
-
         import secrets
-
         from datetime import timedelta
 
 
