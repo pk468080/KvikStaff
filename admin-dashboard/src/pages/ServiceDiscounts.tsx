@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 
 import { supabase } from '../lib/supabase'
+import { DataTable, TableHeader, TableBody, TableRow, TableCell } from '../components/ui/DataTable'
+
 
 
 type Service = {

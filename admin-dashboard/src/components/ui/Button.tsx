@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost'

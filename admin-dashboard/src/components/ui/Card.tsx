@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   children: React.ReactNode

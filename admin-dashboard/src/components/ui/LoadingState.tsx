@@ -1,4 +1,3 @@
-import React from 'react'
 
 export function LoadingState({ message = 'Loading...' }: { message?: string }) {
   return (
