@@ -9,6 +9,7 @@ import {
 
 import { supabase } from '../lib/supabase'
 
+
 type Service = {
   id: string
   name: string
@@ -894,16 +895,9 @@ export default function ServiceDiscounts() {
                 'auto',
             }}
           >
-            <table
-              style={{
-                width:
-                  '100%',
-                borderCollapse:
-                  'collapse',
-              }}
-            >
-              <thead>
-                <tr>
+            <DataTable>
+              <TableHeader>
+                <TableRow>
                   {[
                     'Name',
                     'Hours',
@@ -939,14 +933,14 @@ export default function ServiceDiscounts() {
                       </th>
                     ),
                   )}
-                </tr>
-              </thead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody>
+              <TableBody>
                 {tiers.length ===
                 0 ? (
-                  <tr>
-                    <td
+                  <TableRow>
+                    <TableCell
                       colSpan={
                         7
                       }
@@ -964,17 +958,13 @@ export default function ServiceDiscounts() {
                       configured
                       for this
                       service.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   tiers.map(
                     tier => (
-                      <tr
-                        key={
-                          tier.id
-                        }
-                      >
-                        <td
+                      <TableRow>
+                        <TableCell
                           style={{
                             padding:
                               '14px',
@@ -994,9 +984,9 @@ export default function ServiceDiscounts() {
                               tier.name
                             }
                           </div>
-                        </td>
+                        </TableCell>
 
-                        <td
+                        <TableCell
                           style={{
                             padding:
                               '14px',
@@ -1014,9 +1004,9 @@ export default function ServiceDiscounts() {
                           null
                             ? '∞'
                             : `${tier.max_hours}h`}
-                        </td>
+                        </TableCell>
 
-                        <td
+                        <TableCell
                           style={{
                             padding:
                               '14px',
@@ -1030,9 +1020,9 @@ export default function ServiceDiscounts() {
                             tier.discount_percent
                           }
                           %
-                        </td>
+                        </TableCell>
 
-                        <td
+                        <TableCell
                           style={{
                             padding:
                               '14px',
@@ -1043,9 +1033,9 @@ export default function ServiceDiscounts() {
                           {
                             tier.priority
                           }
-                        </td>
+                        </TableCell>
 
-                        <td
+                        <TableCell
                           style={{
                             padding:
                               '14px',
@@ -1075,9 +1065,9 @@ export default function ServiceDiscounts() {
                               tier.effective_to,
                             )}
                           </div>
-                        </td>
+                        </TableCell>
 
-                        <td
+                        <TableCell
                           style={{
                             padding:
                               '14px',
@@ -1118,9 +1108,9 @@ export default function ServiceDiscounts() {
                               ? 'Active'
                               : 'Inactive'}
                           </button>
-                        </td>
+                        </TableCell>
 
-                        <td
+                        <TableCell
                           style={{
                             padding:
                               '14px',
@@ -1171,13 +1161,13 @@ export default function ServiceDiscounts() {
                               Delete
                             </button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ),
                   )
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </DataTable>
           </div>
         </div>
       </div>

@@ -10,7 +10,16 @@ import {
 } from 'lucide-react'
 
 import { adminAction } from '../lib/adminAction'
+import { PageHeader } from '../components/ui/PageHeader'
+import { DataTable, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/DataTable'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { LoadingState } from '../components/ui/LoadingState'
+import { ErrorState } from '../components/ui/ErrorState'
+
 import { loadGoogleMaps } from '../lib/googleMaps'
+
 import { supabase } from '../lib/supabase'
 
 declare const google: any
@@ -183,7 +192,7 @@ export default function ServiceAreas() {
       )
     } catch (err) {
       console.error(
-        '[TempStaff] Failed to load service areas:',
+        '[KvikStaff] Failed to load service areas:',
         err,
       )
 
@@ -252,7 +261,7 @@ export default function ServiceAreas() {
           position: initialCenter,
           map,
           draggable: true,
-          title: 'TempStaff service area center',
+          title: 'KvikStaff service area center',
         })
 
         markerRef.current = marker
@@ -400,7 +409,7 @@ export default function ServiceAreas() {
         setMapLoading(false)
       } catch (err) {
         console.error(
-          '[TempStaff] Failed to initialize Google Maps:',
+          '[KvikStaff] Failed to initialize Google Maps:',
           err,
         )
 
@@ -741,7 +750,7 @@ export default function ServiceAreas() {
       await loadData()
     } catch (err) {
       console.error(
-        '[TempStaff] Failed to save service area:',
+        '[KvikStaff] Failed to save service area:',
         err,
       )
 
@@ -2038,9 +2047,9 @@ export default function ServiceAreas() {
           </div>
         ) : (
           <div className="bookings-table-wrap">
-            <table className="bookings-table">
-              <thead>
-                <tr>
+            <DataTable>
+              <TableHeader>
+                <TableRow>
                   <th>
                     Area
                   </th>
@@ -2064,16 +2073,14 @@ export default function ServiceAreas() {
                   <th>
                     Action
                   </th>
-                </tr>
-              </thead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody>
+              <TableBody>
                 {filteredAreas.map(
                   (area) => (
-                    <tr
-                      key={`${area.is_legacy ? 'legacy' : 'group'}-${area.id}`}
-                    >
-                      <td>
+                    <TableRow>
+                      <TableCell>
                         <strong>
                           {area.name}
                         </strong>
@@ -2118,9 +2125,9 @@ export default function ServiceAreas() {
                             LEGACY AREA
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <strong>
                           {Number(
                             area.radius_km,
@@ -2152,9 +2159,9 @@ export default function ServiceAreas() {
                             4,
                           )}
                         </div>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <div
                           style={{
                             display:
@@ -2212,9 +2219,9 @@ export default function ServiceAreas() {
                             </span>
                           )}
                         </div>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <span
                           className={
                             area.is_active
@@ -2226,9 +2233,9 @@ export default function ServiceAreas() {
                             ? 'Live'
                             : 'Inactive'}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <span
                           style={{
                             color:
@@ -2241,9 +2248,9 @@ export default function ServiceAreas() {
                             area.updated_at,
                           ).toLocaleString()}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <button
                           className="dashboard-refresh"
                           onClick={() =>
@@ -2264,12 +2271,12 @@ export default function ServiceAreas() {
 
                           Edit
                         </button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ),
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </DataTable>
           </div>
         )}
       </div>

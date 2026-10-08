@@ -83,12 +83,12 @@ export default function AdminLayout() {
 
         <div className="sidebar-brand">
           <div className="brand-mark">
-            TS
+            KS
           </div>
 
           <div>
             <div className="brand-name">
-              TempStaff
+              KvikStaff
             </div>
 
             <div className="brand-role">
@@ -154,7 +154,7 @@ export default function AdminLayout() {
 
           <div>
             <div className="header-title">
-              TempStaff Admin
+              KvikStaff Admin
             </div>
 
             <div className="header-subtitle">

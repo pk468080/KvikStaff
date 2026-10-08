@@ -3,6 +3,7 @@ import { Edit3, Image as ImageIcon, Plus, RefreshCw, Trash2, Upload, X } from 'l
 
 import { supabase } from '../lib/supabase'
 
+
 type ContentType = 'offer' | 'update'
 
 type Service = {

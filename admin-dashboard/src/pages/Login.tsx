@@ -90,7 +90,7 @@ export default function Login() {
         style={styles.card}
       >
         <h1 style={styles.title}>
-          TempStaff Admin
+          KvikStaff Admin
         </h1>
 
         <p style={styles.subtitle}>

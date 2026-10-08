@@ -11,6 +11,15 @@ import {
 
 import { supabase } from '../lib/supabase'
 import { adminAction } from '../lib/adminAction'
+import { PageHeader } from '../components/ui/PageHeader'
+import { DataTable, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/DataTable'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { LoadingState } from '../components/ui/LoadingState'
+import { ErrorState } from '../components/ui/ErrorState'
+
+
 
 type Category = {
   id: string
@@ -1336,51 +1345,47 @@ export default function Services() {
           </div>
         ) : (
           <div className="bookings-table-wrap">
-            <table className="bookings-table">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Service</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Price</th>
-                  <th>Workers</th>
-                  <th>Image</th>
-                  <th>Featured</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
+            <DataTable className="bookings-table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Workers</TableHead>
+                  <TableHead>Image</TableHead>
+                  <TableHead>Featured</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody>
+              <TableBody>
                 {filteredServices.map(
                   (service) => (
-                    <tr
-                      key={
-                        service.id
-                      }
-                    >
-                      <td>
+                    <TableRow>
+                      <TableCell>
                         <strong>
                           {
                             service.display_order
                           }
                         </strong>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <strong>
                           {
                             service.name
                           }
                         </strong>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {service.category_name ||
                           'General'}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <span
                           className={
                             service.is_active
@@ -1392,24 +1397,24 @@ export default function Services() {
                             ? 'Active'
                             : 'Inactive'}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {service.hourly_price ===
                         null
                           ? 'Not set'
                           : `${service.currency} ${service.hourly_price}/hr`}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <strong>
                           {
                             service.worker_count
                           }
                         </strong>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {service.image_url ? (
                           <img
                             src={
@@ -1461,9 +1466,9 @@ export default function Services() {
                             />
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {service.is_featured ? (
                           <Star
                             size={
@@ -1482,9 +1487,9 @@ export default function Services() {
                             —
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <div
                           style={{
                             display:
@@ -1540,12 +1545,12 @@ export default function Services() {
                                 : 'Activate'}
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </DataTable>
           </div>
         )}
       </div>
@@ -2191,7 +2196,7 @@ export default function Services() {
                                 'auto',
                             }}
                           >
-                            <table
+                            <DataTable
                               style={{
                                 width:
                                   '100%',
@@ -2199,8 +2204,8 @@ export default function Services() {
                                   'collapse',
                               }}
                             >
-                              <thead>
-                                <tr>
+                              <TableHeader>
+                                <TableRow>
                                   {[
                                     'Price',
                                     'From',
@@ -2233,20 +2238,16 @@ export default function Services() {
                                       </th>
                                     )
                                   )}
-                                </tr>
-                              </thead>
+                                </TableRow>
+                              </TableHeader>
 
-                              <tbody>
+                              <TableBody>
                                 {priceHistory.map(
                                   (
                                     row
                                   ) => (
-                                    <tr
-                                      key={
-                                        row.id
-                                      }
-                                    >
-                                      <td
+                                    <TableRow>
+                                      <TableCell
                                         style={{
                                           padding:
                                             '9px 10px',
@@ -2263,9 +2264,9 @@ export default function Services() {
                                           row.price
                                         }
                                         /hr
-                                      </td>
+                                      </TableCell>
 
-                                      <td
+                                      <TableCell
                                         style={{
                                           padding:
                                             '9px 10px',
@@ -2278,9 +2279,9 @@ export default function Services() {
                                         {formatDate(
                                           row.effective_from
                                         )}
-                                      </td>
+                                      </TableCell>
 
-                                      <td
+                                      <TableCell
                                         style={{
                                           padding:
                                             '9px 10px',
@@ -2293,9 +2294,9 @@ export default function Services() {
                                         {formatDate(
                                           row.effective_to
                                         )}
-                                      </td>
+                                      </TableCell>
 
-                                      <td
+                                      <TableCell
                                         style={{
                                           padding:
                                             '9px 10px',
@@ -2312,12 +2313,12 @@ export default function Services() {
                                         {row.is_active
                                           ? 'Current'
                                           : 'Historical'}
-                                      </td>
-                                    </tr>
+                                      </TableCell>
+                                    </TableRow>
                                   )
                                 )}
-                              </tbody>
-                            </table>
+                              </TableBody>
+                            </DataTable>
                           </div>
                         )}
                       </div>
