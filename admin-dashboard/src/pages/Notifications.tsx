@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { adminAction } from '../lib/adminAction'
 
+
 type Notification = {
   id: string
   user_id: string

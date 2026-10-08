@@ -319,7 +319,7 @@ const netCollected =
               <h2>Platform overview</h2>
 
               <p>
-                Current activity across TempStaff.
+                Current activity across KvikStaff.
               </p>
             </div>
 

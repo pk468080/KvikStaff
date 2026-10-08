@@ -3,6 +3,20 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { adminAction } from '../lib/adminAction'
 
+import { PageHeader } from '../components/ui/PageHeader'
+import { DataTable, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/DataTable'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { LoadingState } from '../components/ui/LoadingState'
+import { ErrorState } from '../components/ui/ErrorState'
+
+
+
+
+
+
+
 type Worker = {
   id: string
   full_name: string | null
@@ -928,9 +942,9 @@ export default function Workers() {
         </div>
       ) : (
         <div className="workers-table-wrap">
-          <table className="workers-table">
-            <thead>
-              <tr>
+          <DataTable className="workers-table">
+            <TableHeader>
+              <TableRow>
                 <th>
                   Worker
                 </th>
@@ -955,18 +969,14 @@ export default function Workers() {
                 <th>
                   Actions
                 </th>
-              </tr>
-            </thead>
+              </TableRow>
+            </TableHeader>
 
-            <tbody>
+            <TableBody>
               {filteredWorkers.map(
                 worker => (
-                  <tr
-                    key={
-                      worker.id
-                    }
-                  >
-                    <td
+                  <TableRow>
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -989,9 +999,9 @@ export default function Workers() {
                         {worker.email ||
                           'No email'}
                       </div>
-                    </td>
+                    </TableCell>
 
-                    <td
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -1008,9 +1018,9 @@ export default function Workers() {
                           worker.worker_status
                         }
                       </span>
-                    </td>
+                    </TableCell>
 
-                    <td
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -1043,9 +1053,9 @@ export default function Workers() {
                           Verify
                         </button>
                       )}
-                    </td>
+                    </TableCell>
 
-                    <td
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -1054,9 +1064,9 @@ export default function Workers() {
                       {worker.rating.toFixed(
                         1,
                       )}
-                    </td>
+                    </TableCell>
 
-                    <td
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -1064,9 +1074,9 @@ export default function Workers() {
                       {
                         worker.total_completed_jobs
                       }
-                    </td>
+                    </TableCell>
 
-                    <td
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -1075,9 +1085,9 @@ export default function Workers() {
                         worker.service_radius_km
                       }{' '}
                       km
-                    </td>
+                    </TableCell>
 
-                    <td
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -1110,9 +1120,9 @@ export default function Workers() {
                           Suspended
                         </option>
                       </select>
-                    </td>
+                    </TableCell>
 
-                    <td
+                    <TableCell
                       style={
                         styles.td
                       }
@@ -1171,12 +1181,12 @@ export default function Workers() {
                           Remove
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ),
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </DataTable>
         </div>
       )}
 

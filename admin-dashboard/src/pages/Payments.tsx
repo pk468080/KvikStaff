@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { adminAction } from '../lib/adminAction'
+import { PageHeader } from '../components/ui/PageHeader'
+import { DataTable, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/DataTable'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { LoadingState } from '../components/ui/LoadingState'
+import { ErrorState } from '../components/ui/ErrorState'
+
 import { supabase } from '../lib/supabase'
+
 type PaymentStatus =
   | 'pending'
   | 'paid'
@@ -981,34 +990,34 @@ const safePage = Math.min(page, totalPages)
           ) : (
             <>
               <div className="bookings-table-wrap">
-                <table className="bookings-table">
-                  <thead>
-                    <tr>
-                      <th>Payment</th>
-                      <th>Booking</th>
-                      <th>Provider</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th>Paid</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
+                <DataTable>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Booking</TableHead>
+                      <TableHead>Provider</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Paid</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
 
-                  <tbody>
+                  <TableBody>
                     {paginate(filteredPayments, safePage).map(payment => (
-                      <tr key={payment.id}>
-                        <td>
+                      <TableRow>
+                        <TableCell>
                           <strong>{shortId(payment.id)}</strong>
                           <div style={{ fontSize: 12, color: '#64748b' }}>
                             {formatDate(payment.created_at)}
                           </div>
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           <strong>{shortId(payment.booking_id)}</strong>
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           <div>{payment.provider}</div>
                           <div
                             style={{
@@ -1018,22 +1027,22 @@ const safePage = Math.min(page, totalPages)
                           >
                             Order: {shortId(payment.provider_order_id)}
                           </div>
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {formatMoney(
                             payment.amount,
                             payment.currency,
                           )}
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {renderPaymentStatus(payment.status)}
-                        </td>
+                        </TableCell>
 
-                        <td>{formatDate(payment.paid_at)}</td>
+                        <TableCell>{formatDate(payment.paid_at)}</TableCell>
 
-                        <td>
+                        <TableCell>
                           <div
                             style={{
                               display: 'flex',
@@ -1062,11 +1071,11 @@ const safePage = Math.min(page, totalPages)
                               </button>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </DataTable>
               </div>
 
               {renderPagination(filteredPayments.length)}
@@ -1083,25 +1092,25 @@ const safePage = Math.min(page, totalPages)
           ) : (
             <>
               <div className="bookings-table-wrap">
-                <table className="bookings-table">
-                  <thead>
-                    <tr>
-  <th>Refund</th>
-  <th>Payment</th>
-  <th>Booking</th>
-  <th>Amount</th>
-  <th>Status</th>
-  <th>Provider Refund</th>
-  <th>Requested</th>
-  <th>Actions</th>
-</tr>
-                  </thead>
+                <DataTable>
+                  <TableHeader>
+                    <TableRow>
+  <TableHead>Refund</TableHead>
+  <TableHead>Payment</TableHead>
+  <TableHead>Booking</TableHead>
+  <TableHead>Amount</TableHead>
+  <TableHead>Status</TableHead>
+  <TableHead>Provider Refund</TableHead>
+  <TableHead>Requested</TableHead>
+  <TableHead>Actions</TableHead>
+</TableRow>
+                  </TableHeader>
 
-                  <tbody>
+                  <TableBody>
                     {paginate(filteredRefunds, safePage).map(refund => (
-                      <tr key={refund.id}>
+                      <TableRow>
                         
-                          <td>
+                          <TableCell>
   <strong>{shortId(refund.id)}</strong>
 
   <div
@@ -1121,30 +1130,30 @@ const safePage = Math.min(page, totalPages)
   >
     {refund.reason || 'No reason'}
   </div>
-</td>
+</TableCell>
 
-                        <td>{shortId(refund.payment_id)}</td>
-                        <td>{shortId(refund.booking_id)}</td>
+                        <TableCell>{shortId(refund.payment_id)}</TableCell>
+                        <TableCell>{shortId(refund.booking_id)}</TableCell>
 
-                        <td>
+                        <TableCell>
                           {formatMoney(
                             refund.amount,
                             refund.currency,
                           )}
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {renderPaymentStatus(refund.status)}
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {shortId(refund.provider_refund_id)}
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {formatDate(refund.requested_at)}
-                        </td>
-                        <td>
+                        </TableCell>
+                        <TableCell>
   {refund.status === 'pending' && (
   <button
     className="dashboard-refresh"
@@ -1212,11 +1221,11 @@ const safePage = Math.min(page, totalPages)
       Failed
     </span>
   )}
-</td>
-                      </tr>
+</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </DataTable>
               </div>
 
               {renderPagination(filteredRefunds.length)}
@@ -1233,28 +1242,26 @@ const safePage = Math.min(page, totalPages)
           ) : (
             <>
               <div className="bookings-table-wrap">
-                <table className="bookings-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice</th>
-                      <th>Booking</th>
-                      <th>Base</th>
-                      <th>Platform Fee</th>
-                      <th>Tax</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                      <th>Issued</th>
-                    </tr>
-                  </thead>
+                <DataTable>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice</TableHead>
+                      <TableHead>Booking</TableHead>
+                      <TableHead>Base</TableHead>
+                      <TableHead>Platform Fee</TableHead>
+                      <TableHead>Tax</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Issued</TableHead>
+                    </TableRow>
+                  </TableHeader>
 
-                  <tbody>
+                  <TableBody>
                     {paginate(filteredInvoices, safePage).map(invoice => (
-                      <tr
-                        key={invoice.id}
-                        onClick={() => openInvoice(invoice)}
+                      <TableRow onClick={() => openInvoice(invoice)}
                         style={{ cursor: 'pointer' }}
                       >
-                        <td>
+                        <TableCell>
                           <strong>{invoice.invoice_number}</strong>
                           <div
                             style={{
@@ -1264,49 +1271,49 @@ const safePage = Math.min(page, totalPages)
                           >
                             {shortId(invoice.id)}
                           </div>
-                        </td>
+                        </TableCell>
 
-                        <td>{shortId(invoice.booking_id)}</td>
+                        <TableCell>{shortId(invoice.booking_id)}</TableCell>
 
-                        <td>
+                        <TableCell>
                           {formatMoney(
                             invoice.base_amount,
                             invoice.currency,
                           )}
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {formatMoney(
                             invoice.platform_fee,
                             invoice.currency,
                           )}
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {formatMoney(
                             invoice.tax_amount,
                             invoice.currency,
                           )}
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           <strong>
                             {formatMoney(
                               invoice.total_amount,
                               invoice.currency,
                             )}
                           </strong>
-                        </td>
+                        </TableCell>
 
-                        <td>
+                        <TableCell>
                           {renderPaymentStatus(invoice.status)}
-                        </td>
+                        </TableCell>
 
-                        <td>{formatDate(invoice.issued_at)}</td>
-                      </tr>
+                        <TableCell>{formatDate(invoice.issued_at)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </DataTable>
               </div>
 
               {renderPagination(filteredInvoices.length)}
@@ -1322,31 +1329,31 @@ const safePage = Math.min(page, totalPages)
         ) : (
           <>
             <div className="bookings-table-wrap">
-              <table className="bookings-table">
-                <thead>
-                  <tr>
-                    <th>Provider</th>
-                    <th>Event</th>
-                    <th>Event ID</th>
-                    <th>Signature</th>
-                    <th>Status</th>
-                    <th>Received</th>
-                    <th>Processed</th>
-                  </tr>
-                </thead>
+              <DataTable>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Event ID</TableHead>
+                    <TableHead>Signature</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Received</TableHead>
+                    <TableHead>Processed</TableHead>
+                  </TableRow>
+                </TableHeader>
 
-                <tbody>
+                <TableBody>
                   {paginate(filteredWebhooks, safePage).map(webhook => (
-                    <tr key={webhook.id}>
-                      <td>{webhook.provider}</td>
+                    <TableRow>
+                      <TableCell>{webhook.provider}</TableCell>
 
-                      <td>
+                      <TableCell>
                         <strong>{webhook.event_name}</strong>
-                      </td>
+                      </TableCell>
 
-                      <td>{shortId(webhook.event_id)}</td>
+                      <TableCell>{shortId(webhook.event_id)}</TableCell>
 
-                      <td>
+                      <TableCell>
                         <span
                           style={{
                             color: webhook.signature_verified
@@ -1359,23 +1366,23 @@ const safePage = Math.min(page, totalPages)
                             ? 'Verified'
                             : 'Not verified'}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {renderPaymentStatus(webhook.status)}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {formatDate(webhook.received_at)}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {formatDate(webhook.processed_at)}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </DataTable>
             </div>
 
             {renderPagination(filteredWebhooks.length)}
@@ -1385,35 +1392,35 @@ const safePage = Math.min(page, totalPages)
                 <h3>Razorpay webhook history</h3>
 
                 <div className="bookings-table-wrap">
-                  <table className="bookings-table">
-                    <thead>
-                      <tr>
-                        <th>Event</th>
-                        <th>Order ID</th>
-                        <th>Payment ID</th>
-                        <th>Received</th>
-                      </tr>
-                    </thead>
+                  <DataTable>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Payment ID</TableHead>
+                        <TableHead>Received</TableHead>
+                      </TableRow>
+                    </TableHeader>
 
-                    <tbody>
+                    <TableBody>
                       {razorpayWebhooks
                         .slice(0, 20)
                         .map(event => (
-                          <tr key={event.event_id}>
-                            <td>{event.event_type}</td>
-                            <td>
+                          <TableRow>
+                            <TableCell>{event.event_type}</TableCell>
+                            <TableCell>
                               {shortId(event.order_id)}
-                            </td>
-                            <td>
+                            </TableCell>
+                            <TableCell>
                               {shortId(event.payment_id)}
-                            </td>
-                            <td>
+                            </TableCell>
+                            <TableCell>
                               {formatDate(event.received_at)}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </DataTable>
                 </div>
               </div>
             )}
@@ -1433,49 +1440,49 @@ const safePage = Math.min(page, totalPages)
           </div>
 
           <div className="bookings-table-wrap">
-            <table className="bookings-table">
-              <thead>
-                <tr>
-                  <th>Request</th>
-                  <th>Booking</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Reason</th>
-                  <th>Requested</th>
-                </tr>
-              </thead>
+            <DataTable>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Request</TableHead>
+                  <TableHead>Booking</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Requested</TableHead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody>
+              <TableBody>
                 {refundRequests.slice(0, 20).map(request => (
-                  <tr key={request.id}>
-                    <td>
+                  <TableRow>
+                    <TableCell>
                       <strong>{shortId(request.id)}</strong>
-                    </td>
+                    </TableCell>
 
-                    <td>{shortId(request.booking_id)}</td>
+                    <TableCell>{shortId(request.booking_id)}</TableCell>
 
-                    <td>
+                    <TableCell>
                       {formatMoney(
                         request.amount,
                         request.currency,
                       )}
-                    </td>
+                    </TableCell>
 
-                    <td>
+                    <TableCell>
                       {renderPaymentStatus(request.status)}
-                    </td>
+                    </TableCell>
 
-                    <td>
+                    <TableCell>
                       {request.reason || '—'}
-                    </td>
+                    </TableCell>
 
-                    <td>
+                    <TableCell>
                       {formatDate(request.requested_at)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </DataTable>
           </div>
         </div>
       )}

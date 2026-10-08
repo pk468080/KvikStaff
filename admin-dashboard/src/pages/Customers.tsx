@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { adminAction } from '../lib/adminAction'
+import { PageHeader } from '../components/ui/PageHeader'
+import { DataTable, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/DataTable'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { LoadingState } from '../components/ui/LoadingState'
+import { ErrorState } from '../components/ui/ErrorState'
+
+
+
+
 
 type Customer = {
   id: string
@@ -334,7 +345,7 @@ export default function Customers() {
           </h1>
 
           <p>
-            Manage TempStaff customers
+            Manage KvikStaff customers
             and account access.
           </p>
         </div>
@@ -561,9 +572,9 @@ export default function Customers() {
           </div>
         ) : (
           <div className="bookings-table-wrap">
-            <table className="bookings-table">
-              <thead>
-                <tr>
+            <DataTable className="bookings-table">
+              <TableHeader>
+                <TableRow>
                   <th>
                     Customer
                   </th>
@@ -595,18 +606,14 @@ export default function Customers() {
                   <th>
                     Action
                   </th>
-                </tr>
-              </thead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody>
+              <TableBody>
                 {filteredCustomers.map(
                   customer => (
-                    <tr
-                      key={
-                        customer.id
-                      }
-                    >
-                      <td>
+                    <TableRow>
+                      <TableCell>
                         <div
                           style={{
                             display:
@@ -661,9 +668,9 @@ export default function Customers() {
                               'Unnamed Customer'}
                           </strong>
                         </div>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <div>
                           {customer.email ||
                             'No email'}
@@ -680,18 +687,18 @@ export default function Customers() {
                           {customer.phone ||
                             'No phone'}
                         </div>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <span className="booking-id">
                           {customer.id.slice(
                             0,
                             8
                           )}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <span
                           className={
                             customer.is_active
@@ -703,31 +710,31 @@ export default function Customers() {
                             ? 'Active'
                             : 'Inactive'}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <strong>
                           {
                             customer.booking_count
                           }
                         </strong>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <strong>
                           {formatAmount(
                             customer.total_spend
                           )}
                         </strong>
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {formatDate(
                           customer.created_at
                         )}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         <button
                           className="dashboard-refresh"
                           disabled={
@@ -747,12 +754,12 @@ export default function Customers() {
                               ? 'Deactivate'
                               : 'Activate'}
                         </button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </DataTable>
           </div>
         )}
       </div>
