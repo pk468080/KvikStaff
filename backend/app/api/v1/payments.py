@@ -1,9 +1,10 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 
 from app.core.database import get_db
+from app.core.idempotency import idempotent
 from app.core.security import (
     CurrentUser,
     get_customer,
@@ -59,8 +60,10 @@ async def get_booking_payment_details(
     "/order",
     response_model=RazorpayOrderResponse,
 )
+@idempotent(action="create_razorpay_order")
 async def create_razorpay_order(
     request: CreateRazorpayOrderRequest,
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
     current_user: CurrentUser = Depends(
         get_customer
     ),
