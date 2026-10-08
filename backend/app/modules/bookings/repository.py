@@ -23,6 +23,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.idempotency.atomic import claim_or_replay, complete_idempotency
 
 
 
@@ -175,6 +176,10 @@ class BookingsRepository:
         off_dates: list[date],
 
         booking_type: str,
+
+        idempotency_key: str,
+
+        request_hash: str,
 
     ) -> dict[str, Any]:
 
@@ -352,6 +357,10 @@ class BookingsRepository:
 
         notes: str | None,
 
+        idempotency_key: str,
+
+        request_hash: str,
+
     ) -> dict[str, Any]:
 
         async with self.db.begin():
@@ -363,6 +372,18 @@ class BookingsRepository:
             )
 
 
+
+
+            acquired, existing_response = await claim_or_replay(
+                self.db,
+                user_id=customer_id,
+                action=f"create_{booking_type}_booking",
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+            )
+
+            if not acquired:
+                return existing_response
 
             result = await self.db.execute(
 
@@ -426,9 +447,18 @@ class BookingsRepository:
 
             value = result.scalar_one()
 
+            result_dict = self._to_dict(value)
 
+            await complete_idempotency(
+                self.db,
+                user_id=customer_id,
+                action=f"create_{booking_type}_booking",
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                response=result_dict,
+            )
 
-        return self._to_dict(value)
+        return result_dict
 
 
 
@@ -460,6 +490,10 @@ class BookingsRepository:
 
         booking_type: str,
 
+        idempotency_key: str,
+
+        request_hash: str,
+
     ) -> dict[str, Any]:
 
         async with self.db.begin():
@@ -471,6 +505,18 @@ class BookingsRepository:
             )
 
 
+
+
+            acquired, existing_response = await claim_or_replay(
+                self.db,
+                user_id=customer_id,
+                action=f"create_{booking_type}_booking",
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+            )
+
+            if not acquired:
+                return existing_response
 
             if booking_type == "scheduled":
 
@@ -640,9 +686,18 @@ class BookingsRepository:
 
             value = result.scalar_one()
 
+            result_dict = self._to_dict(value)
 
+            await complete_idempotency(
+                self.db,
+                user_id=customer_id,
+                action=f"create_{booking_type}_booking",
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                response=result_dict,
+            )
 
-        return self._to_dict(value)
+        return result_dict
 
 
 
