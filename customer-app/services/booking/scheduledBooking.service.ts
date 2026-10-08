@@ -1,4 +1,7 @@
-import { apiRequest } from '../../lib/api'
+import {
+  apiRequest,
+  createIdempotencyKey,
+} from '../../lib/api'
 
 import type {
   BookingCreationResult,
@@ -12,12 +15,16 @@ export async function createCustomerScheduledBooking(
   > & {
     selectedWeekdays?: number[]
   },
+  idempotencyKey = createIdempotencyKey(
+    'booking-scheduled',
+  ),
 ): Promise<BookingCreationResult> {
   const result =
     await apiRequest<BookingCreationResult>(
       '/bookings/scheduled',
       {
         method: 'POST',
+        idempotencyKey,
         body: JSON.stringify({
           service_variant_id:
             input.serviceVariantId,

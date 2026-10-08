@@ -1,4 +1,7 @@
-import { apiRequest } from '../../lib/api'
+import {
+  apiRequest,
+  createIdempotencyKey,
+} from '../../lib/api'
 
 import type { BookingCreationResult } from '../../types/booking'
 
@@ -12,12 +15,16 @@ export type CreateInstantBookingInput = {
 
 export async function createCustomerInstantBooking(
   input: CreateInstantBookingInput,
+  idempotencyKey = createIdempotencyKey(
+    'booking-instant',
+  ),
 ): Promise<BookingCreationResult> {
   const result =
     await apiRequest<BookingCreationResult>(
       '/bookings/instant',
       {
         method: 'POST',
+        idempotencyKey,
         body: JSON.stringify({
           service_variant_id:
             input.serviceVariantId,

@@ -9,6 +9,27 @@ if (!API_BASE_URL) {
   )
 }
 
+export type ApiRequestOptions =
+  RequestInit & {
+    idempotencyKey?: string
+  }
+
+export function createIdempotencyKey(
+  prefix = 'kvikstaff',
+): string {
+  const timestamp =
+    Date.now().toString(36)
+
+  const randomPart =
+    `${Math.random()
+      .toString(36)
+      .slice(2)}${Math.random()
+      .toString(36)
+      .slice(2)}`
+
+  return `${prefix}-${timestamp}-${randomPart}`
+}
+
 async function getAccessToken(): Promise<string> {
   const {
     data: { session },
@@ -70,7 +91,7 @@ function getErrorMessage(
 
 async function request<T>(
   path: string,
-  options: RequestInit = {},
+  options: ApiRequestOptions = {},
   requiresAuth: boolean,
 ): Promise<T> {
   const baseUrl =
@@ -81,8 +102,13 @@ async function request<T>(
       ? path
       : `/${path}`
 
+  const {
+    idempotencyKey,
+    ...requestOptions
+  } = options
+
   const headers = new Headers(
-    options.headers,
+    requestOptions.headers,
   )
 
   if (requiresAuth) {
@@ -95,8 +121,15 @@ async function request<T>(
     )
   }
 
+  if (idempotencyKey) {
+    headers.set(
+      'Idempotency-Key',
+      idempotencyKey,
+    )
+  }
+
   if (
-    options.body &&
+    requestOptions.body &&
     !headers.has('Content-Type')
   ) {
     headers.set(
@@ -108,7 +141,7 @@ async function request<T>(
   const response = await fetch(
     `${baseUrl}${normalizedPath}`,
     {
-      ...options,
+      ...requestOptions,
       headers,
     },
   )
@@ -142,7 +175,7 @@ async function request<T>(
 
 export async function apiRequest<T>(
   path: string,
-  options: RequestInit = {},
+  options: ApiRequestOptions = {},
 ): Promise<T> {
   return request<T>(
     path,
@@ -153,7 +186,7 @@ export async function apiRequest<T>(
 
 export async function publicApiRequest<T>(
   path: string,
-  options: RequestInit = {},
+  options: ApiRequestOptions = {},
 ): Promise<T> {
   return request<T>(
     path,

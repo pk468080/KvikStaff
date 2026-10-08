@@ -1,4 +1,7 @@
-import { apiRequest } from '../../lib/api'
+import {
+  apiRequest,
+  createIdempotencyKey,
+} from '../../lib/api'
 
 import type {
   BookingCreationResult,
@@ -7,12 +10,16 @@ import type {
 
 export async function createCustomerRecurringBooking(
   input: MultiOccurrenceBookingInput,
+  idempotencyKey = createIdempotencyKey(
+    'booking-recurring',
+  ),
 ): Promise<BookingCreationResult> {
   const result =
     await apiRequest<BookingCreationResult>(
       '/bookings/recurring',
       {
         method: 'POST',
+        idempotencyKey,
         body: JSON.stringify({
           service_variant_id:
             input.serviceVariantId,

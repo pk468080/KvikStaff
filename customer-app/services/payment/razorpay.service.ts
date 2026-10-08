@@ -1,4 +1,7 @@
-import { apiRequest } from '../../lib/api'
+import {
+  apiRequest,
+  createIdempotencyKey,
+} from '../../lib/api'
 
 export type RazorpayOrder = {
   keyId: string
@@ -175,6 +178,9 @@ export async function createRazorpayOrder(
   bookingId: string,
   expectedAmount: number,
   expectedCurrency: string,
+  idempotencyKey = createIdempotencyKey(
+    `payment-order-${bookingId}`,
+  ),
 ): Promise<RazorpayOrder> {
   if (!bookingId) {
     throw new Error(
@@ -189,6 +195,7 @@ export async function createRazorpayOrder(
       '/payments/order',
       {
         method: 'POST',
+        idempotencyKey,
         body: JSON.stringify({
           booking_id:
             bookingId,
