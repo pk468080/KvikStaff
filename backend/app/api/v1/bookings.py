@@ -89,6 +89,7 @@ async def create_instant_booking(
     return await service.create_instant_booking(
         request=request,
         customer_id=UUID(current_user.id),
+        idempotency_key=idempotency_key,
     )
 
 
@@ -103,6 +104,7 @@ async def create_scheduled_booking(
     return await service.create_scheduled_booking(
         request=request,
         customer_id=UUID(current_user.id),
+        idempotency_key=idempotency_key,
     )
 
 
@@ -117,6 +119,7 @@ async def create_recurring_booking(
     return await service.create_recurring_booking(
         request=request,
         customer_id=UUID(current_user.id),
+        idempotency_key=idempotency_key,
     )
 
 
