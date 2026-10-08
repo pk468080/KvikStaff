@@ -51,6 +51,10 @@ import {
 import type { BookingDraft } from '../types/booking'
 import type { HomeService } from '../types/service'
 
+import { useRef } from 'react'
+import {
+  createIdempotencyKey,
+} from '../lib/api'
 
 type CustomerLocation = {
   latitude: number
@@ -120,7 +124,14 @@ export default function CustomerNavigator({
   onSignOut,
 }: CustomerNavigatorProps) {
   const insets = useSafeAreaInsets()
+  const instantBookingIdempotencyKeyRef =
+    useRef<string | null>(null)
 
+  const scheduledBookingIdempotencyKeyRef =
+    useRef<string | null>(null)
+
+  const recurringBookingIdempotencyKeyRef =
+    useRef<string | null>(null)
   return (
     <Stack.Navigator
       screenOptions={{
@@ -322,18 +333,26 @@ export default function CustomerNavigator({
               draft.bookingType ===
               'instant'
             ) {
-              const result =
-                await createCustomerInstantBooking(
-                  {
-                    serviceVariantId:
-                      service.serviceVariantId,
-                    addressId,
-                    startTime:
-                      draft.startTime,
-                    endTime:
-                      draft.endTime,
-                  },
-                )
+              const idempotencyKey =
+  instantBookingIdempotencyKeyRef.current ??
+  (instantBookingIdempotencyKeyRef.current =
+    createIdempotencyKey(
+      'booking-instant',
+    ))
+
+const result =
+  await createCustomerInstantBooking(
+    {
+      serviceVariantId:
+        service.serviceVariantId,
+      addressId,
+      startTime:
+        draft.startTime,
+      endTime:
+        draft.endTime,
+    },
+    idempotencyKey,
+  )
 
               if (
                 result.instant_available ===
@@ -341,6 +360,8 @@ export default function CustomerNavigator({
                 result.fallback_to_scheduled ===
                   true
               ) {
+
+                instantBookingIdempotencyKeyRef.current = null
                 navigation.navigate(
                   'Booking',
                   { service },
@@ -370,8 +391,14 @@ export default function CustomerNavigator({
               draft.bookingType ===
               'scheduled'
             ) {
+              const idempotencyKey =
+  scheduledBookingIdempotencyKeyRef.current ??
+  (scheduledBookingIdempotencyKeyRef.current =
+    createIdempotencyKey(
+      'booking-scheduled',
+    ))
               const result =
-                await createCustomerScheduledBooking(
+  await createCustomerScheduledBooking(
                   {
                     serviceVariantId:
                       service.serviceVariantId,
@@ -412,6 +439,7 @@ export default function CustomerNavigator({
                     excludedDates:
                       draft.excludedDates,
                   },
+                  idempotencyKey,
                 )
 
               navigation.navigate(
@@ -499,7 +527,12 @@ export default function CustomerNavigator({
                 )}`,
               )
             }
-
+            const idempotencyKey =
+  recurringBookingIdempotencyKeyRef.current ??
+  (recurringBookingIdempotencyKeyRef.current =
+    createIdempotencyKey(
+      'booking-recurring',
+    ))
             const result =
               await createCustomerRecurringBooking(
                 {
@@ -535,8 +568,11 @@ export default function CustomerNavigator({
                   excludedDates:
                     expectedExcludedDates,
                 },
+                idempotencyKey,
               )
-
+              instantBookingIdempotencyKeyRef.current = null
+scheduledBookingIdempotencyKeyRef.current = null
+recurringBookingIdempotencyKeyRef.current = null
             navigation.navigate(
               'Payment',
               {

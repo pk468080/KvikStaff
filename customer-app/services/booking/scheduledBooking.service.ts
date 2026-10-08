@@ -1,6 +1,5 @@
 import {
   apiRequest,
-  createIdempotencyKey,
 } from '../../lib/api'
 
 import type {
@@ -15,9 +14,7 @@ export async function createCustomerScheduledBooking(
   > & {
     selectedWeekdays?: number[]
   },
-  idempotencyKey = createIdempotencyKey(
-    'booking-scheduled',
-  ),
+ idempotencyKey: string,
 ): Promise<BookingCreationResult> {
   const result =
     await apiRequest<BookingCreationResult>(

@@ -1,6 +1,5 @@
 import {
   apiRequest,
-  createIdempotencyKey,
 } from '../../lib/api'
 
 import type { BookingCreationResult } from '../../types/booking'
@@ -15,9 +14,7 @@ export type CreateInstantBookingInput = {
 
 export async function createCustomerInstantBooking(
   input: CreateInstantBookingInput,
-  idempotencyKey = createIdempotencyKey(
-    'booking-instant',
-  ),
+  idempotencyKey: string,
 ): Promise<BookingCreationResult> {
   const result =
     await apiRequest<BookingCreationResult>(

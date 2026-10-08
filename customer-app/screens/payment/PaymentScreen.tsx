@@ -9,7 +9,14 @@ import {
   View,
 } from 'react-native'
 
-import { useEffect, useState } from 'react'
+import {
+  createIdempotencyKey,
+} from '../../lib/api'
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import RazorpayCheckout from 'react-native-razorpay'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
@@ -49,7 +56,8 @@ export default function PaymentScreen({
   const [processing, setProcessing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+  const paymentOrderIdempotencyKeyRef =
+    useRef<string | null>(null)
   useEffect(() => {
     let cancelled = false
 
@@ -101,11 +109,19 @@ export default function PaymentScreen({
     try {
       let order: RazorpayOrder
 
-      order = await createRazorpayOrder(
-        bookingId,
-        details.amount,
-        details.currency,
-      )
+      const idempotencyKey =
+  paymentOrderIdempotencyKeyRef.current ??
+  (paymentOrderIdempotencyKeyRef.current =
+    createIdempotencyKey(
+      `payment-order-${bookingId}`,
+    ))
+
+order = await createRazorpayOrder(
+  bookingId,
+  details.amount,
+  details.currency,
+  idempotencyKey,
+)
 
       /*
        * The backend discovered that this payment was

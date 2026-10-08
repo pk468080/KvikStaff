@@ -1,6 +1,5 @@
 import {
   apiRequest,
-  createIdempotencyKey,
 } from '../../lib/api'
 
 import type {
@@ -10,9 +9,7 @@ import type {
 
 export async function createCustomerRecurringBooking(
   input: MultiOccurrenceBookingInput,
-  idempotencyKey = createIdempotencyKey(
-    'booking-recurring',
-  ),
+  idempotencyKey: string,
 ): Promise<BookingCreationResult> {
   const result =
     await apiRequest<BookingCreationResult>(
