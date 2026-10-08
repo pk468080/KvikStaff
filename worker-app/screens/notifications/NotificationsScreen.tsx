@@ -22,7 +22,8 @@ import EmptyState from '../../components/ui/EmptyState'
 
 import ErrorState from '../../components/ui/ErrorState'
 
-import StatusBadge from '../../components/ui/StatusBadge'
+import StatusBadge from '../../components/ui/StatusBadge';
+
 
 import {
   UI,
@@ -89,7 +90,7 @@ function getNotificationIconStyle(
       backgroundColor:
         UI.colors.infoBackground,
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     }
   }
 
@@ -139,7 +140,7 @@ export default function NotificationsScreen({
               name="notifications-outline"
               size={28}
               color={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
             />
           </View>
@@ -147,7 +148,7 @@ export default function NotificationsScreen({
           <ActivityIndicator
             size="large"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -204,7 +205,7 @@ export default function NotificationsScreen({
               handleRefresh
             }
             tintColor={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
         }
@@ -477,7 +478,7 @@ export default function NotificationsScreen({
                 name="notifications-off-outline"
                 size={30}
                 color={
-                  UI.colors.secondary
+                  UI.colors.primaryBlue
                 }
               />
             </View>
@@ -723,7 +724,7 @@ export default function NotificationsScreen({
                             name="chevron-forward"
                             size={18}
                             color={
-                              UI.colors.secondary
+                              UI.colors.primaryBlue
                             }
                           />
                         </View>
@@ -745,7 +746,7 @@ export default function NotificationsScreen({
                             name="chevron-forward"
                             size={18}
                             color={
-                              UI.colors.secondary
+                              UI.colors.primaryBlue
                             }
                           />
                         </View>
@@ -825,7 +826,7 @@ const styles = StyleSheet.create({
     letterSpacing:
       1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   topBarTitle: {
@@ -968,7 +969,7 @@ const styles = StyleSheet.create({
       UI.colors.warningBackground,
     borderWidth: 1,
     borderColor:
-      '#FDE68A',
+      UI.colors.warningBackground,
   },
 
   warningIcon: {
@@ -1033,7 +1034,7 @@ const styles = StyleSheet.create({
     letterSpacing:
       1.05,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   sectionTitle: {
@@ -1070,7 +1071,7 @@ const styles = StyleSheet.create({
     fontWeight:
       '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   list: {
@@ -1079,20 +1080,22 @@ const styles = StyleSheet.create({
   },
 
   notificationCard: {
-    padding:
-      UI.spacing.lg,
-    borderRadius:
-      UI.radius.xl,
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
+      backgroundColor: UI.colors.surface,
+      borderRadius: UI.radius.lg,
+      padding: UI.spacing.lg,
+      marginBottom: UI.spacing.md,
+      borderColor: UI.colors.border,
+      borderWidth: 1,
+      elevation: 2,
+      shadowColor: UI.colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
 
   notificationCardUnread: {
     borderColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
     backgroundColor:
       '#F8FFFE',
   },
@@ -1150,7 +1153,7 @@ const styles = StyleSheet.create({
     fontWeight:
       '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   timeText: {
@@ -1230,7 +1233,7 @@ const styles = StyleSheet.create({
     fontWeight:
       '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   emptyWrapper: {

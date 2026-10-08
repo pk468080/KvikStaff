@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui';
 import {
   useEffect,
   useState,
@@ -456,7 +457,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   ownBubble: {
-    backgroundColor: '#008A88',
+    backgroundColor: UI.colors.primaryBlue,
     borderBottomRightRadius: 3,
   },
   otherBubble: {
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: '#008A88',
+    backgroundColor: UI.colors.primaryBlue,
   },
   sendButtonDisabled: {
     backgroundColor: '#9ABABD',

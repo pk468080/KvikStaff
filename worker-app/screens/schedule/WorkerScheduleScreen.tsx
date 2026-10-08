@@ -22,6 +22,7 @@ import {
   View,
 } from 'react-native'
 
+
 import {
   Ionicons,
 } from '@expo/vector-icons'
@@ -233,7 +234,7 @@ function SettingRow({
         <Ionicons
           name={icon}
           size={19}
-          color={UI.colors.secondary}
+          color={UI.colors.primaryBlue}
         />
       </View>
 
@@ -742,13 +743,13 @@ export default function WorkerScheduleScreen({
             <Ionicons
               name="calendar-outline"
               size={26}
-              color={UI.colors.secondary}
+              color={UI.colors.primaryBlue}
             />
           </View>
 
           <ActivityIndicator
             size="small"
-            color={UI.colors.secondary}
+            color={UI.colors.primaryBlue}
           />
 
           <Text style={styles.loadingTitle}>
@@ -796,7 +797,7 @@ export default function WorkerScheduleScreen({
               onRefresh={() => {
                 void handleRefresh()
               }}
-              tintColor={UI.colors.secondary}
+              tintColor={UI.colors.primaryBlue}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -1074,7 +1075,7 @@ export default function WorkerScheduleScreen({
                               <Ionicons
                                 name="checkmark"
                                 size={14}
-                                color={UI.colors.secondary}
+                                color={UI.colors.primaryBlue}
                               />
                             ) : null}
                           </View>
@@ -1235,7 +1236,7 @@ export default function WorkerScheduleScreen({
                           size={19}
                           color={
                             selected
-                              ? UI.colors.secondary
+                              ? UI.colors.primaryBlue
                               : UI.colors.textMuted
                           }
                         />
@@ -1362,7 +1363,7 @@ export default function WorkerScheduleScreen({
                     <Ionicons
                       name="calendar-clear-outline"
                       size={25}
-                      color={UI.colors.secondary}
+                      color={UI.colors.primaryBlue}
                     />
                   </View>
 
@@ -1394,7 +1395,7 @@ export default function WorkerScheduleScreen({
                         color={
                           exception.exceptionType === 'unavailable'
                             ? UI.colors.error
-                            : UI.colors.secondary
+                            : UI.colors.primaryBlue
                         }
                       />
                     </View>
@@ -1517,7 +1518,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 1,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   topBarTitle: {
@@ -1640,7 +1641,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     backgroundColor: UI.colors.errorBackground,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: UI.colors.errorBackground,
   },
 
   errorIcon: {
@@ -1682,7 +1683,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.05,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   sectionTitle: {
@@ -1701,13 +1702,18 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    paddingHorizontal: UI.spacing.lg,
-    paddingVertical: UI.spacing.md,
-    borderRadius: UI.radius.xl,
-    backgroundColor: UI.colors.surface,
-    borderWidth: 1,
-    borderColor: UI.colors.border,
-  },
+      backgroundColor: UI.colors.surface,
+      borderRadius: UI.radius.lg,
+      padding: UI.spacing.lg,
+      marginBottom: UI.spacing.md,
+      borderColor: UI.colors.border,
+      borderWidth: 1,
+      elevation: 2,
+      shadowColor: UI.colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
 
   settingRow: {
     minHeight: 72,
@@ -1850,7 +1856,7 @@ const styles = StyleSheet.create({
 
   toggleActive: {
     backgroundColor: UI.colors.infoBackground,
-    borderColor: UI.colors.secondary,
+    borderColor: UI.colors.primaryBlue,
   },
 
   toggleThumb: {
@@ -1866,7 +1872,7 @@ const styles = StyleSheet.create({
   },
 
   toggleThumbActive: {
-    borderColor: UI.colors.secondary,
+    borderColor: UI.colors.primaryBlue,
     transform: [{ translateX: 18 }],
   },
 
@@ -1985,7 +1991,7 @@ const styles = StyleSheet.create({
 
   typeCardSelected: {
     backgroundColor: UI.colors.infoBackground,
-    borderColor: UI.colors.secondary,
+    borderColor: UI.colors.primaryBlue,
   },
 
   typeCardPressed: {
@@ -2089,7 +2095,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: UI.typography.small,
     fontWeight: '700',
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   exceptionTime: {

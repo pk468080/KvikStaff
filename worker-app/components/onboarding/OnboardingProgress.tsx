@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   percentText: {
     fontSize: UI.typography.small,
     fontWeight: '700',
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   track: {
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   fill: {
     height: '100%',
     borderRadius: UI.radius.pill,
-    backgroundColor: UI.colors.secondary,
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   labels: {

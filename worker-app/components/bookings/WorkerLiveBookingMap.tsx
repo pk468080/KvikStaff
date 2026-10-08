@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui';
 import {
   useEffect,
   useMemo,
@@ -439,7 +440,7 @@ const styles =
 
     distanceText: {
       color:
-        '#008A88',
+        UI.colors.primaryBlue,
       fontSize: 11,
       fontWeight:
         '800',

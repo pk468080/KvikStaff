@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       UI.colors.errorBackground,
     borderColor:
-      '#FECACA',
+      UI.colors.errorBackground,
   },
 
   statusText: {
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       UI.colors.errorBackground,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: UI.colors.errorBackground,
   },
 
   rejectionTitle: {

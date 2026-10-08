@@ -14,6 +14,8 @@ import {
   View,
 } from 'react-native'
 
+
+
 import {
   Ionicons,
 } from '@expo/vector-icons'
@@ -171,7 +173,7 @@ function getOfferStatusColor(
 
     case 'pending':
     default:
-      return UI.colors.secondary
+      return UI.colors.primaryBlue
   }
 }
 
@@ -199,7 +201,7 @@ function DetailRow({
           name={icon}
           size={18}
           color={
-            UI.colors.secondary
+            UI.colors.primaryBlue
           }
         />
       </View>
@@ -664,7 +666,7 @@ export default function BookingOfferScreen({
           <ActivityIndicator
             size="large"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -757,7 +759,7 @@ export default function BookingOfferScreen({
               )
             }}
             tintColor={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
         }
@@ -934,7 +936,7 @@ export default function BookingOfferScreen({
                   name="time-outline"
                   size={20}
                   color={
-                    UI.colors.secondary
+                    UI.colors.primaryBlue
                   }
                 />
               </View>
@@ -998,7 +1000,7 @@ export default function BookingOfferScreen({
               name="information-circle-outline"
               size={20}
               color={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
             />
 
@@ -1162,7 +1164,7 @@ export default function BookingOfferScreen({
                     name="location-outline"
                     size={22}
                     color={
-                      UI.colors.secondary
+                      UI.colors.primaryBlue
                     }
                   />
                 </View>
@@ -1214,7 +1216,7 @@ export default function BookingOfferScreen({
                     name="document-text-outline"
                     size={21}
                     color={
-                      UI.colors.secondary
+                      UI.colors.primaryBlue
                     }
                   />
 
@@ -1438,7 +1440,7 @@ export default function BookingOfferScreen({
               name="information-circle-outline"
               size={24}
               color={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
             />
 
@@ -1596,7 +1598,7 @@ const styles = StyleSheet.create({
     fontWeight:
       '700',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
     textAlign:
       'center',
   },
@@ -1775,19 +1777,18 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    paddingHorizontal:
-      UI.spacing.lg,
-    paddingVertical:
-      UI.spacing.sm,
-    borderRadius:
-      UI.radius.xl,
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth:
-      1,
-    borderColor:
-      UI.colors.border,
-  },
+      backgroundColor: UI.colors.surface,
+      borderRadius: UI.radius.lg,
+      padding: UI.spacing.lg,
+      marginBottom: UI.spacing.md,
+      borderColor: UI.colors.border,
+      borderWidth: 1,
+      elevation: 2,
+      shadowColor: UI.colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
 
   detailRow: {
     flexDirection:

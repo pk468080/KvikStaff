@@ -25,7 +25,8 @@ import EmptyState from '../../components/ui/EmptyState'
 
 import ErrorState from '../../components/ui/ErrorState'
 
-import StatusBadge from '../../components/ui/StatusBadge'
+import StatusBadge from '../../components/ui/StatusBadge';
+
 
 import {
   UI,
@@ -356,7 +357,7 @@ export default function WorkerBookingsScreen({
           <ActivityIndicator
             size="large"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -410,7 +411,7 @@ export default function WorkerBookingsScreen({
               handleRefresh
             }
             tintColor={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
         }
@@ -660,7 +661,7 @@ export default function WorkerBookingsScreen({
                 }
                 size={28}
                 color={
-                  UI.colors.secondary
+                  UI.colors.primaryBlue
                 }
               />
             </View>
@@ -761,7 +762,7 @@ export default function WorkerBookingsScreen({
                               : booking.status ===
                                   'completed'
                                 ? UI.colors.success
-                                : UI.colors.secondary
+                                : UI.colors.primaryBlue
                           }
                         />
                       </View>
@@ -988,7 +989,7 @@ export default function WorkerBookingsScreen({
                           name="chevron-forward"
                           size={18}
                           color={
-                            UI.colors.secondary
+                            UI.colors.primaryBlue
                           }
                         />
                       </View>
@@ -1040,7 +1041,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   title: {
@@ -1099,7 +1100,7 @@ const styles = StyleSheet.create({
       UI.colors.warningBackground,
     borderWidth: 1,
     borderColor:
-      '#FDE68A',
+      UI.colors.warningBackground,
   },
 
   warningIcon: {
@@ -1193,7 +1194,7 @@ const styles = StyleSheet.create({
       UI.typography.small,
     fontWeight: '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   filterRow: {
@@ -1302,7 +1303,7 @@ const styles = StyleSheet.create({
 
   bookingCardActive: {
     borderColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
     borderLeftWidth: 4,
   },
 
@@ -1332,7 +1333,7 @@ const styles = StyleSheet.create({
 
   jobIconActive: {
     backgroundColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   jobIconCompleted: {
@@ -1353,7 +1354,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   bookingDate: {
@@ -1511,7 +1512,7 @@ const styles = StyleSheet.create({
       UI.typography.small,
     fontWeight: '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   emptyWrapper: {

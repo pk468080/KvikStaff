@@ -20,7 +20,7 @@ export default function LoadingState({
     <View style={styles.container}>
       <ActivityIndicator
         size="large"
-        color={UI.colors.secondary}
+        color={UI.colors.primaryBlue}
       />
 
       <Text style={styles.title}>
@@ -41,7 +41,7 @@ export function LoadingStateInline({
     <View style={styles.inlineContainer}>
       <ActivityIndicator
         size="small"
-        color={UI.colors.secondary}
+        color={UI.colors.primaryBlue}
       />
 
       <Text style={styles.inlineMessage}>

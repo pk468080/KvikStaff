@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native'
 
+
 import * as DocumentPicker from 'expo-document-picker'
 
 import { AppButton } from '../../components/ui/AppButton'
@@ -344,7 +345,7 @@ export default function DocumentsScreen({
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             size="large"
-            color={UI.colors.secondary}
+            color={UI.colors.primaryBlue}
           />
 
           <Text style={styles.loadingTitle}>
@@ -479,7 +480,7 @@ export default function DocumentsScreen({
           <View style={styles.uploadingRow}>
             <ActivityIndicator
               size="small"
-              color={UI.colors.secondary}
+              color={UI.colors.primaryBlue}
             />
 
             <Text style={styles.uploadingText}>
@@ -533,7 +534,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.1,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   title: {
@@ -588,7 +589,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       UI.colors.errorBackground,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: UI.colors.errorBackground,
   },
 
   errorTitle: {

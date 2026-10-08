@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native'
 
+
 import {
   Ionicons,
 } from '@expo/vector-icons'
@@ -318,7 +319,7 @@ export default function SettingsScreen({
               <Ionicons
                 name="person-outline"
                 size={18}
-                color={UI.colors.secondary}
+                color={UI.colors.primaryBlue}
               />
             </View>
           </View>
@@ -330,7 +331,7 @@ export default function SettingsScreen({
                 UI.colors.infoBackground
               }
               iconColor={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
               title="Edit profile"
               subtitle="Update your worker information and personal details."
@@ -383,7 +384,7 @@ export default function SettingsScreen({
               <Ionicons
                 name="briefcase-outline"
                 size={18}
-                color={UI.colors.secondary}
+                color={UI.colors.primaryBlue}
               />
             </View>
           </View>
@@ -395,7 +396,7 @@ export default function SettingsScreen({
                 UI.colors.infoBackground
               }
               iconColor={
-                UI.colors.secondary
+                UI.colors.primaryBlue
               }
               title="Availability & schedule"
               subtitle="Set weekly working hours and date-specific exceptions."
@@ -529,7 +530,7 @@ export default function SettingsScreen({
           >
             <ActivityIndicator
               size="small"
-              color={UI.colors.secondary}
+              color={UI.colors.primaryBlue}
             />
 
             <Text
@@ -577,7 +578,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 1,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   headerTitle: {
@@ -636,7 +637,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   heroCopy: {
@@ -674,18 +675,18 @@ const styles = StyleSheet.create({
   },
 
   section: {
-    marginTop:
-      UI.spacing.lg,
-    padding:
-      UI.spacing.lg,
-    borderRadius:
-      UI.radius.xl,
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
+      backgroundColor: UI.colors.surface,
+      borderRadius: UI.radius.lg,
+      padding: UI.spacing.lg,
+      marginBottom: UI.spacing.md,
+      borderColor: UI.colors.border,
+      borderWidth: 1,
+      elevation: 2,
+      shadowColor: UI.colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
 
   sectionHeader: {
     flexDirection: 'row',
@@ -701,7 +702,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   sectionTitle: {

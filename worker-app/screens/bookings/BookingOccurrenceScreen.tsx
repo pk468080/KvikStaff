@@ -35,7 +35,8 @@ import {
 
 import ErrorState from '../../components/ui/ErrorState'
 
-import StatusBadge from '../../components/ui/StatusBadge'
+import StatusBadge from '../../components/ui/StatusBadge';
+
 
 import {
   AppButton,
@@ -432,7 +433,7 @@ function InfoRow({
         <Ionicons
           name={icon}
           size={18}
-          color={UI.colors.secondary}
+          color={UI.colors.primaryBlue}
         />
       </View>
 
@@ -945,7 +946,7 @@ export default function BookingOccurrenceScreen({
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             size="large"
-            color={UI.colors.secondary}
+            color={UI.colors.primaryBlue}
           />
           <Text style={styles.loadingTitle}>
             Loading occurrence
@@ -1038,7 +1039,7 @@ export default function BookingOccurrenceScreen({
             onRefresh={() => {
               void loadOccurrence(true)
             }}
-            tintColor={UI.colors.secondary}
+            tintColor={UI.colors.primaryBlue}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -1198,7 +1199,7 @@ export default function BookingOccurrenceScreen({
                   <Ionicons
                     name="location-outline"
                     size={22}
-                    color={UI.colors.secondary}
+                    color={UI.colors.primaryBlue}
                   />
                 </View>
 
@@ -1226,7 +1227,7 @@ export default function BookingOccurrenceScreen({
                   <Ionicons
                     name="map-outline"
                     size={30}
-                    color={UI.colors.secondary}
+                    color={UI.colors.primaryBlue}
                   />
 
                   <Text style={styles.mapUnavailableTitle}>
@@ -1306,7 +1307,7 @@ export default function BookingOccurrenceScreen({
               <Ionicons
                 name="person-outline"
                 size={21}
-                color={UI.colors.secondary}
+                color={UI.colors.primaryBlue}
               />
             </View>
 
@@ -1732,7 +1733,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 1,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   topBarTitle: {
@@ -1849,7 +1850,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     backgroundColor: UI.colors.warningBackground,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: UI.colors.warningBackground,
   },
 
   warningText: {
@@ -1887,7 +1888,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.05,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   sectionTitle: {
@@ -1929,7 +1930,7 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontSize: UI.typography.small,
     fontWeight: '800',
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   locationAddress: {
@@ -2055,7 +2056,7 @@ const styles = StyleSheet.create({
     borderRadius: UI.radius.xl,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: UI.colors.secondary,
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   primaryActionPressed: {
@@ -2101,7 +2102,7 @@ const styles = StyleSheet.create({
     borderRadius: UI.radius.xl,
     backgroundColor: UI.colors.warningBackground,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: UI.colors.warningBackground,
   },
 
   otpHeader: {

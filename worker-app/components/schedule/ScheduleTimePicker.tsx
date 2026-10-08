@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
       UI.typography.body,
     fontWeight: '700',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   options: {
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       UI.colors.infoBackground,
     borderColor:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   optionText: {
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   optionTextSelected: {
     fontWeight: '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   check: {
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
       UI.typography.small,
     fontWeight: '700',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   pressed: {

@@ -1,36 +1,40 @@
-// worker-app/constants/ui.ts
-
 export const UI = {
   splashDuration: 2000,
 
   colors: {
-    primary: '#0B1F33',
-    secondary: '#0F766E',
-    accent: '#F28C28',
+    primary: '#0A3972', // Primary navy
+    primaryBlue: '#0784FB',
+    secondary: '#0784FB', // Fallback for components still using secondary
+    accent: '#78E2E0', // Teal accent
 
-    background: '#F6F8FA',
+    background: '#F5FAFD', // very light blue-white
     surface: '#FFFFFF',
 
-    text: '#0B1F33',
-    textSecondary: '#667085',
+    text: '#0A3972',
+    textSecondary: '#61798A',
     textMuted: '#98A2B3',
 
-    border: '#E5E7EB',
-    inputBorder: '#D9DEE5',
+    border: '#DCEAF2',
+    inputBorder: '#DCEAF2',
 
-    success: '#166534',
-    successBackground: '#ECFDF3',
+    success: '#16A34A', // clean green
+    successBackground: '#DCFCE7',
 
-    warning: '#92400E',
-    warningBackground: '#FFFBEB',
+    warning: '#D97706', // clean amber
+    warningBackground: '#FEF3C7',
 
-    error: '#B42318',
-    errorBackground: '#FEF3F2',
+    error: '#DC2626', // clean red
+    errorBackground: '#FEE2E2',
 
-    info: '#1E3A8A',
+    info: '#0784FB',
     infoBackground: '#EFF6FF',
 
     disabled: '#98A2B3',
+    disabledBackground: '#F3F4F6',
+
+    // Tab bar specific
+    tabBarActive: '#0784FB',
+    tabBarInactive: '#61798A',
   },
 
   spacing: {
@@ -61,10 +65,34 @@ export const UI = {
     largeTitle: 28,
   },
 
+  shadows: {
+    sm: {
+      shadowColor: '#0A3972',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    md: {
+      shadowColor: '#0A3972',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    lg: {
+      shadowColor: '#0A3972',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+  },
+
   sizes: {
     buttonHeight: 52,
     inputHeight: 52,
     headerHeight: 56,
     tabBarHeight: 64,
   },
-} as const
+} as const;

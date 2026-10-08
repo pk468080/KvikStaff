@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native'
 
+
 import {
   AppButton,
 } from '../../components/ui/AppButton'
@@ -172,7 +173,7 @@ export default function WorkerEarningsScreen({
           <ActivityIndicator
             size="large"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -678,7 +679,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   title: {
@@ -712,7 +713,7 @@ const styles = StyleSheet.create({
     backgroundColor:
       UI.colors.warningBackground,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: UI.colors.warningBackground,
   },
 
   warningTitle: {
@@ -862,7 +863,7 @@ const styles = StyleSheet.create({
       UI.typography.small,
     fontWeight: '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
     backgroundColor:
       UI.colors.infoBackground,
     overflow: 'hidden',
@@ -873,16 +874,18 @@ const styles = StyleSheet.create({
   },
 
   earningCard: {
-    padding:
-      UI.spacing.lg,
-    borderRadius:
-      UI.radius.lg,
-    backgroundColor:
-      UI.colors.surface,
-    borderWidth: 1,
-    borderColor:
-      UI.colors.border,
-  },
+      backgroundColor: UI.colors.surface,
+      borderRadius: UI.radius.lg,
+      padding: UI.spacing.lg,
+      marginBottom: UI.spacing.md,
+      borderColor: UI.colors.border,
+      borderWidth: 1,
+      elevation: 2,
+      shadowColor: UI.colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
 
   earningPressed: {
     opacity: 0.82,
@@ -990,7 +993,7 @@ const styles = StyleSheet.create({
       UI.typography.small,
     fontWeight: '800',
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   emptyWrapper: {

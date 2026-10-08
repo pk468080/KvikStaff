@@ -1,3 +1,5 @@
+import { AppCard } from '../../components/ui/AppCard';
+import { WorkerJobCard } from '../../components/home/WorkerJobCard';
 import {
   useCallback,
 } from 'react'
@@ -256,7 +258,7 @@ function JobCard({
   onPress?: () => void
 }) {
   const content = (
-    <View
+    <AppCard
       style={[
         styles.jobCard,
         active &&
@@ -416,7 +418,7 @@ function JobCard({
           →
         </Text>
       </View>
-    </View>
+    </AppCard>
   )
 
   if (!onPress) {
@@ -537,7 +539,7 @@ export default function WorkerHomeScreen({
           <ActivityIndicator
             size="large"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -646,7 +648,7 @@ export default function WorkerHomeScreen({
               void refreshAll()
             }}
             tintColor={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
         }
@@ -940,7 +942,7 @@ export default function WorkerHomeScreen({
           </View>
 
           {activeBooking ? (
-            <JobCard
+            <WorkerJobCard
               booking={
                 activeBooking
               }
@@ -950,7 +952,7 @@ export default function WorkerHomeScreen({
               }
             />
           ) : nextBooking ? (
-            <JobCard
+            <WorkerJobCard
               booking={
                 nextBooking
               }
@@ -959,10 +961,7 @@ export default function WorkerHomeScreen({
               }
             />
           ) : (
-            <View
-              style={
-                styles.emptyJobCard
-              }
+            <AppCard style={styles.emptyJobCard}
             >
               <View
                 style={
@@ -1009,7 +1008,7 @@ export default function WorkerHomeScreen({
                   />
                 </View>
               ) : null}
-            </View>
+            </AppCard>
           )}
         </View>
 
@@ -1063,7 +1062,7 @@ export default function WorkerHomeScreen({
               <ActivityIndicator
                 size="small"
                 color={
-                  UI.colors.secondary
+                  UI.colors.primaryBlue
                 }
               />
 
@@ -1171,7 +1170,7 @@ export default function WorkerHomeScreen({
               </View>
             </View>
 
-            <JobCard
+            <WorkerJobCard
               booking={
                 nextBooking
               }
@@ -1287,7 +1286,7 @@ const styles =
       fontWeight: '800',
       letterSpacing: 1,
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     greeting: {
@@ -1489,7 +1488,7 @@ const styles =
       fontWeight: '800',
       letterSpacing: 1.05,
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     sectionTitle: {
@@ -1510,24 +1509,26 @@ const styles =
         UI.typography.small,
       fontWeight: '700',
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     jobCard: {
-      padding:
-        UI.spacing.lg,
-      borderRadius:
-        UI.radius.xl,
-      backgroundColor:
-        UI.colors.surface,
+      backgroundColor: UI.colors.surface,
+      borderRadius: UI.radius.lg,
+      padding: UI.spacing.lg,
+      marginBottom: UI.spacing.md,
+      borderColor: UI.colors.border,
       borderWidth: 1,
-      borderColor:
-        UI.colors.border,
+      elevation: 2,
+      shadowColor: UI.colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
     },
 
     jobCardActive: {
       borderColor:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     jobTopRow: {
@@ -1677,7 +1678,7 @@ const styles =
         UI.typography.small,
       fontWeight: '800',
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     jobActionArrow: {
@@ -1686,7 +1687,7 @@ const styles =
       fontSize: 17,
       fontWeight: '800',
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     emptyJobCard: {
@@ -1723,7 +1724,7 @@ const styles =
       fontSize: 28,
       fontWeight: '400',
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     emptyJobTitle: {
@@ -1791,7 +1792,7 @@ const styles =
       fontSize: 20,
       fontWeight: '700',
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     earningsAmount: {
@@ -1856,7 +1857,7 @@ const styles =
         UI.typography.small,
       fontWeight: '800',
       color:
-        UI.colors.secondary,
+        UI.colors.primaryBlue,
     },
 
     earningsLoading: {

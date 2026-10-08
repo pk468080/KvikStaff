@@ -230,9 +230,9 @@ function WorkerTabs() {
         tabBarLabelStyle:
           styles.tabBarLabel,
         tabBarActiveTintColor:
-          UI.colors.secondary,
+          UI.colors.tabBarActive,
         tabBarInactiveTintColor:
-          UI.colors.textMuted,
+          UI.colors.tabBarInactive,
         tabBarHideOnKeyboard:
           true,
       }}
@@ -663,25 +663,24 @@ export default function WorkerNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
+    position: 'absolute',
+    bottom: UI.spacing.lg,
+    left: UI.spacing.lg,
+    right: UI.spacing.lg,
     height: 72,
     paddingTop: 8,
     paddingBottom: 8,
-    borderTopWidth: 1,
-    borderTopColor:
-      UI.colors.border,
-    backgroundColor:
-      UI.colors.surface,
+    borderRadius: UI.radius.lg,
+    borderTopWidth: 0,
+    borderWidth: 1,
+    borderColor: UI.colors.border,
+    backgroundColor: UI.colors.surface,
     elevation: 8,
-    shadowColor:
-      UI.colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowColor: UI.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
-
   tabBarLabel: {
     fontSize: 11,
     fontWeight: '700',

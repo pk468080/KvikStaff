@@ -16,7 +16,8 @@ import {
   Ionicons,
 } from '@expo/vector-icons'
 
-import StatusBadge from '../../components/ui/StatusBadge'
+import StatusBadge from '../../components/ui/StatusBadge';
+
 
 import ErrorState from '../../components/ui/ErrorState'
 
@@ -149,7 +150,7 @@ function AccountRow({
         <Ionicons
           name={icon}
           size={18}
-          color={UI.colors.secondary}
+          color={UI.colors.primaryBlue}
         />
       </View>
 
@@ -214,7 +215,7 @@ function ActionRow({
           color={
             destructive
               ? UI.colors.error
-              : UI.colors.secondary
+              : UI.colors.primaryBlue
           }
         />
       </View>
@@ -318,7 +319,7 @@ export default function ProfileScreen({
           <ActivityIndicator
             size="large"
             color={
-              UI.colors.secondary
+              UI.colors.primaryBlue
             }
           />
 
@@ -644,7 +645,7 @@ export default function ProfileScreen({
                 name="checkmark-done"
                 size={17}
                 color={
-                  UI.colors.secondary
+                  UI.colors.primaryBlue
                 }
               />
             </View>
@@ -682,7 +683,7 @@ export default function ProfileScreen({
                 name="location-outline"
                 size={17}
                 color={
-                  UI.colors.secondary
+                  UI.colors.primaryBlue
                 }
               />
             </View>
@@ -829,7 +830,7 @@ export default function ProfileScreen({
                   name="radio-outline"
                   size={19}
                   color={
-                    UI.colors.secondary
+                    UI.colors.primaryBlue
                   }
                 />
               </View>
@@ -1078,7 +1079,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.1,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   title: {
@@ -1127,7 +1128,7 @@ const styles = StyleSheet.create({
       UI.colors.warningBackground,
     borderWidth: 1,
     borderColor:
-      '#FDE68A',
+      UI.colors.warningBackground,
   },
 
   warningIcon: {
@@ -1287,7 +1288,7 @@ const styles = StyleSheet.create({
     fontWeight:
       '700',
     color:
-      '#FDE68A',
+      UI.colors.warningBackground,
   },
 
   statsCard: {
@@ -1366,7 +1367,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.05,
     color:
-      UI.colors.secondary,
+      UI.colors.primaryBlue,
   },
 
   sectionTitle: {

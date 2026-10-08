@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native'
 
+
 import { AppButton } from '../../components/ui/AppButton'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import { UI } from '../../constants/ui'
@@ -203,7 +204,7 @@ export default function ServicesScreen({
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             size="large"
-            color={UI.colors.secondary}
+            color={UI.colors.primaryBlue}
           />
 
           <Text style={styles.loadingTitle}>
@@ -444,7 +445,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.1,
-    color: UI.colors.secondary,
+    color: UI.colors.primaryBlue,
   },
 
   title: {
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
   },
 
   serviceCardSelected: {
-    borderColor: UI.colors.secondary,
+    borderColor: UI.colors.primaryBlue,
     backgroundColor: UI.colors.successBackground,
   },
 
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
   },
 
   serviceIconSelected: {
-    backgroundColor: UI.colors.secondary,
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   serviceIconText: {
@@ -583,8 +584,8 @@ const styles = StyleSheet.create({
   },
 
   checkboxSelected: {
-    borderColor: UI.colors.secondary,
-    backgroundColor: UI.colors.secondary,
+    borderColor: UI.colors.primaryBlue,
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   checkboxText: {
@@ -620,7 +621,7 @@ const styles = StyleSheet.create({
     borderRadius: UI.radius.md,
     backgroundColor: UI.colors.errorBackground,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: UI.colors.errorBackground,
   },
 
   errorTitle: {
