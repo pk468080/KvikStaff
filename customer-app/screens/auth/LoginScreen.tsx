@@ -13,7 +13,7 @@ import { AppButton } from '../../components/ui/AppButton'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 
 type LoginScreenProps = {
-  onContinue: (phone: string) => void
+  onContinue: (phone: string) => void | Promise<void>
 }
 
 export default function LoginScreen({
@@ -26,6 +26,27 @@ export default function LoginScreen({
   const isValid =
     normalizedPhone.length >= 10 &&
     normalizedPhone.length <= 15
+    const [sendingOtp, setSendingOtp] = useState(false)
+const [requestError, setRequestError] = useState('')
+
+async function handleContinue() {
+  if (!isValid || sendingOtp) {
+    return
+  }
+
+  setRequestError('')
+  setSendingOtp(true)
+
+  try {
+    await onContinue(normalizedPhone)
+  } catch {
+    setRequestError(
+      'Could not send a verification code. Please try again later.',
+    )
+  } finally {
+    setSendingOtp(false)
+  }
+}
 
   return (
     <ScreenContainer>
@@ -108,17 +129,28 @@ export default function LoginScreen({
                     placeholderTextColor="#8A9AAA"
                     keyboardType="phone-pad"
                     autoComplete="tel"
-                    maxLength={15}
+                    maxLength={10}
                     style={styles.input}
                   />
                 </View>
               </View>
 
               <AppButton
-                title="Send OTP"
-                disabled={!isValid}
-                onPress={() => onContinue(normalizedPhone)}
-              />
+  title={sendingOtp ? 'Sending OTP...' : 'Send OTP'}
+  disabled={!isValid || sendingOtp}
+  onPress={() => {
+    void handleContinue()
+  }}
+/>
+
+{requestError ? (
+  <Text
+    accessibilityRole="alert"
+    style={styles.requestError}
+  >
+    {requestError}
+  </Text>
+) : null}
 
               <View style={styles.securityRow}>
                 <View style={styles.securityIcon}>
@@ -158,7 +190,13 @@ const styles = StyleSheet.create({
   keyboard: {
     flex: 1,
   },
-
+requestError: {
+  marginTop: 10,
+  color: '#D92D20',
+  fontSize: 13,
+  lineHeight: 18,
+  fontWeight: '600',
+},
   container: {
     flex: 1,
     paddingHorizontal: 20,

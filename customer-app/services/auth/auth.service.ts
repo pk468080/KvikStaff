@@ -1,6 +1,5 @@
 import { supabase } from '../../lib/supabase'
 
-export const TEMP_OTP = '123456'
 
 const MAX_NAME_LENGTH = 100
 const MAX_COMPANY_NAME_LENGTH = 150
@@ -69,6 +68,42 @@ function normalizePhone(phone: string) {
   return phone.replace(/\D/g, '')
 }
 
+function normalizeIndianLocalPhone(phone: string) {
+  const digits = normalizePhone(phone)
+
+  let localPhone = digits
+
+  if (digits.length === 11 && digits.startsWith('0')) {
+    localPhone = digits.slice(1)
+  } else if (digits.length === 12 && digits.startsWith('91')) {
+    localPhone = digits.slice(2)
+  }
+
+  if (!/^[6-9]\d{9}$/.test(localPhone)) {
+    throw new Error('Enter a valid 10-digit Indian mobile number.')
+  }
+
+  return localPhone
+}
+
+function formatIndianE164Phone(phone: string) {
+  return `+91${normalizeIndianLocalPhone(phone)}`
+}
+
+function safeNormalizeIndianLocalPhone(
+  phone: string | null | undefined,
+) {
+  if (!phone) {
+    return ''
+  }
+
+  try {
+    return normalizeIndianLocalPhone(phone)
+  } catch {
+    return ''
+  }
+}
+
 function getUserMetadataPhone(
   user: {
     user_metadata?: Record<string, unknown>
@@ -77,7 +112,7 @@ function getUserMetadataPhone(
   const value = user?.user_metadata?.phone
 
   return typeof value === 'string'
-    ? normalizePhone(value)
+    ? safeNormalizeIndianLocalPhone(value)
     : ''
 }
 
@@ -137,26 +172,27 @@ function profileNeedsRegistration(
 }
 
 export async function sendOtp(phone: string) {
-  const normalizedPhone = normalizePhone(phone)
+  const localPhone = normalizeIndianLocalPhone(phone)
 
-  if (
-    normalizedPhone.length < 10 ||
-    normalizedPhone.length > 15
-  ) {
+  const { error } = await supabase.auth.signInWithOtp({
+    phone: formatIndianE164Phone(localPhone),
+    options: {
+      shouldCreateUser: true,
+    },
+  })
+
+  if (error) {
+    if (__DEV__) {
+      console.error(
+        'Customer SMS OTP request failed:',
+        error.message,
+      )
+    }
+
     throw new Error(
-      'Please enter a valid mobile number.',
+      'Unable to send a verification code. Please try again.',
     )
   }
-
-  console.log(
-    'Development OTP:',
-    TEMP_OTP,
-  )
-
-  console.log(
-    'OTP requested for:',
-    normalizedPhone,
-  )
 
   return {
     success: true,
@@ -190,125 +226,86 @@ export async function getCustomerAuthState(): Promise<CustomerAuthState> {
   const needsRegistration =
     profileNeedsRegistration(profile)
 
-  const profilePhone = profile?.phone
-    ? normalizePhone(profile.phone)
-    : ''
+  const profilePhone = safeNormalizeIndianLocalPhone(
+  profile?.phone,
+)
 
-  const metadataPhone =
-    getUserMetadataPhone(session.user)
+const authPhone = safeNormalizeIndianLocalPhone(
+  session.user.phone,
+)
 
-  return {
-    authenticated: true,
-    needsRegistration,
-    phone:
-      profilePhone ||
-      metadataPhone,
-  }
+const metadataPhone = getUserMetadataPhone(session.user)
+
+return {
+  authenticated: true,
+  needsRegistration,
+  phone: profilePhone || authPhone || metadataPhone,
+}
 }
 
 export async function verifyOtp(
   phone: string,
   otp: string,
 ): Promise<VerifyOtpResult> {
-  const normalizedPhone = normalizePhone(phone)
+  let localPhone: string
 
-  if (otp !== TEMP_OTP) {
+  try {
+    localPhone = normalizeIndianLocalPhone(phone)
+  } catch {
     return {
       success: false,
-      error: 'Invalid OTP',
+      error: 'Please enter a valid mobile number.',
     }
   }
 
-  if (
-    normalizedPhone.length < 10 ||
-    normalizedPhone.length > 15
-  ) {
+  const token = otp.trim()
+
+  if (!/^\d{6}$/.test(token)) {
     return {
       success: false,
-      error: 'Invalid mobile number.',
+      error: 'Enter the six-digit verification code.',
     }
   }
 
   try {
-    const { data, error } =
-      await supabase.functions.invoke(
-        'customer-auth',
-        {
-          body: {
-            phone: normalizedPhone,
-            otp: TEMP_OTP,
-          },
-        },
-      )
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: formatIndianE164Phone(localPhone),
+      token,
+      type: 'sms',
+    })
 
-    if (error) {
-      throw error
-    }
-
-    if (!data?.success) {
+    if (error || !data.user || !data.session) {
       return {
         success: false,
-        error:
-          typeof data?.error === 'string'
-            ? data.error
-            : 'Unable to verify the OTP.',
+        error: 'The verification code is invalid or expired.',
       }
     }
 
-    const session = data.session
-
-    if (!session) {
-      throw new Error(
-        'Authentication succeeded but no session was returned.',
-      )
-    }
-
-    /*
-     * functions.invoke returns the session from the Edge Function,
-     * but the local Supabase client must also adopt it so the rest of
-     * the customer app sees the authenticated customer identity.
-     */
-    const { error: sessionError } =
-      await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      })
-
-    if (sessionError) {
-      throw sessionError
-    }
-
-    const authenticatedSession =
-      await getCurrentSession()
-
-    if (!authenticatedSession) {
-      throw new Error(
-        'Supabase did not persist the customer session.',
-      )
-    }
+    const profile = await getCustomerProfile(data.user.id)
+    const needsRegistration = profileNeedsRegistration(profile)
 
     return {
       success: true,
       phone:
-        typeof data.phone === 'string'
-          ? normalizePhone(data.phone)
-          : normalizedPhone,
-      session: authenticatedSession,
-      needsRegistration:
-        data.needsRegistration === true,
+        safeNormalizeIndianLocalPhone(profile?.phone) ||
+        localPhone,
+      session: data.session,
+      needsRegistration,
     }
   } catch (error) {
-    console.error(
-      'Customer OTP verification failed:',
-      error,
-    )
+    // Do not leave a partially validated session on this device.
+    await supabase.auth.signOut({ scope: 'local' })
+
+    if (__DEV__) {
+      console.error(
+        'Customer account validation failed:',
+        error,
+      )
+    }
 
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Unable to verify the OTP.',
+      error: 'Unable to validate this customer account.',
     }
   }
 }
@@ -389,20 +386,16 @@ export async function createCustomerProfile(
         )
       }
 
-      const existingPhone =
-        existingProfile.phone
-          ? normalizePhone(
-              existingProfile.phone,
-            )
-          : ''
+      const existingPhone = safeNormalizeIndianLocalPhone(
+  existingProfile.phone,
+)
 
-      const metadataPhone =
-        getUserMetadataPhone(session.user)
+const metadataPhone = getUserMetadataPhone(session.user)
 
-      const normalizedPhone =
-        normalizePhone(phone) ||
-        existingPhone ||
-        metadataPhone
+const normalizedPhone =
+  safeNormalizeIndianLocalPhone(phone) ||
+  existingPhone ||
+  metadataPhone
 
       if (
         normalizedPhone.length < 10 ||
@@ -449,9 +442,9 @@ export async function createCustomerProfile(
     const metadataPhone =
       getUserMetadataPhone(session.user)
 
-    const normalizedPhone =
-      normalizePhone(phone) ||
-      metadataPhone
+   const normalizedPhone =
+  safeNormalizeIndianLocalPhone(phone) ||
+  metadataPhone
 
     if (
       normalizedPhone.length < 10 ||

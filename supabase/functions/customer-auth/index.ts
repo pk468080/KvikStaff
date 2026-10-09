@@ -1,7 +1,4 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
-
-const TEMP_OTP = "123456";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function json(data: unknown, status = 200) {
+function json(data: unknown, status = 410) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -20,235 +17,15 @@ function json(data: unknown, status = 200) {
   });
 }
 
-function normalizePhone(phone: string) {
-  return phone.replace(/\D/g, "");
-}
-
-function isValidPhone(phone: string) {
-  return phone.length >= 10 && phone.length <= 15;
-}
-
-Deno.serve(async (req) => {
+Deno.serve((req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  if (req.method !== "POST") {
-    return json({ success: false, error: "Method not allowed." }, 405);
-  }
-
-  try {
-    const body = await req.json();
-    const phone = normalizePhone(
-      typeof body?.phone === "string" ? body.phone : "",
-    );
-    const otp =
-      typeof body?.otp === "string" ? body.otp.trim() : "";
-
-    if (!isValidPhone(phone)) {
-      return json({
-        success: false,
-        error: "Invalid mobile number.",
-      }, 400);
-    }
-
-    if (otp !== TEMP_OTP) {
-      return json({
-        success: false,
-        error: "Invalid OTP.",
-      }, 401);
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error(
-        "Supabase server authentication is not configured.",
-      );
-    }
-
-    const admin = createClient(
-      supabaseUrl,
-      serviceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      },
-    );
-
-    /*
-     * profiles.phone is the application's authoritative customer-phone
-     * mapping. We use the service-role client here because the caller is
-     * not authenticated before OTP verification.
-     */
-    const { data: profile, error: profileError } = await admin
-      .from("profiles")
-      .select(
-        "id, full_name, phone, role, is_active, company_name",
-      )
-      .eq("phone", phone)
-      .eq("role", "customer")
-      .maybeSingle();
-
-    if (profileError) {
-      throw profileError;
-    }
-
-    let userId: string;
-    let needsRegistration = true;
-
-    if (profile) {
-      if (profile.is_active !== true) {
-        return json({
-          success: false,
-          error: "This customer account is inactive.",
-        }, 403);
-      }
-
-      userId = profile.id;
-      needsRegistration =
-        !profile.full_name ||
-        profile.full_name.trim().length === 0 ||
-        !profile.company_name ||
-        profile.company_name.trim().length === 0;
-
-      /*
-       * Development authentication bridge:
-       * make the existing Auth identity sign-in-able by phone using the
-       * fixed development OTP as its temporary password.
-       */
-      const { error: updateUserError } =
-        await admin.auth.admin.updateUserById(userId, {
-          phone,
-          phone_confirm: true,
-          password: TEMP_OTP,
-          user_metadata: {
-            phone,
-          },
-        });
-
-      if (updateUserError) {
-        throw updateUserError;
-      }
-    } else {
-      const { data: created, error: createError } =
-        await admin.auth.admin.createUser({
-          phone,
-          phone_confirm: true,
-          password: TEMP_OTP,
-          user_metadata: {
-            phone,
-          },
-        });
-
-      if (createError) {
-        /*
-         * A matching Auth user can exist without a profile. Try to locate
-         * it and complete the development authentication bridge.
-         */
-        const { data: usersData, error: listError } =
-          await admin.auth.admin.listUsers({
-            page: 1,
-            perPage: 1000,
-          });
-
-        if (listError) {
-          throw createError;
-        }
-
-        const existingAuthUser = usersData.users.find(
-          (user) =>
-            normalizePhone(user.phone ?? "") === phone,
-        );
-
-        if (!existingAuthUser) {
-          throw createError;
-        }
-
-        userId = existingAuthUser.id;
-
-        const { error: updateUserError } =
-          await admin.auth.admin.updateUserById(userId, {
-            phone,
-            phone_confirm: true,
-            password: TEMP_OTP,
-            user_metadata: {
-              phone,
-            },
-          });
-
-        if (updateUserError) {
-          throw updateUserError;
-        }
-      } else {
-        if (!created.user) {
-          throw new Error(
-            "Supabase did not create the customer identity.",
-          );
-        }
-
-        userId = created.user.id;
-      }
-    }
-
-    /*
-     * The privileged lookup/update above establishes the correct Auth
-     * identity. The session itself is generated by Supabase Auth using
-     * that identity, not fabricated by the Edge Function.
-     */
-    const authClient = createClient(
-      supabaseUrl,
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
-        Deno.env.get("SUPABASE_ANON_KEY") ??
-        "",
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      },
-    );
-
-    const { data: signInData, error: signInError } =
-      await authClient.auth.signInWithPassword({
-        phone,
-        password: TEMP_OTP,
-      });
-
-    if (signInError) {
-      throw signInError;
-    }
-
-    if (!signInData.session) {
-      throw new Error(
-        "Supabase did not create an authentication session.",
-      );
-    }
-
-    return json({
-      success: true,
-      phone,
-      needsRegistration,
-      session: signInData.session,
-      user: {
-        id: userId,
-      },
+    return new Response("ok", {
+      headers: corsHeaders,
     });
-  } catch (error) {
-    console.error(
-      "[KvikStaff] customer-auth error:",
-      error,
-    );
-
-    return json({
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to verify customer authentication.",
-    }, 500);
   }
+
+  return json({
+    success: false,
+    error: "This legacy authentication endpoint has been retired.",
+  });
 });

@@ -142,7 +142,7 @@ export default function OtpScreen({
                   value.replace(/\D/g, ''),
                 )
               }}
-              placeholder="123456"
+              placeholder="------"
               placeholderTextColor="#B8C6D1"
               keyboardType="number-pad"
               maxLength={6}
@@ -158,7 +158,7 @@ export default function OtpScreen({
                 </Text>
               </View>
               <Text style={styles.codeHintText}>
-                For development testing, use 123456.
+                Check your SMS for the six-digit verification code.
               </Text>
             </View>
 
