@@ -267,9 +267,9 @@ async function buildPlan(
     skipped[key] = (skipped[key] ?? 0) + 1;
   };
 
-  const plans: PlanItem[] = [];
+ const plans: PlanItem[] = [];
 
-  for (const user of users) {
+for (const user of users) {
   if (!user.phone) {
     skip("missing_auth_phone");
     continue;
@@ -285,43 +285,55 @@ async function buildPlan(
     continue;
   }
 
-    const normalizedPhone = normalizeIndianPhone(user.phone);
-    let reason: string | null = null;
+  const profile = profilesById.get(user.id) ?? null;
 
-    if (!normalizedPhone) {
-      reason = "invalid_auth_phone_requires_manual_review";
-    } else if (profile && !normalizeIndianPhone(profile.phone)) {
-      reason = "invalid_profile_phone_requires_manual_review";
-    } else if (
-      profile &&
-      normalizeIndianPhone(profile.phone) !== normalizedPhone
-    ) {
-      reason = "auth_and_profile_phone_mismatch";
-    } else if (profile?.is_active === false) {
-      reason = "inactive_customer_profile_requires_manual_review";
-    } else {
-      const owners = phoneOwners.get(normalizedPhone);
-      if (owners && owners.size > 1) {
-        reason = "duplicate_normalized_phone_requires_manual_review";
-      }
-    }
-
-    plans.push({
-      user,
-      profile,
-      phoneShape: phoneShape(user.phone),
-      normalizedPhone,
-      action: reason
-        ? "rotate_password_and_flag_review"
-        : "normalize_phone_require_otp",
-      reason: reason ??
-        (profile
-          ? "valid_phone_matches_customer_profile"
-          : "valid_phone_without_profile"),
-    });
+  // Never migrate worker or admin accounts.
+  if (profile && profile.role !== "customer") {
+    skip("non_customer_profile");
+    continue;
   }
 
-  return { plans, skipped };
+  // Only migrate legacy numbers that are not already in E.164 format.
+  if (isIndianE164(user.phone)) {
+    skip("already_e164");
+    continue;
+  }
+
+  const normalizedPhone = normalizeIndianPhone(user.phone);
+  let reason: string | null = null;
+
+  if (!normalizedPhone) {
+    reason = "invalid_auth_phone_requires_manual_review";
+  } else if (profile && !normalizeIndianPhone(profile.phone)) {
+    reason = "invalid_profile_phone_requires_manual_review";
+  } else if (
+    profile &&
+    normalizeIndianPhone(profile.phone) !== normalizedPhone
+  ) {
+    reason = "auth_and_profile_phone_mismatch";
+  } else if (profile?.is_active === false) {
+    reason = "inactive_customer_profile_requires_manual_review";
+  } else {
+    const owners = phoneOwners.get(normalizedPhone);
+
+    if (owners && owners.size > 1) {
+      reason = "duplicate_normalized_phone_requires_manual_review";
+    }
+  }
+
+  plans.push({
+    user,
+    profile,
+    phoneShape: phoneShape(user.phone),
+    normalizedPhone,
+    action: reason
+      ? "rotate_password_and_flag_review"
+      : "normalize_phone_require_otp",
+    reason: reason ??
+      (profile
+        ? "valid_phone_matches_customer_profile"
+        : "valid_phone_without_profile"),
+  });
 }
 
 async function fingerprintPlan(plans: PlanItem[]): Promise<string> {
