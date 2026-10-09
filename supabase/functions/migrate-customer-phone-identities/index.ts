@@ -321,7 +321,7 @@ for (const user of users) {
     }
   }
 
-  plans.push({
+    plans.push({
     user,
     profile,
     phoneShape: phoneShape(user.phone),
@@ -334,6 +334,9 @@ for (const user of users) {
         ? "valid_phone_matches_customer_profile"
         : "valid_phone_without_profile"),
   });
+}
+
+return { plans, skipped };
 }
 
 async function fingerprintPlan(plans: PlanItem[]): Promise<string> {
