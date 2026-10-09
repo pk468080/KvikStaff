@@ -155,7 +155,31 @@ function hasPhoneIdentity(user: AuthUser): boolean {
   return Array.isArray(user.identities) &&
     user.identities.some((identity) => identity.provider === "phone");
 }
+async function hasPhoneIdentityWithFallback(
+  admin: ReturnType<typeof createClient>,
+  user: AuthUser,
+): Promise<boolean> {
+  // The paginated list can lack complete identity details.
+  if (hasPhoneIdentity(user)) {
+    return true;
+  }
 
+  if (!user.phone) {
+    return false;
+  }
+
+  // Retrieve the full user record before classifying the account.
+  const { data, error } = await admin.auth.admin.getUserById(user.id);
+
+  if (error || !data?.user) {
+    // Fail closed. Do not silently classify an unreadable identity.
+    throw new Error(
+      "Unable to verify a phone identity for an Auth user.",
+    );
+  }
+
+  return hasPhoneIdentity(data.user as unknown as AuthUser);
+}
 function hasMigrationMarker(user: AuthUser): boolean {
   return Boolean(user.app_metadata?.[MIGRATION_MARKER]);
 }
@@ -227,8 +251,15 @@ async function buildPlan(
   const phoneOwners = new Map<string, Set<string>>();
 
   for (const user of users) {
-    const normalized = normalizeIndianPhone(user.phone);
-    if (!normalized) continue;
+  if (!user.phone) {
+    skip("missing_auth_phone");
+    continue;
+  }
+
+  if (!(await hasPhoneIdentityWithFallback(admin, user))) {
+    skip("not_a_phone_identity");
+    continue;
+  }
 
     const owners = phoneOwners.get(normalized) ?? new Set<string>();
     owners.add(user.id);
