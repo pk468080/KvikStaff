@@ -289,18 +289,7 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
-[auth.sms]
-# Keep new phone signups disabled until the identity migration completes.
-enable_signup = false
-enable_confirmations = true
-template = "Your KvikStaff verification code is {{ .Code }}. Do not share it."
-max_frequency = "60s"
 
-[auth.sms.twilio]
-enabled = true
-account_sid = "env(SUPABASE_AUTH_SMS_TWILIO_ACCOUNT_SID)"
-message_service_sid = "env(SUPABASE_AUTH_SMS_TWILIO_MESSAGE_SERVICE_SID)"
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
