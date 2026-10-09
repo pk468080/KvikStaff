@@ -331,45 +331,15 @@ const [
   useState<BookingMapLocation | null>(
     null,
   )
-  const [
+   const [
     statusHistory,
     setStatusHistory,
-  ] =
-    useState<BookingStatusHistoryItem[]>(
-      [],
-    )
-    useEffect(() => {
-  // Invalidate any OTP request belonging to a previous booking.
-  otpRequestIdRef.current += 1
-  otpRequestInFlightRef.current = false
-  bookingStatusRef.current = null
-
-  setOtp(null)
-  setOtpType(null)
-  setOtpLoadingType(null)
-}, [bookingId])
-
-useEffect(() => {
-  if (!otpType) {
-    return
-  }
-
-  const otpIsStillValid =
-    otpType === 'start'
-      ? booking?.status === 'arrived'
-      : booking?.status === 'in_progress'
-
-  if (!otpIsStillValid) {
-    setOtp(null)
-    setOtpType(null)
-  }
-}, [booking?.status, otpType])
+  ] = useState<BookingStatusHistoryItem[]>([])
 
   const [
     locationNow,
     setLocationNow,
-  ] =
-    useState(Date.now())
+  ] = useState(Date.now())
 
   const [
     loading,
@@ -379,39 +349,58 @@ useEffect(() => {
   const [
     error,
     setError,
-  ] =
-    useState<string | null>(
-      null,
-    )
-    const [
-  otpType,
-  setOtpType,
-] = useState<'start' | 'end' | null>(null)
-
-const [
-  otpLoadingType,
-  setOtpLoadingType,
-] = useState<'start' | 'end' | null>(null)
-
-const bookingStatusRef = useRef<BookingStatus | null>(null)
-const otpRequestIdRef = useRef(0)
-const otpRequestInFlightRef = useRef(false)
+  ] = useState<string | null>(null)
 
   const [
     otp,
     setOtp,
-  ] =
-    useState<string | null>(
-      null,
-    )
+  ] = useState<string | null>(null)
+
+  const [
+    otpType,
+    setOtpType,
+  ] = useState<'start' | 'end' | null>(null)
+
+  const [
+    otpLoadingType,
+    setOtpLoadingType,
+  ] = useState<'start' | 'end' | null>(null)
+
+  const bookingStatusRef = useRef<BookingStatus | null>(null)
+  const otpRequestIdRef = useRef(0)
+  const otpRequestInFlightRef = useRef(false)
 
   const [
     timer,
     setTimer,
-  ] =
-    useState(
-      '00:00:00',
-    )
+  ] = useState('00:00:00')
+
+  useEffect(() => {
+    // Clear OTP data when the displayed booking changes.
+    otpRequestIdRef.current += 1
+    otpRequestInFlightRef.current = false
+    bookingStatusRef.current = null
+
+    setOtp(null)
+    setOtpType(null)
+    setOtpLoadingType(null)
+  }, [bookingId])
+
+  useEffect(() => {
+    if (!otpType) {
+      return
+    }
+
+    const otpIsStillValid =
+      otpType === 'start'
+        ? booking?.status === 'arrived'
+        : booking?.status === 'in_progress'
+
+    if (!otpIsStillValid) {
+      setOtp(null)
+      setOtpType(null)
+    }
+  }, [booking?.status, otpType])
 
   const locationFreshness =
     useMemo(
