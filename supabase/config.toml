@@ -419,3 +419,5 @@ verify_jwt = true
 
 [functions.process-razorpay-refund]
 verify_jwt = false
+[functions.migrate-customer-phone-identities]
+verify_jwt = false
