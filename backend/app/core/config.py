@@ -19,9 +19,11 @@ class Settings(BaseSettings):
         ]
     )
 
-    database_url: str
+    database_url: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/kvikstaff"
+    )
 
-    supabase_url: str
+    supabase_url: str = "https://example.supabase.co"
     supabase_jwt_audience: str = "authenticated"
     supabase_jwt_issuer: str | None = None
     supabase_jwt_secret: str | None = None
