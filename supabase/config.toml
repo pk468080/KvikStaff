@@ -414,11 +414,10 @@ enabled = true
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
 [functions.process-worker-push-receipts]
 verify_jwt = false
-# Retired legacy endpoint. Customer login uses Supabase Auth SMS OTP.
+
+# Retired legacy customer authentication endpoint.
 [functions.customer-auth]
 verify_jwt = true
-# Legacy customer authentication endpoint is retired.
-[functions.customer-auth]
-verify_jwt = true
+
 [functions.process-razorpay-refund]
 verify_jwt = false
