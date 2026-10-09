@@ -251,6 +251,25 @@ async function buildPlan(
   const phoneOwners = new Map<string, Set<string>>();
 
   for (const user of users) {
+  const normalized = normalizeIndianPhone(user.phone);
+
+  if (!normalized) {
+    continue;
+  }
+
+  const owners = phoneOwners.get(normalized) ?? new Set<string>();
+  owners.add(user.id);
+  phoneOwners.set(normalized, owners);
+}
+
+  const skipped: Record<string, number> = {};
+  const skip = (key: string) => {
+    skipped[key] = (skipped[key] ?? 0) + 1;
+  };
+
+  const plans: PlanItem[] = [];
+
+  for (const user of users) {
   if (!user.phone) {
     skip("missing_auth_phone");
     continue;
@@ -261,42 +280,10 @@ async function buildPlan(
     continue;
   }
 
-    const owners = phoneOwners.get(normalized) ?? new Set<string>();
-    owners.add(user.id);
-    phoneOwners.set(normalized, owners);
+  if (hasMigrationMarker(user)) {
+    skip("already_migrated_or_flagged");
+    continue;
   }
-
-  const skipped: Record<string, number> = {};
-  const skip = (key: string) => {
-    skipped[key] = (skipped[key] ?? 0) + 1;
-  };
-
-  const plans: PlanItem[] = [];
-
-  for (const user of users) {
-    if (!user.phone || !hasPhoneIdentity(user)) {
-      skip("not_a_phone_identity");
-      continue;
-    }
-
-    if (hasMigrationMarker(user)) {
-      skip("already_migrated_or_flagged");
-      continue;
-    }
-
-    const profile = profilesById.get(user.id) ?? null;
-
-    // Do not change worker/admin identities through this migration.
-    if (profile && profile.role !== "customer") {
-      skip("non_customer_profile");
-      continue;
-    }
-
-    // This function is scoped to the known legacy, non-E.164 identities.
-    if (isIndianE164(user.phone)) {
-      skip("already_e164");
-      continue;
-    }
 
     const normalizedPhone = normalizeIndianPhone(user.phone);
     let reason: string | null = null;
