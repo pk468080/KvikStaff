@@ -1,3 +1,4 @@
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -11,12 +12,13 @@ COPY app ./app
 COPY migrations ./migrations
 COPY alembic.ini ./
 
-RUN pip install --upgrade pip && pip install . \
+RUN pip install --upgrade pip \
+    && pip install . \
     && useradd --create-home --uid 10001 appuser \
     && chown -R appuser:appuser /app
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 10000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
