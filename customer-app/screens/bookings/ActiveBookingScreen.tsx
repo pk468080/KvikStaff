@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -337,6 +338,32 @@ const [
     useState<BookingStatusHistoryItem[]>(
       [],
     )
+    useEffect(() => {
+  // Invalidate any OTP request belonging to a previous booking.
+  otpRequestIdRef.current += 1
+  otpRequestInFlightRef.current = false
+  bookingStatusRef.current = null
+
+  setOtp(null)
+  setOtpType(null)
+  setOtpLoadingType(null)
+}, [bookingId])
+
+useEffect(() => {
+  if (!otpType) {
+    return
+  }
+
+  const otpIsStillValid =
+    otpType === 'start'
+      ? booking?.status === 'arrived'
+      : booking?.status === 'in_progress'
+
+  if (!otpIsStillValid) {
+    setOtp(null)
+    setOtpType(null)
+  }
+}, [booking?.status, otpType])
 
   const [
     locationNow,
@@ -356,6 +383,19 @@ const [
     useState<string | null>(
       null,
     )
+    const [
+  otpType,
+  setOtpType,
+] = useState<'start' | 'end' | null>(null)
+
+const [
+  otpLoadingType,
+  setOtpLoadingType,
+] = useState<'start' | 'end' | null>(null)
+
+const bookingStatusRef = useRef<BookingStatus | null>(null)
+const otpRequestIdRef = useRef(0)
+const otpRequestInFlightRef = useRef(false)
 
   const [
     otp,
@@ -406,9 +446,9 @@ const [
           bookingId,
         )
 
-      setBooking(
-        nextBooking,
-      )
+      bookingStatusRef.current = nextBooking.status
+
+setBooking(nextBooking)
 
       if (nextBooking.status === 'cancelled') {
         const nextRefunds =
@@ -781,60 +821,76 @@ const [
     )
   }
 
-  async function showOtp(
-    type: 'start' | 'end',
-  ) {
-    if (!booking) {
+  async function showOtp(type: 'start' | 'end') {
+  if (!booking || otpRequestInFlightRef.current) {
+    return
+  }
+
+  if (type === 'start' && booking.status !== 'arrived') {
+    setError('The start OTP is available after the worker arrives.')
+    return
+  }
+
+  if (type === 'end' && booking.status !== 'in_progress') {
+    setError('The end OTP is available while the service is in progress.')
+    return
+  }
+
+  otpRequestInFlightRef.current = true
+  const requestId = ++otpRequestIdRef.current
+
+  setOtpLoadingType(type)
+  setOtp(null)
+  setOtpType(null)
+  setError(null)
+
+  try {
+    const result = await requestBookingOtp(bookingId, type)
+
+    // Ignore responses belonging to an older screen/request.
+    if (otpRequestIdRef.current !== requestId) {
+      return
+    }
+
+    const expectedStatus =
+      type === 'start' ? 'arrived' : 'in_progress'
+
+    // Do not display an OTP if the booking status changed while waiting.
+    if (bookingStatusRef.current !== expectedStatus) {
+      setOtp(null)
+      setOtpType(null)
       return
     }
 
     if (
-      type === 'start' &&
-      booking.status !==
-        'arrived'
+      typeof result.otp !== 'string' ||
+      !/^\d{6}$/.test(result.otp)
     ) {
-      setError(
-        'The start OTP is available after the worker arrives.',
+      throw new Error(
+        'The server did not return a valid six-digit booking OTP. Please try again.',
       )
-
-      return
     }
 
-    if (
-      type === 'end' &&
-      booking.status !==
-        'in_progress'
-    ) {
-      setError(
-        'The end OTP is available while the service is in progress.',
-      )
+    setOtp(result.otp)
+    setOtpType(type)
+  } catch (nextError) {
+    if (otpRequestIdRef.current === requestId) {
+      setOtp(null)
+      setOtpType(null)
 
-      return
-    }
-
-    try {
-      const result =
-        await requestBookingOtp(
-          bookingId,
-          type,
-        )
-
-      setOtp(
-        result.otp ??
-          'OTP sent to your registered contact.',
-      )
-
-      setError(null)
-    } catch (
-      nextError
-    ) {
       setError(
         nextError instanceof Error
           ? nextError.message
           : 'Unable to generate the booking OTP.',
       )
     }
+  } finally {
+    if (otpRequestIdRef.current === requestId) {
+      otpRequestInFlightRef.current = false
+      setOtpLoadingType(null)
+    }
   }
+}
 
   if (loading) {
     return (

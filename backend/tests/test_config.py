@@ -10,7 +10,7 @@ def test_production_requires_cors_origins() -> None:
             _env_file=None,
             environment="production",
             database_url="postgresql+asyncpg://user:password@db:5432/kvikstaff",
-            supabase_url="https://example.supabase.co",
+            supabase_url="https://project-id.supabase.co",
             redis_url="redis://:password@redis:6379/0",
             cors_origins=[],
         )
@@ -22,7 +22,7 @@ def test_production_rejects_local_redis() -> None:
             _env_file=None,
             environment="production",
             database_url="postgresql+asyncpg://user:password@db:5432/kvikstaff",
-            supabase_url="https://example.supabase.co",
+            supabase_url="https://project-id.supabase.co",
             redis_url="redis://localhost:6379/0",
             cors_origins=["https://app.example.com"],
         )
@@ -34,7 +34,7 @@ def test_production_rejects_wildcard_cors() -> None:
             _env_file=None,
             environment="production",
             database_url="postgresql+asyncpg://user:password@db:5432/kvikstaff",
-            supabase_url="https://example.supabase.co",
+            supabase_url="https://project-id.supabase.co",
             redis_url="redis://:password@redis:6379/0",
             cors_origins=["*"],
         )
@@ -45,7 +45,7 @@ def test_production_accepts_required_configuration() -> None:
         _env_file=None,
         environment="production",
         database_url="postgresql+asyncpg://user:password@db:5432/kvikstaff",
-        supabase_url="https://example.supabase.co",
+        supabase_url="https://project-id.supabase.co",
         redis_url="redis://:password@redis:6379/0",
         cors_origins=[
             "https://app.example.com",
@@ -57,6 +57,22 @@ def test_production_accepts_required_configuration() -> None:
     assert settings.environment == "production"
     assert settings.debug is False
     assert settings.redis_url == "redis://:password@redis:6379/0"
+
+
+def test_production_rejects_debug_enabled() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="DEBUG must be false in production",
+    ):
+        Settings(
+            _env_file=None,
+            environment="production",
+            debug=True,
+            database_url="postgresql+asyncpg://user:password@db:5432/kvikstaff",
+            supabase_url="https://project-id.supabase.co",
+            redis_url="redis://:password@redis:6379/0",
+            cors_origins=["https://app.example.com"],
+        )
 
 
 def test_development_has_local_cors_origins() -> None:

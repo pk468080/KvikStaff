@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.core.booking_otp_rate_limit import close_redis_client
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
 from app.core.logging import configure_logging
@@ -13,7 +14,11 @@ from app.core.logging import configure_logging
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_logging()
-    yield
+
+    try:
+        yield
+    finally:
+        await close_redis_client()
 
 
 def build_docs_config() -> dict[str, str | None]:
@@ -59,11 +64,9 @@ async def request_context_middleware(
     a failed request with backend logs and downstream operations.
     """
     request_id = str(uuid4())
-
     request.state.request_id = request_id
 
     response = await call_next(request)
-
     response.headers["X-Request-ID"] = request_id
 
     return response

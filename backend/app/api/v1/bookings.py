@@ -3,8 +3,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header
 
+from app.core.booking_otp_rate_limit import (
+    enforce_booking_otp_rate_limit,
+)
 from app.core.database import get_db
-
 from app.core.security import CurrentUser, get_customer
 from app.modules.bookings.repository import BookingsRepository
 from app.modules.bookings.schemas import (
@@ -16,12 +18,6 @@ from app.modules.bookings.schemas import (
     InstantBookingPriceRequest,
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
-)
-from fastapi import (
-    APIRouter,
-    Depends,
-    Header,
-    HTTPException,
 )
 from app.modules.bookings.service import BookingsService
 
@@ -79,7 +75,6 @@ async def calculate_multi_occurrence_booking_price(
 
 
 @router.post("/instant")
-
 async def create_instant_booking(
     request: InstantBookingCreateRequest,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
@@ -94,7 +89,6 @@ async def create_instant_booking(
 
 
 @router.post("/scheduled")
-
 async def create_scheduled_booking(
     request: MultiOccurrenceBookingCreateRequest,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
@@ -109,7 +103,6 @@ async def create_scheduled_booking(
 
 
 @router.post("/recurring")
-
 async def create_recurring_booking(
     request: MultiOccurrenceBookingCreateRequest,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
@@ -188,9 +181,17 @@ async def create_booking_otp(
         get_bookings_service
     ),
 ) -> dict[str, Any]:
+    customer_id = UUID(current_user.id)
+
+    await enforce_booking_otp_rate_limit(
+        booking_id=booking_id,
+        customer_id=customer_id,
+        otp_type=request.otp_type,
+    )
+
     return await service.create_customer_booking_otp(
         booking_id=booking_id,
-        customer_id=UUID(current_user.id),
+        customer_id=customer_id,
         otp_type=request.otp_type,
         occurrence_id=request.occurrence_id,
     )
@@ -266,7 +267,7 @@ async def get_booking_refunds(
         get_bookings_service
     ),
 ) -> list[dict[str, Any]]:
-    return await service.get_booking_refunds(
+    return await service.get_customer_booking_refunds(
         booking_id=booking_id,
         customer_id=UUID(current_user.id),
     )
