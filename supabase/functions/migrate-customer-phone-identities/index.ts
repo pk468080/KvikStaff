@@ -506,31 +506,50 @@ Deno.serve(async (req: Request) => {
         break;
       }
 
-      const updated = data.user as unknown as AuthUser;
-      const phoneIdentityMatches = Boolean(
-        plan.normalizedPhone &&
-          updated.identities?.some(
-            (identity) =>
-              identity.provider === "phone" &&
-              identity.identity_data?.phone === plan.normalizedPhone,
-          ),
+           // Read the user again because the Admin update response may not
+      // contain the refreshed identity metadata.
+      const {
+        data: verificationData,
+        error: verificationError,
+      } = await admin.auth.admin.getUserById(plan.user.id);
+
+      if (verificationError || !verificationData?.user) {
+        results.push({
+          user_id: plan.user.id,
+          status: "updated_but_verify_manually",
+          reason: "admin_update_succeeded_but_readback_failed",
+        });
+        break;
+      }
+
+      const updated = verificationData.user as unknown as AuthUser;
+
+      const phoneIdentity = updated.identities?.find(
+        (identity) => identity.provider === "phone",
       );
 
-      const phoneIsUnconfirmed = updated.phone_confirmed_at == null;
+      const phoneIdentityMatches = Boolean(
+        plan.normalizedPhone &&
+          phoneIdentity?.identity_data?.phone === plan.normalizedPhone,
+      );
+
+      const identityMarkedUnverified =
+        phoneIdentity?.identity_data?.phone_verified === false;
 
       let status: string;
 
       if (reviewOnly) {
-        status = phoneIsUnconfirmed
-          ? "password_rotated_phone_review_required"
-          : "updated_but_confirmation_state_uncertain";
+        status = "password_rotated_phone_review_required";
+      } else if (
+        updated.phone === plan.normalizedPhone &&
+        phoneIdentityMatches &&
+        identityMarkedUnverified
+      ) {
+        status = updated.phone_confirmed_at
+          ? "phone_normalized_otp_login_required_legacy_confirmation_timestamp_retained"
+          : "phone_normalized_otp_login_required";
       } else {
-        status =
-          updated.phone === plan.normalizedPhone &&
-            phoneIdentityMatches &&
-            phoneIsUnconfirmed
-            ? "migrated_phone_unconfirmed"
-            : "updated_but_verify_manually";
+        status = "updated_but_verify_manually";
       }
 
       results.push({
@@ -540,21 +559,28 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const manualReviewCount = results.filter(
+      const manualReviewCount = results.filter(
       (result) =>
         result.status === "password_rotated_phone_review_required" ||
-        result.status === "updated_but_confirmation_state_uncertain" ||
         result.status === "updated_but_verify_manually" ||
         result.status === "update_failed",
     ).length;
 
-    return json({
-      success: results.length === plans.length && manualReviewCount === 0,
-      mode: "apply",
-      completed_count: results.length,
-      manual_review_or_failure_count: manualReviewCount,
-      results,
-    }, manualReviewCount > 0 ? 207 : 200);
+    const retainedLegacyConfirmationCount = results.filter(
+      (result) =>
+        result.status ===
+        "phone_normalized_otp_login_required_legacy_confirmation_timestamp_retained",
+    ).length;
+
+   return json({
+  success: results.length === plans.length && manualReviewCount === 0,
+  mode: "apply",
+  completed_count: results.length,
+  manual_review_or_failure_count: manualReviewCount,
+  legacy_confirmation_timestamp_retained_count:
+    retainedLegacyConfirmationCount,
+  results,
+}, manualReviewCount > 0 ? 207 : 200);
   } catch {
     return json({
       success: false,
