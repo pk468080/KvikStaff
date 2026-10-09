@@ -414,9 +414,11 @@ enabled = true
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
 [functions.process-worker-push-receipts]
 verify_jwt = false
-# Customer login currently uses the intentional fixed OTP (123456).
-# The customer is not authenticated before OTP verification.
+# Retired legacy endpoint. Customer login uses Supabase Auth SMS OTP.
 [functions.customer-auth]
-verify_jwt = false
+verify_jwt = true
+# Legacy customer authentication endpoint is retired.
+[functions.customer-auth]
+verify_jwt = true
 [functions.process-razorpay-refund]
 verify_jwt = false
