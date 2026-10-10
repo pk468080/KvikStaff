@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native'
 import * as Location from 'expo-location'
@@ -25,11 +26,17 @@ export default function LocationFetchingScreen({
   const [loading, setLoading] =
     useState(false)
 
+  const [addressLoading, setAddressLoading] =
+    useState(false)
+
+  const [addressInput, setAddressInput] =
+    useState('')
+
   const [error, setError] =
     useState('')
 
   async function handleFetchLocation() {
-    if (loading) {
+    if (loading || addressLoading) {
       return
     }
 
@@ -45,7 +52,7 @@ export default function LocationFetchingScreen({
         'granted'
       ) {
         throw new Error(
-          'Location permission is required to continue.',
+          'Location permission was not granted. Enter your service address below to continue.',
         )
       }
 
@@ -76,8 +83,7 @@ export default function LocationFetchingScreen({
         const first = results[0]
 
         if (first) {
-          address =
-            formatAddress(first)
+          address = formatAddress(first)
         }
       } catch (reverseGeocodeError) {
         /*
@@ -104,12 +110,94 @@ export default function LocationFetchingScreen({
       setError(
         err instanceof Error
           ? err.message
-          : 'Unable to fetch your location. Please try again.',
+          : 'Unable to fetch your location. Enter your service address below or try again.',
       )
     } finally {
       setLoading(false)
     }
   }
+
+  async function handleUseAddress() {
+    if (loading || addressLoading) {
+      return
+    }
+
+    const query = addressInput.trim()
+
+    if (query.length < 3) {
+      setError(
+        'Enter a more specific service address, area, or PIN code.',
+      )
+      return
+    }
+
+    setError('')
+    setAddressLoading(true)
+
+    try {
+      const results =
+        await Location.geocodeAsync(query)
+
+      const first = results[0]
+
+      if (!first) {
+        setError(
+          'Address not found. Try a full address, nearby landmark, area, or PIN code.',
+        )
+        return
+      }
+
+      let address = query
+
+      try {
+        const reverseResults =
+          await Location.reverseGeocodeAsync({
+            latitude: first.latitude,
+            longitude: first.longitude,
+          })
+
+        const firstAddress =
+          reverseResults[0]
+
+        if (firstAddress) {
+          const formatted =
+            formatAddress(firstAddress)
+
+          if (formatted) {
+            address = formatted
+          }
+        }
+      } catch (reverseGeocodeError) {
+        /*
+         * Keep the address entered by the customer
+         * if reverse geocoding is unavailable.
+         */
+        console.error(
+          'Manual reverse geocoding error:',
+          reverseGeocodeError,
+        )
+      }
+
+      await onLocationFetched(
+        first.latitude,
+        first.longitude,
+        address,
+      )
+    } catch (err) {
+      console.error(
+        'Manual onboarding location error:',
+        err,
+      )
+
+      setError(
+        'Unable to select that address right now. Check your connection and try again.',
+      )
+    } finally {
+      setAddressLoading(false)
+    }
+  }
+
+  const busy = loading || addressLoading
 
   return (
     <ScreenContainer>
@@ -124,15 +212,14 @@ export default function LocationFetchingScreen({
           </View>
 
           <Text style={styles.title}>
-            Get your location
+            Choose your service location
           </Text>
 
           <Text style={styles.subtitle}>
-            We use your current location to show
-            services and workers available in your area.
+            Enter the address where you need service, or use your current location. GPS permission is optional, but a service location is needed to find available services and workers.
           </Text>
 
-          {loading ? (
+          {busy ? (
             <ActivityIndicator
               size="large"
               style={styles.loader}
@@ -140,23 +227,65 @@ export default function LocationFetchingScreen({
           ) : null}
 
           {error ? (
-            <Text style={styles.error}>
+            <Text
+              accessibilityRole="alert"
+              style={styles.error}
+            >
               {error}
             </Text>
           ) : null}
         </View>
 
-        <AppButton
-          title={
-            loading
-              ? 'Fetching location...'
-              : 'Allow location'
-          }
-          disabled={loading}
-          onPress={() =>
-            void handleFetchLocation()
-          }
-        />
+        <View style={styles.actions}>
+          <Text style={styles.inputLabel}>
+            Service address or area
+          </Text>
+
+          <TextInput
+            accessibilityLabel="Service address or area"
+            style={styles.addressInput}
+            value={addressInput}
+            onChangeText={setAddressInput}
+            editable={!busy}
+            placeholder="e.g. Sector 12, Dwarka, New Delhi"
+            placeholderTextColor="#9AA1AD"
+            returnKeyType="go"
+            onSubmitEditing={() => {
+              void handleUseAddress()
+            }}
+            autoCapitalize="words"
+          />
+
+          <View style={styles.buttonSpacing}>
+            <AppButton
+              title={
+                addressLoading
+                  ? 'Finding address...'
+                  : 'Continue with address'
+              }
+              disabled={busy}
+              onPress={() => {
+                void handleUseAddress()
+              }}
+            />
+          </View>
+
+          <Text style={styles.orText}>
+            OR
+          </Text>
+
+          <AppButton
+            title={
+              loading
+                ? 'Fetching location...'
+                : 'Use current location'
+            }
+            disabled={busy}
+            onPress={() => {
+              void handleFetchLocation()
+            }}
+          />
+        </View>
       </View>
     </ScreenContainer>
   )
@@ -181,8 +310,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 60,
-    paddingBottom: 32,
+    paddingTop: 44,
+    paddingBottom: 28,
     justifyContent: 'space-between',
   },
 
@@ -197,16 +326,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 28,
-  },
-
-  iconText: {
-    fontSize: 42,
-    color: '#111827',
+    marginBottom: 22,
   },
 
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '700',
     color: '#111827',
     textAlign: 'center',
@@ -214,20 +338,56 @@ const styles = StyleSheet.create({
 
   subtitle: {
     marginTop: 12,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     color: '#6B7280',
     textAlign: 'center',
   },
 
   loader: {
-    marginTop: 28,
+    marginTop: 20,
   },
 
   error: {
-    marginTop: 20,
-    fontSize: 14,
+    marginTop: 16,
+    fontSize: 13,
+    lineHeight: 19,
     color: '#DC2626',
+    textAlign: 'center',
+  },
+
+  actions: {
+    width: '100%',
+  },
+
+  inputLabel: {
+    marginBottom: 8,
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  addressInput: {
+    minHeight: 52,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    fontSize: 15,
+    color: '#111827',
+  },
+
+  buttonSpacing: {
+    marginTop: 12,
+  },
+
+  orText: {
+    marginVertical: 10,
+    color: '#9AA1AD',
+    fontSize: 11,
+    fontWeight: '700',
     textAlign: 'center',
   },
 })
