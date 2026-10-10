@@ -80,6 +80,7 @@ jobs:
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest -q
 
+ 
   account_deletion_edge_function:
     runs-on: ubuntu-latest
     steps:
@@ -87,5 +88,6 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - run: deno install
       - run: deno test supabase/functions/admin-action/account-deletion_test.ts
       - run: deno check supabase/functions/admin-action/index.ts
