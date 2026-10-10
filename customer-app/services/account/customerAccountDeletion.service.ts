@@ -5,8 +5,10 @@ export type AccountDeletionRequest = {
   reason: string | null
   status:
     | 'pending'
+    | 'processing'
     | 'approved'
     | 'rejected'
+    | 'cancelled'
   requestedAt: string
   reviewedAt: string | null
 }
@@ -24,8 +26,10 @@ function normalizeAccountDeletionRequest(
 ): AccountDeletionRequest {
   if (
     value.status !== 'pending' &&
+    value.status !== 'processing' &&
     value.status !== 'approved' &&
-    value.status !== 'rejected'
+    value.status !== 'rejected' &&
+    value.status !== 'cancelled'
   ) {
     throw new Error(
       `Unexpected account deletion request status: ${value.status}`,
