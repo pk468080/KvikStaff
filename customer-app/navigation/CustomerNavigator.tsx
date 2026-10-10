@@ -68,7 +68,7 @@ type CustomerNavigatorProps = {
     latitude: number,
     longitude: number,
     address: string,
-  ) => void
+  ) => Promise<void> | void
   onSignOut: () => void
 }
 

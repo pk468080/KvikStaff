@@ -60,7 +60,7 @@ type HomeScreenProps = {
     latitude: number,
     longitude: number,
     address: string,
-  ) => void
+  ) => Promise<void> | void
   onServicePress?: (
     service: HomeService,
   ) => void
@@ -511,7 +511,7 @@ const [
 
       setAddress(selectedAddress)
 
-      onLocationChange(
+          await onLocationChange(
         latitude,
         longitude,
         selectedAddress,
@@ -579,7 +579,7 @@ const [
 
       setAddress(selectedAddress)
 
-      onLocationChange(
+            await onLocationChange(
         first.latitude,
         first.longitude,
         selectedAddress,
