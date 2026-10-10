@@ -27,6 +27,7 @@ class AccountDeletionRepository:
                     reviewed_at
                 FROM public.account_deletion_requests
                 WHERE user_id = CAST(:customer_id AS uuid)
+                   OR auth_user_id = CAST(:customer_id AS uuid)
                 ORDER BY
                     requested_at DESC,
                     id DESC
@@ -52,6 +53,33 @@ class AccountDeletionRepository:
         reason: str | None,
     ) -> dict[str, Any]:
         async with self.db.begin():
+            existing = await self.db.execute(
+                text(
+                    """
+                    SELECT
+                        id,
+                        reason,
+                        status,
+                        requested_at,
+                        reviewed_at
+                    FROM public.account_deletion_requests
+                    WHERE status IN ('pending', 'processing')
+                      AND (
+                        user_id = CAST(:customer_id AS uuid)
+                        OR auth_user_id = CAST(:customer_id AS uuid)
+                      )
+                    ORDER BY requested_at DESC, id DESC
+                    LIMIT 1
+                    FOR UPDATE
+                    """
+                ),
+                {"customer_id": str(customer_id)},
+            )
+            existing_row = existing.mappings().first()
+
+            if existing_row is not None:
+                return dict(existing_row)
+
             inserted = await self.db.execute(
                 text(
                     """
@@ -66,7 +94,7 @@ class AccountDeletionRepository:
                         'pending'
                     )
                     ON CONFLICT (user_id)
-                    WHERE status = 'pending'
+                    WHERE status IN ('pending', 'processing')
                     DO NOTHING
                     RETURNING
                         id,
@@ -97,8 +125,11 @@ class AccountDeletionRepository:
                         requested_at,
                         reviewed_at
                     FROM public.account_deletion_requests
-                    WHERE user_id = CAST(:customer_id AS uuid)
-                      AND status = 'pending'
+                    WHERE status IN ('pending', 'processing')
+                      AND (
+                        user_id = CAST(:customer_id AS uuid)
+                        OR auth_user_id = CAST(:customer_id AS uuid)
+                      )
                     ORDER BY
                         requested_at DESC,
                         id DESC
@@ -110,9 +141,7 @@ class AccountDeletionRepository:
                 },
             )
 
-            existing_row = (
-                existing.mappings().first()
-            )
+            existing_row = existing.mappings().first()
 
             if existing_row is None:
                 raise ValueError(

@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { processAccountDeletionApproval } from "./account-deletion.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -181,6 +182,103 @@ Deno.serve(async (req: Request) => {
         },
         400,
       );
+    }
+
+    // Customer approval must complete the erasure workflow, not just deactivate the
+    // profile. Worker requests continue through the existing reviewed worker flow.
+    if (
+      action === "admin_review_account_deletion" &&
+      params.p_status === "approved"
+    ) {
+      const requestId =
+        typeof params.p_request_id === "string"
+          ? params.p_request_id
+          : "";
+
+      if (!requestId) {
+        return json(
+          {
+            success: false,
+            error: "Deletion request ID is required.",
+          },
+          400,
+        );
+      }
+
+      const flow = await processAccountDeletionApproval(
+        requestId,
+        {
+          prepare: async (id) => {
+            const { data, error } = await userClient.rpc(
+              "prepare_customer_account_deletion",
+              { p_request_id: id },
+            );
+            return { data, error };
+          },
+
+          findAuthUser: async (id) => {
+            const { data, error } = await adminClient.auth.admin.getUserById(id);
+
+            if (error) {
+              const authError = error as {
+                status?: number;
+                code?: string;
+                message?: string;
+              };
+
+              if (
+                authError.status === 404 ||
+                authError.code === "user_not_found"
+              ) {
+                return { found: false, notFound: true };
+              }
+
+              return { found: false, error: authError };
+            }
+
+            return data.user
+              ? { found: true }
+              : { found: false, notFound: true };
+          },
+
+          deleteAuthUser: async (id) => {
+            const { error } = await adminClient.auth.admin.deleteUser(id);
+            return { error };
+          },
+
+          banAuthUser: async (id) => {
+            const { error } = await adminClient.auth.admin.updateUserById(id, {
+              ban_duration: "876000h",
+            });
+            return { error };
+          },
+
+          complete: async (id, targetAuthUserId, targetProfileId) => {
+            const { data, error } = await userClient.rpc(
+              "complete_customer_account_deletion",
+              {
+                p_request_id: id,
+                p_auth_user_id: targetAuthUserId,
+                p_profile_id: targetProfileId,
+              },
+            );
+            return { data, error };
+          },
+        },
+      );
+
+      if (flow.kind === "failure") {
+        return json(
+          { success: false, error: flow.error },
+          flow.status,
+        );
+      }
+
+      if (flow.kind === "success") {
+        return json({ success: true, data: flow.data });
+      }
+
+      // Not a customer erasure: keep the existing worker-deactivation RPC below.
     }
 
     const {

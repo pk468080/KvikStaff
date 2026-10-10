@@ -7,8 +7,10 @@ from pydantic import BaseModel, Field, field_validator
 
 AccountDeletionStatus = Literal[
     "pending",
+    "processing",
     "approved",
     "rejected",
+    "cancelled",
 ]
 
 
