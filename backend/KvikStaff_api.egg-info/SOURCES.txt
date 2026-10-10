@@ -27,7 +27,6 @@ app/api/v1/support.py
 app/api/v1/worker_presence.py
 app/api/v1/worker_schedule.py
 app/core/__init__.py
-app/core/booking_otp_rate_limit.py
 app/core/config.py
 app/core/database.py
 app/core/exceptions.py
@@ -109,15 +108,12 @@ app/workers/__init__.py
 migrations/__init__.py
 migrations/env.py
 tests/__init__.py
-tests/test_account_deletion_schema.py
 tests/test_atomic_idempotency.py
-tests/test_booking_otp_rate_limit.py
 tests/test_bookings_authorization.py
 tests/test_config.py
 tests/test_fastapi_hardening.py
 tests/test_health.py
 tests/test_idempotency.py
-tests/test_payments_service.py
 tests/test_security.py
 tests/test_worker_authorization.py
 tests/test_worker_presence_service.py
