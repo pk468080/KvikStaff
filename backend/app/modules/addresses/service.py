@@ -12,10 +12,7 @@ from app.modules.addresses.schemas import (
 
 
 class AddressesService:
-    def __init__(
-        self,
-        repository: AddressesRepository,
-    ) -> None:
+    def __init__(self, repository: AddressesRepository) -> None:
         self.repository = repository
 
     async def get_addresses(
@@ -71,7 +68,11 @@ class AddressesService:
                 longitude=request.longitude,
                 label=request.label,
             )
+            # get_db() yields a session but does not commit on success.
+            # Commit the inserted address before returning its ID to the app.
+            await self.repository.db.commit()
         except Exception as exc:
+            await self.repository.db.rollback()
             raise AppError(
                 "ADDRESS_CREATE_FAILED",
                 "Unable to create the customer address.",
@@ -85,17 +86,30 @@ class AddressesService:
         address_id: UUID,
         customer_id: UUID,
     ) -> None:
-        deleted = await self.repository.delete_customer_address(
-            address_id,
-            customer_id,
-        )
-
-        if not deleted:
-            raise AppError(
-                "ADDRESS_NOT_FOUND",
-                "Customer address not found.",
-                404,
+        try:
+            deleted = await self.repository.delete_customer_address(
+                address_id,
+                customer_id,
             )
+
+            if not deleted:
+                await self.repository.db.rollback()
+                raise AppError(
+                    "ADDRESS_NOT_FOUND",
+                    "Customer address not found.",
+                    404,
+                )
+
+            await self.repository.db.commit()
+        except AppError:
+            raise
+        except Exception as exc:
+            await self.repository.db.rollback()
+            raise AppError(
+                "ADDRESS_DELETE_FAILED",
+                "Unable to delete the customer address.",
+                400,
+            ) from exc
 
     @staticmethod
     def _to_response(
