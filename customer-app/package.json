@@ -1,3 +1,4 @@
+
 {
   "name": "customer-app",
   "version": "1.0.0",
@@ -25,13 +26,12 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-url-polyfill": "^4.0.0"
-    
   },
   "overrides": {
-  "xcode": {
-    "uuid": "11.1.1"
-  }
-},
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  },
   "devDependencies": {
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
