@@ -1,5 +1,5 @@
-import { supabase } from '../../lib/supabase'
 
+import { supabase } from '../../lib/supabase'
 
 const MAX_NAME_LENGTH = 100
 const MAX_COMPANY_NAME_LENGTH = 150
@@ -64,13 +64,12 @@ type CreateCustomerProfileResult =
   | CreateCustomerProfileSuccess
   | CreateCustomerProfileFailure
 
-function normalizePhone(phone: string) {
+function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, '')
 }
 
-function normalizeIndianLocalPhone(phone: string) {
+function normalizeIndianLocalPhone(phone: string): string {
   const digits = normalizePhone(phone)
-
   let localPhone = digits
 
   if (digits.length === 11 && digits.startsWith('0')) {
@@ -80,19 +79,17 @@ function normalizeIndianLocalPhone(phone: string) {
   }
 
   if (!/^[6-9]\d{9}$/.test(localPhone)) {
-    throw new Error('Enter a valid 10-digit Indian mobile number.')
+    throw new Error(
+      'Enter a valid 10-digit Indian mobile number.',
+    )
   }
 
   return localPhone
 }
 
-function formatIndianE164Phone(phone: string) {
-  return `+91${normalizeIndianLocalPhone(phone)}`
-}
-
 function safeNormalizeIndianLocalPhone(
   phone: string | null | undefined,
-) {
+): string {
   if (!phone) {
     return ''
   }
@@ -104,25 +101,14 @@ function safeNormalizeIndianLocalPhone(
   }
 }
 
-function getUserMetadataPhone(
-  user: {
-    user_metadata?: Record<string, unknown>
-  } | null,
-) {
-  const value = user?.user_metadata?.phone
-
-  return typeof value === 'string'
-    ? safeNormalizeIndianLocalPhone(value)
-    : ''
+function formatIndianE164Phone(phone: string): string {
+  return `+91${normalizeIndianLocalPhone(phone)}`
 }
 
 async function getCustomerProfile(
   userId: string,
 ): Promise<CustomerProfile | null> {
-  const {
-    data: profile,
-    error,
-  } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select(
       'id, full_name, phone, role, is_active, company_name',
@@ -137,19 +123,9 @@ async function getCustomerProfile(
   return profile
 }
 
-export async function getCurrentCustomerProfile(): Promise<CustomerProfile | null> {
-  const session = await getCurrentSession()
-
-  if (!session) {
-    return null
-  }
-
-  return getCustomerProfile(session.user.id)
-}
-
 function profileNeedsRegistration(
   profile: CustomerProfile | null,
-) {
+): boolean {
   if (!profile) {
     return true
   }
@@ -164,11 +140,48 @@ function profileNeedsRegistration(
   }
 
   return (
-    !profile.full_name ||
-    profile.full_name.trim().length === 0 ||
-    !profile.company_name ||
-    profile.company_name.trim().length === 0
+    !profile.full_name?.trim() ||
+    !profile.company_name?.trim()
   )
+}
+
+export async function getCurrentSession() {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession()
+
+  if (error) {
+    throw error
+  }
+
+  return session
+}
+
+export async function getCurrentCustomerProfile():
+  Promise<CustomerProfile | null> {
+  const session = await getCurrentSession()
+
+  if (!session) {
+    return null
+  }
+
+  const profile = await getCustomerProfile(session.user.id)
+
+  if (!profile) {
+    return null
+  }
+
+  // Display the Auth phone rather than trusting a stale
+  // or incorrectly populated profile.phone value.
+  const authPhone = safeNormalizeIndianLocalPhone(
+    session.user.phone,
+  )
+
+  return {
+    ...profile,
+    phone: authPhone || null,
+  }
 }
 
 export async function sendOtp(phone: string) {
@@ -194,22 +207,19 @@ export async function sendOtp(phone: string) {
     )
   }
 
-  return {
-    success: true,
-  }
+  return { success: true }
 }
 
-export async function getCustomerAuthState(): Promise<CustomerAuthState> {
+export async function getCustomerAuthState():
+  Promise<CustomerAuthState> {
   const {
-    data: sessionData,
-    error: sessionError,
+    data: { session },
+    error,
   } = await supabase.auth.getSession()
 
-  if (sessionError) {
-    throw sessionError
+  if (error) {
+    throw error
   }
-
-  const session = sessionData.session
 
   if (!session) {
     return {
@@ -219,28 +229,25 @@ export async function getCustomerAuthState(): Promise<CustomerAuthState> {
     }
   }
 
-  const profile = await getCustomerProfile(
-    session.user.id,
+  const authPhone = safeNormalizeIndianLocalPhone(
+    session.user.phone,
   )
 
-  const needsRegistration =
-    profileNeedsRegistration(profile)
+  if (!authPhone || !session.user.phone_confirmed_at) {
+    throw new Error(
+      'A verified Indian mobile number is required. Please sign in again.',
+    )
+  }
 
-  const profilePhone = safeNormalizeIndianLocalPhone(
-  profile?.phone,
-)
+  const profile = await getCustomerProfile(session.user.id)
 
-const authPhone = safeNormalizeIndianLocalPhone(
-  session.user.phone,
-)
+  const needsRegistration = profileNeedsRegistration(profile)
 
-const metadataPhone = getUserMetadataPhone(session.user)
-
-return {
-  authenticated: true,
-  needsRegistration,
-  phone: profilePhone || authPhone || metadataPhone,
-}
+  return {
+    authenticated: true,
+    needsRegistration,
+    phone: authPhone,
+  }
 }
 
 export async function verifyOtp(
@@ -281,19 +288,33 @@ export async function verifyOtp(
       }
     }
 
+    const verifiedAuthPhone = safeNormalizeIndianLocalPhone(
+      data.user.phone,
+    )
+
+    if (
+      !data.user.phone_confirmed_at ||
+      verifiedAuthPhone !== localPhone
+    ) {
+      await supabase.auth.signOut({ scope: 'local' })
+
+      return {
+        success: false,
+        error: 'Unable to confirm the verified mobile number.',
+      }
+    }
+
     const profile = await getCustomerProfile(data.user.id)
     const needsRegistration = profileNeedsRegistration(profile)
 
     return {
       success: true,
-      phone:
-        safeNormalizeIndianLocalPhone(profile?.phone) ||
-        localPhone,
+      // The just-verified number is authoritative.
+      phone: localPhone,
       session: data.session,
       needsRegistration,
     }
   } catch (error) {
-    // Do not leave a partially validated session on this device.
     await supabase.auth.signOut({ scope: 'local' })
 
     if (__DEV__) {
@@ -316,8 +337,7 @@ export async function createCustomerProfile(
   companyName: string,
 ): Promise<CreateCustomerProfileResult> {
   const trimmedName = name.trim()
-  const trimmedCompanyName =
-    companyName.trim()
+  const trimmedCompanyName = companyName.trim()
 
   if (!trimmedName) {
     return {
@@ -326,10 +346,7 @@ export async function createCustomerProfile(
     }
   }
 
-  if (
-    trimmedName.length >
-    MAX_NAME_LENGTH
-  ) {
+  if (trimmedName.length > MAX_NAME_LENGTH) {
     return {
       success: false,
       error: `Name must be ${MAX_NAME_LENGTH} characters or fewer.`,
@@ -343,10 +360,7 @@ export async function createCustomerProfile(
     }
   }
 
-  if (
-    trimmedCompanyName.length >
-    MAX_COMPANY_NAME_LENGTH
-  ) {
+  if (trimmedCompanyName.length > MAX_COMPANY_NAME_LENGTH) {
     return {
       success: false,
       error: `Company name must be ${MAX_COMPANY_NAME_LENGTH} characters or fewer.`,
@@ -354,58 +368,55 @@ export async function createCustomerProfile(
   }
 
   try {
+    // Validate the user with Supabase Auth rather than accepting
+    // the client-provided phone as the identity source.
     const {
-      data: sessionData,
-      error: sessionError,
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-    if (sessionError) {
-      throw sessionError
+    if (userError) {
+      throw userError
     }
 
-    const session = sessionData.session
-
-    if (!session) {
+    if (!user) {
       throw new Error(
         'A customer authentication session is required.',
       )
     }
 
-    const userId = session.user.id
+    const authPhone = safeNormalizeIndianLocalPhone(user.phone)
 
-    const existingProfile =
-      await getCustomerProfile(userId)
+    if (!authPhone || !user.phone_confirmed_at) {
+      throw new Error(
+        'Verify your Indian mobile number before saving your profile.',
+      )
+    }
+
+    const userId = user.id
+    const existingProfile = await getCustomerProfile(userId)
+
+    // For new registrations, the number passed from the OTP flow
+    // must match Auth. For existing profiles, ignore the stored
+    // phone argument and repair it from the verified Auth identity.
+    if (!existingProfile) {
+      const requestedPhone = safeNormalizeIndianLocalPhone(phone)
+
+      if (requestedPhone !== authPhone) {
+        throw new Error(
+          'The registration number does not match the mobile number verified by OTP.',
+        )
+      }
+    } else if (
+      existingProfile.role !== 'customer' ||
+      existingProfile.is_active !== true
+    ) {
+      throw new Error(
+        'The authenticated account is not an active customer account.',
+      )
+    }
 
     if (existingProfile) {
-      if (
-        existingProfile.role !== 'customer' ||
-        existingProfile.is_active !== true
-      ) {
-        throw new Error(
-          'The authenticated account is not an active customer account.',
-        )
-      }
-
-      const existingPhone = safeNormalizeIndianLocalPhone(
-  existingProfile.phone,
-)
-
-const metadataPhone = getUserMetadataPhone(session.user)
-
-const normalizedPhone =
-  safeNormalizeIndianLocalPhone(phone) ||
-  existingPhone ||
-  metadataPhone
-
-      if (
-        normalizedPhone.length < 10 ||
-        normalizedPhone.length > 15
-      ) {
-        throw new Error(
-          'A valid customer mobile number is required.',
-        )
-      }
-
       const {
         data: updatedProfile,
         error: updateError,
@@ -413,9 +424,8 @@ const normalizedPhone =
         .from('profiles')
         .update({
           full_name: trimmedName,
-          phone: normalizedPhone,
-          company_name:
-            trimmedCompanyName,
+          phone: authPhone,
+          company_name: trimmedCompanyName,
         })
         .eq('id', userId)
         .select(
@@ -439,22 +449,6 @@ const normalizedPhone =
       }
     }
 
-    const metadataPhone =
-      getUserMetadataPhone(session.user)
-
-   const normalizedPhone =
-  safeNormalizeIndianLocalPhone(phone) ||
-  metadataPhone
-
-    if (
-      normalizedPhone.length < 10 ||
-      normalizedPhone.length > 15
-    ) {
-      throw new Error(
-        'A valid customer mobile number is required.',
-      )
-    }
-
     const {
       data: createdProfile,
       error: createError,
@@ -463,9 +457,8 @@ const normalizedPhone =
       .insert({
         id: userId,
         full_name: trimmedName,
-        phone: normalizedPhone,
-        company_name:
-          trimmedCompanyName,
+        phone: authPhone,
+        company_name: trimmedCompanyName,
       })
       .select(
         'id, full_name, phone, role, is_active, company_name',
@@ -487,40 +480,22 @@ const normalizedPhone =
       profile: createdProfile,
     }
   } catch (error) {
-    console.error(
-      'Customer registration failed:',
-      error,
-    )
+    if (__DEV__) {
+      console.error('Customer profile save failed:', error)
+    }
 
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Unable to create the customer account.',
+          : 'Unable to create or update the customer account.',
     }
   }
 }
 
-export async function getCurrentSession() {
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession()
-
-  if (error) {
-    throw error
-  }
-
-  
-
-  return session
-}
-  
-
 export async function signOut() {
-  const { error } =
-    await supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut()
 
   if (error) {
     throw error
