@@ -473,12 +473,17 @@ const [
       const permission =
         await Location.requestForegroundPermissionsAsync()
 
-      if (
-        permission.status !== 'granted'
-      ) {
-        throw new Error(
-          'Location permission is required to use services in your area.',
-        )
+      if (permission.status !== 'granted') {
+  setLocationError(
+    'Location permission is off. Search for your service area manually, or enable location access in Settings.',
+  )
+
+  if (automatic) {
+    setLocationPickerVisible(true)
+  }
+
+  return
+
       }
 
       const currentLocation =
