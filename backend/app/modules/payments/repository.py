@@ -14,37 +14,46 @@ class PaymentsRepository:
     ) -> None:
         self.db = db
 
+    async def commit_transaction(self) -> None:
+        await self.db.commit()
+
+    
     async def get_customer_booking(
         self,
         customer_id: UUID,
         booking_id: UUID,
+        *,
+        for_update: bool = False,
     ) -> dict[str, Any] | None:
+        query = """
+            SELECT
+                id,
+                customer_id,
+                status::text AS status,
+                fulfillment_type::text
+                    AS fulfillment_type,
+                service_variant_id,
+                total_amount,
+                pricing_snapshot,
+                scheduled_start,
+                schedule_start_date,
+                schedule_end_date,
+                selected_weekdays,
+                off_dates,
+                total_working_hours
+            FROM public.bookings
+            WHERE id =
+                CAST(:booking_id AS uuid)
+              AND customer_id =
+                CAST(:customer_id AS uuid)
+            LIMIT 1
+        """
+
+        if for_update:
+            query += " FOR UPDATE"
+
         result = await self.db.execute(
-            text(
-                """
-                SELECT
-                    id,
-                    customer_id,
-                    status::text AS status,
-                    fulfillment_type::text
-                        AS fulfillment_type,
-                    service_variant_id,
-                    total_amount,
-                    pricing_snapshot,
-                    scheduled_start,
-                    schedule_start_date,
-                    schedule_end_date,
-                    selected_weekdays,
-                    off_dates,
-                    total_working_hours
-                FROM public.bookings
-                WHERE id =
-                    CAST(:booking_id AS uuid)
-                  AND customer_id =
-                    CAST(:customer_id AS uuid)
-                LIMIT 1
-                """
-            ),
+            text(query),
             {
                 "booking_id": str(booking_id),
                 "customer_id": str(customer_id),
@@ -57,6 +66,7 @@ class PaymentsRepository:
             return None
 
         return dict(row)
+
 
     async def mark_payment_failed(
         self,
@@ -103,10 +113,13 @@ class PaymentsRepository:
             booking.get("status")
         )
 
+    
     async def reset_payment_failed(
         self,
         customer_id: UUID,
         booking_id: UUID,
+        *,
+        commit: bool = True,
     ) -> bool:
         result = await self.db.execute(
             text(
@@ -128,9 +141,11 @@ class PaymentsRepository:
             },
         )
 
-        await self.db.commit()
+        if commit:
+            await self.db.commit()
 
         return result.rowcount > 0
+
 
     async def expire_payment_booking(
         self,

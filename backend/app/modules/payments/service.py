@@ -159,10 +159,13 @@ class PaymentsService:
     ) -> dict[str, Any]:
         razorpay = self._require_razorpay()
 
+
         booking = await self.repository.get_customer_booking(
             customer_id=customer_id,
             booking_id=booking_id,
+            for_update=True,
         )
+
 
         if booking is None:
             raise AppError(
@@ -272,10 +275,13 @@ class PaymentsService:
             )
 
         if status_value == "payment_failed":
+           
             await self.repository.reset_payment_failed(
                 customer_id=customer_id,
                 booking_id=booking_id,
+                commit=False,
             )
+
 
         existing_payment = (
             await self.repository.get_latest_payment(
@@ -386,6 +392,7 @@ class PaymentsService:
                                 )
                             ),
                     }
+                await self.repository.commit_transaction()               
 
                 return {
                     "success": True,
