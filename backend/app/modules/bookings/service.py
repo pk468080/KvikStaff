@@ -880,6 +880,7 @@ request_hash=get_request_hash(request),
             occurrence_worker_id
         )
 
+
     @staticmethod
     def select_preferred_occurrence(
         occurrences: list[dict[str, Any]],
@@ -887,134 +888,92 @@ request_hash=get_request_hash(request),
         if not occurrences:
             return None
 
-        now = datetime.now(
-            timezone.utc
-        )
+        now = datetime.now(timezone.utc)
 
+        # Only these statuses represent a live worker lifecycle.
+        # Cancelled, completed, and expired occurrences must never
+        # be selected as the current or next shift.
+        terminal_statuses = {
+            "cancelled",
+            "completed",
+            "expired",
+        }
+
+        def get_status(
+            occurrence: dict[str, Any],
+        ) -> str:
+            return str(
+                occurrence.get("status") or ""
+            ).lower()
+
+        def get_start(
+            occurrence: dict[str, Any],
+        ) -> datetime | None:
+            value = occurrence.get("scheduled_start")
+
+            if not isinstance(value, datetime):
+                return None
+
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+
+            return value
+
+        # 1. Prefer a real, active worker lifecycle.
         lifecycle = [
             occurrence
             for occurrence in occurrences
             if (
-                occurrence.get(
-                    "worker_id"
-                )
-                is not None
-                and str(
-                    occurrence.get(
-                        "status"
-                    )
-                    or ""
-                )
+                occurrence.get("worker_id") is not None
+                and get_status(occurrence)
                 in OCCURRENCE_LIFECYCLE_STATUSES
             )
         ]
 
         if lifecycle:
-
             def lifecycle_key(
                 occurrence: dict[str, Any],
-            ):
-                priority = (
-                    OCCURRENCE_STATUS_PRIORITY.get(
-                        str(
-                            occurrence.get(
-                                "status"
-                            )
-                            or ""
-                        ),
-                        0,
-                    )
+            ) -> tuple[int, float]:
+                status = get_status(occurrence)
+                start = get_start(occurrence)
+
+                priority = OCCURRENCE_STATUS_PRIORITY.get(
+                    status, 0
                 )
 
-                scheduled_start = (
-                    occurrence.get(
-                        "scheduled_start"
-                    )
+                distance = (
+                    abs((start - now).total_seconds())
+                    if start is not None
+                    else float("inf")
                 )
 
-                distance = float(
-                    "inf"
-                )
+                return (-priority, distance)
 
-                if isinstance(
-                    scheduled_start,
-                    datetime,
-                ):
-                    start = scheduled_start
+            return min(lifecycle, key=lifecycle_key)
 
-                    if start.tzinfo is None:
-                        start = (
-                            start.replace(
-                                tzinfo=timezone.utc
-                            )
-                        )
-
-                    distance = abs(
-                        (
-                            start
-                            - now
-                        ).total_seconds()
-                    )
-
-                return (
-                    -priority,
-                    distance,
-                )
-
-            return sorted(
-                lifecycle,
-                key=lifecycle_key,
-            )[0]
-
-        future = []
-
-        for occurrence in occurrences:
-            scheduled_start = (
-                occurrence.get(
-                    "scheduled_start"
-                )
+        # 2. Find the earliest eligible upcoming occurrence.
+        # Never select cancelled, completed, or expired shifts.
+        future = [
+            occurrence
+            for occurrence in occurrences
+            if (
+                get_status(occurrence) not in terminal_statuses
+                and (start := get_start(occurrence)) is not None
+                and start >= now
             )
-
-            if not isinstance(
-                scheduled_start,
-                datetime,
-            ):
-                continue
-
-            start = scheduled_start
-
-            if start.tzinfo is None:
-                start = start.replace(
-                    tzinfo=timezone.utc
-                )
-
-            if start >= now:
-                future.append(
-                    occurrence
-                )
+        ]
 
         if future:
-            return sorted(
+            return min(
                 future,
-                key=lambda occurrence: (
-                    occurrence.get(
-                        "scheduled_start"
-                    )
-                ),
-            )[0]
+                key=lambda occurrence: get_start(occurrence),
+            )
 
-        return sorted(
-            occurrences,
-            key=lambda occurrence: (
-                occurrence.get(
-                    "scheduled_start"
-                )
-                or datetime.min.replace(
-                    tzinfo=timezone.utc
-                )
-            ),
-            reverse=True,
-        )[0]
+        # 3. No active or upcoming occurrence remains.
+        # Do not display an old cancelled/completed occurrence
+        # as the next shift.
+        return None
+
 
     @staticmethod
     def sort_status_history(
