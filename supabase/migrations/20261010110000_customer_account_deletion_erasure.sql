@@ -1,5 +1,5 @@
 -- Customer account deletion with a pseudonymous profile for required historical records.
--- Applied manually in Supabase on 2026-10-10; migration history synchronization is pending.
+-- Applied manually in Supabase on 2026-10-10; migration history synchronized.
 
 ALTER TABLE public.account_deletion_requests
   DROP CONSTRAINT IF EXISTS account_deletion_requests_status_check;
