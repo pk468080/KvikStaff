@@ -1,8 +1,10 @@
+
 from __future__ import annotations
 
 import logging
 import math
 from typing import Annotated
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
@@ -29,15 +31,14 @@ PROVIDER_ERROR_MESSAGE = (
 
 class GeocodeAddressRequest(BaseModel):
     address: str = Field(min_length=3, max_length=256)
-    
-    
+
     @field_validator("address", mode="before")
     @classmethod
     def normalize_address(cls, value: object) -> str:
         if not isinstance(value, str):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "Enter a valid service address."
-            )  # noqa: TRY004
+            )
 
         normalized = value.strip()
 
@@ -154,7 +155,7 @@ def _parse_google_geocoding_payload(
 )
 async def geocode_customer_address(
     request: GeocodeAddressRequest,
-    current_user: CurrentUser = Depends(get_customer),
+    current_user: Annotated[CurrentUser, Depends(get_customer)],
 ) -> GeocodeAddressResponse:
     api_key = (
         settings.google_maps_geocoding_api_key or ""
