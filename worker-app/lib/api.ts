@@ -1,7 +1,10 @@
+
 import { supabase } from './supabase'
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL
+
+const API_REQUEST_TIMEOUT_MS = 15_000
 
 if (!API_BASE_URL) {
   throw new Error(
@@ -69,8 +72,7 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token =
-    await getAccessToken()
+  const token = await getAccessToken()
 
   const baseUrl =
     API_BASE_URL.replace(/\/+$/, '')
@@ -80,9 +82,7 @@ export async function apiRequest<T>(
       ? path
       : `/${path}`
 
-  const headers = new Headers(
-    options.headers,
-  )
+  const headers = new Headers(options.headers)
 
   headers.set(
     'Authorization',
@@ -99,37 +99,75 @@ export async function apiRequest<T>(
     )
   }
 
-  const response = await fetch(
-    `${baseUrl}${normalizedPath}`,
-    {
-      ...options,
-      headers,
-    },
-  )
+  const controller = new AbortController()
+  const callerSignal = options.signal
 
-  const responseText =
-    await response.text()
+  const abortFromCaller = (): void => {
+    controller.abort()
+  }
 
-  let payload: unknown = null
-
-  if (responseText.trim()) {
-    try {
-      payload = JSON.parse(
-        responseText,
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      controller.abort()
+    } else {
+      callerSignal.addEventListener(
+        'abort',
+        abortFromCaller,
+        { once: true },
       )
-    } catch {
-      payload = responseText
     }
   }
 
-  if (!response.ok) {
-    throw new Error(
-      getErrorMessage(
-        payload,
-        response.status,
-      ),
+  let timedOut = false
+
+  const timeoutId = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, API_REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(
+      `${baseUrl}${normalizedPath}`,
+      {
+        ...options,
+        headers,
+        signal: controller.signal,
+      },
+    )
+
+    const responseText = await response.text()
+
+    let payload: unknown = null
+
+    if (responseText.trim()) {
+      try {
+        payload = JSON.parse(responseText)
+      } catch {
+        payload = responseText
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        getErrorMessage(payload, response.status),
+      )
+    }
+
+    return payload as T
+  } catch (cause) {
+    if (timedOut) {
+      throw new Error(
+        'Request timed out after 15 seconds. Please check your connection and try again.',
+      )
+    }
+
+    throw cause
+  } finally {
+    clearTimeout(timeoutId)
+
+    callerSignal?.removeEventListener(
+      'abort',
+      abortFromCaller,
     )
   }
-
-  return payload as T
 }
