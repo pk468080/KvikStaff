@@ -1,12 +1,8 @@
+
 import * as Location from 'expo-location'
 
-import type {
-  WorkerLocation,
-} from '../../types/worker'
-
-import {
-  WORKER,
-} from '../../constants/worker'
+import type { WorkerLocation } from '../../types/worker'
+import { WORKER } from '../../constants/worker'
 
 export type WorkerLocationPermissionState =
   | 'granted'
@@ -31,10 +27,8 @@ function mapPermissionStatus(
   switch (status) {
     case Location.PermissionStatus.GRANTED:
       return 'granted'
-
     case Location.PermissionStatus.DENIED:
       return 'denied'
-
     default:
       return 'undetermined'
   }
@@ -68,24 +62,15 @@ function validateCoordinates(
 function mapLocation(
   location: Location.LocationObject,
 ): WorkerLocation {
-  const latitude =
-    location.coords.latitude
+  const latitude = location.coords.latitude
+  const longitude = location.coords.longitude
 
-  const longitude =
-    location.coords.longitude
-
-  validateCoordinates(
-    latitude,
-    longitude,
-  )
+  validateCoordinates(latitude, longitude)
 
   return {
     latitude,
     longitude,
-    recordedAt:
-      new Date(
-        location.timestamp,
-      ).toISOString(),
+    recordedAt: new Date(location.timestamp).toISOString(),
   }
 }
 
@@ -108,14 +93,9 @@ async function withTimeout<T>(
   timeoutMs: number | undefined,
 ): Promise<T> {
   const normalizedTimeout =
-    normalizePositiveMilliseconds(
-      timeoutMs,
-    )
+    normalizePositiveMilliseconds(timeoutMs)
 
-  if (
-    normalizedTimeout ===
-    undefined
-  ) {
+  if (normalizedTimeout === undefined) {
     return promise
   }
 
@@ -126,29 +106,19 @@ async function withTimeout<T>(
   try {
     return await Promise.race([
       promise,
-      new Promise<T>(
-        (_, reject) => {
-          timeoutId =
-            setTimeout(
-              () => {
-                reject(
-                  new Error(
-                    'Worker location request timed out.',
-                  ),
-                )
-              },
-              normalizedTimeout,
-            )
-        },
-      ),
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(
+            new Error(
+              'Worker location request timed out.',
+            ),
+          )
+        }, normalizedTimeout)
+      }),
     ])
   } finally {
-    if (
-      timeoutId !== undefined
-    ) {
-      clearTimeout(
-        timeoutId,
-      )
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
     }
   }
 }
@@ -163,15 +133,8 @@ export async function getWorkerLocationPermissions(): Promise<
     await Location.getBackgroundPermissionsAsync()
 
   return {
-    foreground:
-      mapPermissionStatus(
-        foreground.status,
-      ),
-
-    background:
-      mapPermissionStatus(
-        background.status,
-      ),
+    foreground: mapPermissionStatus(foreground.status),
+    background: mapPermissionStatus(background.status),
   }
 }
 
@@ -179,18 +142,14 @@ export async function requestWorkerForegroundLocationPermission(): Promise<Worke
   const permission =
     await Location.requestForegroundPermissionsAsync()
 
-  return mapPermissionStatus(
-    permission.status,
-  )
+  return mapPermissionStatus(permission.status)
 }
 
 export async function requestWorkerBackgroundLocationPermission(): Promise<WorkerLocationPermissionState> {
   const permission =
     await Location.requestBackgroundPermissionsAsync()
 
-  return mapPermissionStatus(
-    permission.status,
-  )
+  return mapPermissionStatus(permission.status)
 }
 
 export async function requestWorkerLocationPermissions(): Promise<
@@ -199,16 +158,10 @@ export async function requestWorkerLocationPermissions(): Promise<
   const foregroundStatus =
     await requestWorkerForegroundLocationPermission()
 
-  if (
-    foregroundStatus !==
-    'granted'
-  ) {
+  if (foregroundStatus !== 'granted') {
     return {
-      foreground:
-        foregroundStatus,
-
-      background:
-        'denied',
+      foreground: foregroundStatus,
+      background: 'denied',
     }
   }
 
@@ -216,11 +169,8 @@ export async function requestWorkerLocationPermissions(): Promise<
     await requestWorkerBackgroundLocationPermission()
 
   return {
-    foreground:
-      foregroundStatus,
-
-    background:
-      backgroundStatus,
+    foreground: foregroundStatus,
+    background: backgroundStatus,
   }
 }
 
@@ -229,9 +179,7 @@ export async function ensureWorkerForegroundLocationPermission(): Promise<void> 
     await Location.getForegroundPermissionsAsync()
 
   if (
-    mapPermissionStatus(
-      permission.status,
-    ) === 'granted'
+    mapPermissionStatus(permission.status) === 'granted'
   ) {
     return
   }
@@ -239,9 +187,7 @@ export async function ensureWorkerForegroundLocationPermission(): Promise<void> 
   const status =
     await requestWorkerForegroundLocationPermission()
 
-  if (
-    status !== 'granted'
-  ) {
+  if (status !== 'granted') {
     throw new Error(
       'Foreground location permission is required for worker location updates.',
     )
@@ -254,19 +200,14 @@ export async function ensureWorkerBackgroundLocationPermission(): Promise<void> 
   const permissions =
     await getWorkerLocationPermissions()
 
-  if (
-    permissions.background ===
-    'granted'
-  ) {
+  if (permissions.background === 'granted') {
     return
   }
 
   const status =
     await requestWorkerBackgroundLocationPermission()
 
-  if (
-    status !== 'granted'
-  ) {
+  if (status !== 'granted') {
     throw new Error(
       'Background location permission is required for background worker tracking.',
     )
@@ -292,95 +233,64 @@ export async function getCurrentWorkerLocation(
   }
 
   const maximumAge =
-    normalizePositiveMilliseconds(
-      options.maximumAge,
-    )
+    normalizePositiveMilliseconds(options.maximumAge)
 
-  if (
-    maximumAge !==
-    undefined
-  ) {
+  if (maximumAge !== undefined) {
     const lastKnownLocation =
-      await Location.getLastKnownPositionAsync(
-        {
-          maxAge:
-            maximumAge,
-          requiredAccuracy: 250,
-        },
-      )
+      await Location.getLastKnownPositionAsync({
+        maxAge: maximumAge,
+        requiredAccuracy: 250,
+      })
 
-    if (
-      lastKnownLocation
-    ) {
-      return mapLocation(
-        lastKnownLocation,
-      )
+    if (lastKnownLocation) {
+      return mapLocation(lastKnownLocation)
     }
   }
 
   const locationPromise =
-    Location.getCurrentPositionAsync(
-      {
-        accuracy:
-          options.accuracy ??
-          Location.Accuracy.High,
+    Location.getCurrentPositionAsync({
+      accuracy:
+        options.accuracy ?? Location.Accuracy.High,
+      mayShowUserSettingsDialog: true,
+    })
 
-        mayShowUserSettingsDialog:
-          true,
-      },
-    )
-
+  // Prevent Go Online from waiting indefinitely for a GPS fix.
   const location = await withTimeout(
-  locationPromise,
-  options.timeout ?? 12_000,
-)
-
-  return mapLocation(
-    location,
+    locationPromise,
+    options.timeout ?? 12_000,
   )
+
+  return mapLocation(location)
 }
 
 export async function getLastKnownWorkerLocation(
   maximumAgeMs =
-    WORKER.location
-      .defaultUpdateIntervalSeconds *
-    1000,
+    WORKER.location.defaultUpdateIntervalSeconds * 1000,
 ): Promise<WorkerLocation | null> {
   const permission =
     await Location.getForegroundPermissionsAsync()
 
   if (
-    mapPermissionStatus(
-      permission.status,
-    ) !== 'granted'
+    mapPermissionStatus(permission.status) !== 'granted'
   ) {
     return null
   }
 
   const safeMaximumAge =
-    normalizePositiveMilliseconds(
-      maximumAgeMs,
-    ) ??
-    WORKER.location
-      .defaultUpdateIntervalSeconds *
-    1000
+    normalizePositiveMilliseconds(maximumAgeMs) ??
+    WORKER.location.defaultUpdateIntervalSeconds * 1000
 
   const location =
-    await Location.getLastKnownPositionAsync(
-      {
-        maxAge:
-          safeMaximumAge,
-        requiredAccuracy: 250,
-      },
-    )
+    await Location.getLastKnownPositionAsync({
+      maxAge: safeMaximumAge,
+      requiredAccuracy: 250,
+    })
 
   if (!location) {
     return null
   }
 
-  return mapLocation(
-    location,
-  )
+  return mapLocation(location)
 }
 
 export async function getWorkerLocationAccuracy(): Promise<number | null> {
@@ -388,9 +298,7 @@ export async function getWorkerLocationAccuracy(): Promise<number | null> {
     await Location.getForegroundPermissionsAsync()
 
   if (
-    mapPermissionStatus(
-      permission.status,
-    ) !== 'granted'
+    mapPermissionStatus(permission.status) !== 'granted'
   ) {
     return null
   }
@@ -403,27 +311,18 @@ export async function getWorkerLocationAccuracy(): Promise<number | null> {
   }
 
   const location =
-    await Location.getCurrentPositionAsync(
-      {
-        accuracy:
-          Location.Accuracy.Balanced,
+    await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+      mayShowUserSettingsDialog: true,
+    })
 
-        mayShowUserSettingsDialog:
-          true,
-      },
-    )
-
-  return Number.isFinite(
-    location.coords.accuracy,
-  )
+  return Number.isFinite(location.coords.accuracy)
     ? location.coords.accuracy
     : null
 }
 
 export async function watchWorkerLocation(
-  callback: (
-    location: WorkerLocation,
-  ) => void,
+  callback: (location: WorkerLocation) => void,
   options: WorkerLocationOptions = {},
 ): Promise<Location.LocationSubscription> {
   await ensureWorkerForegroundLocationPermission()
@@ -438,33 +337,20 @@ export async function watchWorkerLocation(
   }
 
   const interval =
-    normalizePositiveMilliseconds(
-      options.timeInterval,
-    ) ??
-    WORKER.location
-      .defaultUpdateIntervalSeconds *
-    1000
+    normalizePositiveMilliseconds(options.timeInterval) ??
+    WORKER.location.defaultUpdateIntervalSeconds * 1000
 
   const subscription =
     await Location.watchPositionAsync(
       {
         accuracy:
-          options.accuracy ??
-          Location.Accuracy.High,
-
+          options.accuracy ?? Location.Accuracy.High,
         distanceInterval:
-          WORKER.location
-            .minimumDistanceMeters,
-
-        timeInterval:
-          interval,
+          WORKER.location.minimumDistanceMeters,
+        timeInterval: interval,
       },
       location => {
-        callback(
-          mapLocation(
-            location,
-          ),
-        )
+        callback(mapLocation(location))
       },
     )
 
@@ -488,8 +374,7 @@ export function shouldPublishWorkerLocation(
   location: WorkerLocation | null,
   previousLocation: WorkerLocation | null,
   minimumDistanceMeters =
-    WORKER.location
-      .minimumDistanceMeters,
+    WORKER.location.minimumDistanceMeters,
 ): boolean {
   if (!location) {
     return false
@@ -505,64 +390,34 @@ export function shouldPublishWorkerLocation(
       location,
     )
 
-  return (
-    distance >=
-    minimumDistanceMeters
-  )
+  return distance >= minimumDistanceMeters
 }
 
 export function calculateWorkerLocationDistanceMeters(
   from: WorkerLocation,
   to: WorkerLocation,
 ): number {
-  validateCoordinates(
-    from.latitude,
-    from.longitude,
+  validateCoordinates(from.latitude, from.longitude)
+  validateCoordinates(to.latitude, to.longitude)
+
+  const earthRadiusMeters = 6371000
+
+  const latitudeDelta = toRadians(
+    to.latitude - from.latitude,
   )
 
-  validateCoordinates(
-    to.latitude,
-    to.longitude,
+  const longitudeDelta = toRadians(
+    to.longitude - from.longitude,
   )
 
-  const earthRadiusMeters =
-    6371000
-
-  const latitudeDelta =
-    toRadians(
-      to.latitude -
-        from.latitude,
-    )
-
-  const longitudeDelta =
-    toRadians(
-      to.longitude -
-        from.longitude,
-    )
-
-  const fromLatitude =
-    toRadians(
-      from.latitude,
-    )
-
-  const toLatitude =
-    toRadians(
-      to.latitude,
-    )
+  const fromLatitude = toRadians(from.latitude)
+  const toLatitude = toRadians(to.latitude)
 
   const a =
-    Math.sin(
-      latitudeDelta / 2,
-    ) ** 2 +
-    Math.cos(
-      fromLatitude,
-    ) *
-      Math.cos(
-        toLatitude,
-      ) *
-      Math.sin(
-        longitudeDelta / 2,
-      ) ** 2
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(fromLatitude) *
+      Math.cos(toLatitude) *
+      Math.sin(longitudeDelta / 2) ** 2
 
   const c =
     2 *
@@ -571,53 +426,30 @@ export function calculateWorkerLocationDistanceMeters(
       Math.sqrt(1 - a),
     )
 
-  return (
-    earthRadiusMeters *
-    c
-  )
+  return earthRadiusMeters * c
 }
 
 export function isWorkerLocationFresh(
   location: WorkerLocation | null,
   maxAgeSeconds =
-    WORKER.location
-      .defaultUpdateIntervalSeconds *
-    3,
+    WORKER.location.defaultUpdateIntervalSeconds * 3,
   now: Date = new Date(),
 ): boolean {
   if (!location) {
     return false
   }
 
-  const recordedAt =
-    new Date(
-      location.recordedAt,
-    )
+  const recordedAt = new Date(location.recordedAt)
 
-  if (
-    Number.isNaN(
-      recordedAt.getTime(),
-    )
-  ) {
+  if (Number.isNaN(recordedAt.getTime())) {
     return false
   }
 
-  const ageMs =
-    now.getTime() -
-    recordedAt.getTime()
+  const ageMs = now.getTime() - recordedAt.getTime()
 
-  return (
-    ageMs >= 0 &&
-    ageMs <=
-      maxAgeSeconds * 1000
-  )
+  return ageMs >= 0 && ageMs <= maxAgeSeconds * 1000
 }
 
-function toRadians(
-  degrees: number,
-): number {
-  return (
-    degrees *
-    (Math.PI / 180)
-  )
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180)
 }
