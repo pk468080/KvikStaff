@@ -837,6 +837,11 @@ export default function WorkerHomeScreen({
           >
             {presenceDescription}
           </Text>
+          {presenceError ? (
+  <Text style={styles.presenceError}>
+    {presenceError}
+  </Text>
+) : null}
 
           <View
             style={
@@ -1440,6 +1445,12 @@ const styles =
       color:
         '#D7E4EF',
     },
+    presenceError: {
+  marginTop: UI.spacing.md,
+  color: '#FECACA',
+  fontSize: UI.typography.small,
+  lineHeight: 18,
+},
 
     availabilityMeta: {
       marginTop:
