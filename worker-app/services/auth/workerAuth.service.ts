@@ -733,32 +733,70 @@ export async function refreshWorkerSession(): Promise<Session | null> {
   return data.session
 }
 
+
 export async function signOutWorker(): Promise<void> {
-  try {
-    await goOffline()
-  } catch {
-    console.warn(
-      'Worker presence cleanup failed during sign out.',
-    )
-  }
+  // Best-effort cleanup must not block sign-out indefinitely.
+  const cleanupPromise = Promise.allSettled([
+    goOffline(),
+    deactivateActiveWorkerPushTokens(),
+  ])
+
+  let timeoutId:
+    | ReturnType<typeof setTimeout>
+    | undefined
 
   try {
-    await deactivateActiveWorkerPushTokens()
-  } catch {
-    console.warn(
-      'Worker push-token cleanup failed during sign out.',
-    )
+    const cleanupResult = await Promise.race([
+      cleanupPromise.then(results => ({
+        timedOut: false as const,
+        results,
+      })),
+
+      new Promise<{
+        timedOut: true
+        results: null
+      }>(resolve => {
+        timeoutId = setTimeout(() => {
+          resolve({
+            timedOut: true,
+            results: null,
+          })
+        }, 2500)
+      }),
+    ])
+
+    if (cleanupResult.timedOut) {
+      console.warn(
+        'Worker cleanup timed out during sign-out; continuing with local sign-out.',
+      )
+    } else {
+      cleanupResult.results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.warn(
+            index === 0
+              ? 'Unable to set worker offline during sign-out.'
+              : 'Unable to deactivate worker push tokens during sign-out.',
+            result.reason,
+          )
+        }
+      })
+    }
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+    }
   }
 
-  const {
-    error,
-  } =
-    await supabase.auth.signOut()
+  // Clear this device's session without waiting for a global logout request.
+  const { error } = await supabase.auth.signOut({
+    scope: 'local',
+  })
 
   if (error) {
     throw error
   }
 }
+
 
 export function subscribeToWorkerAuthChanges(
   callback: (
