@@ -417,9 +417,11 @@ navigation.replace('Customer')
                   address,
                 )
 
-                navigation.replace(
-                  'Customer',
-                )
+                await restoreSavedCustomerLocation()
+
+navigation.replace(
+  'Customer',
+)
               }}
             />
           )}
