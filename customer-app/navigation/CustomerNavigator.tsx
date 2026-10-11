@@ -369,6 +369,8 @@ const result =
                 return
               }
 
+              instantBookingIdempotencyKeyRef.current = null
+
               navigation.navigate(
                 'Payment',
                 {
@@ -441,6 +443,8 @@ const result =
                   },
                   idempotencyKey,
                 )
+
+                scheduledBookingIdempotencyKeyRef.current = null
 
               navigation.navigate(
                 'Payment',
@@ -570,9 +574,7 @@ const result =
                 },
                 idempotencyKey,
               )
-              instantBookingIdempotencyKeyRef.current = null
-scheduledBookingIdempotencyKeyRef.current = null
-recurringBookingIdempotencyKeyRef.current = null
+              recurringBookingIdempotencyKeyRef.current = null
             navigation.navigate(
               'Payment',
               {
