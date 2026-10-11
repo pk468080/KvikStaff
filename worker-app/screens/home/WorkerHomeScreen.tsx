@@ -830,13 +830,11 @@ export default function WorkerHomeScreen({
             ) : null}
           </View>
 
-          <Text
-            style={
-              styles.availabilityText
-            }
-          >
-            {presenceDescription}
-          </Text>
+          {presenceError ? (
+  <Text style={styles.presenceError}>
+    {presenceError}
+  </Text>
+) : null}
           {presenceError ? (
   <Text style={styles.presenceError}>
     {presenceError}

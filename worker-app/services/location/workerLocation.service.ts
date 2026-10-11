@@ -330,11 +330,10 @@ export async function getCurrentWorkerLocation(
       },
     )
 
-  const location =
-    await withTimeout(
-      locationPromise,
-      options.timeout,
-    )
+  const location = await withTimeout(
+  locationPromise,
+  options.timeout ?? 12_000,
+)
 
   return mapLocation(
     location,
