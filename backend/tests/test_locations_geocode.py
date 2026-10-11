@@ -3,15 +3,14 @@ from unittest.mock import AsyncMock
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 from redis.exceptions import RedisError
 
 from app.api.v1 import locations
 from app.core import geocoding_rate_limit as rate_limiter
 from app.core.security import CurrentUser
 from app.main import app
-
 
 TEST_CUSTOMER_ID = "11111111-1111-1111-1111-111111111111"
 TEST_API_KEY = "test-google-api-key"
