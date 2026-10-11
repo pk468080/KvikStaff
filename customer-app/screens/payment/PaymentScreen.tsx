@@ -54,16 +54,20 @@ export default function PaymentScreen({
     useState<BookingPaymentDetails | null>(null)
 
   const [processing, setProcessing] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+const [loading, setLoading] = useState(true)
+const [error, setError] = useState<string | null>(null)
+
+const [paymentDetailsRetryCount, setPaymentDetailsRetryCount] =
+  useState(0)
   const paymentOrderIdempotencyKeyRef =
     useRef<string | null>(null)
   useEffect(() => {
     let cancelled = false
 
-    async function loadPaymentDetails() {
-      setLoading(true)
-      setError(null)
+   async function loadPaymentDetails() {
+  setDetails(null)
+  setLoading(true)
+  setError(null)
 
       try {
         const authoritative =
@@ -96,7 +100,7 @@ export default function PaymentScreen({
     return () => {
       cancelled = true
     }
-  }, [bookingId])
+ }, [bookingId, paymentDetailsRetryCount])
 
   async function handlePayment() {
     if (processing || loading || !details) {
@@ -344,6 +348,22 @@ order = await createRazorpayOrder(
               </Text>
             </View>
           ) : null}
+          {error && !details && !loading ? (
+  <Pressable
+    accessibilityRole="button"
+    accessibilityLabel="Retry loading payment details"
+    style={styles.retryButton}
+    onPress={() => {
+      setPaymentDetailsRetryCount(
+        current => current + 1,
+      )
+    }}
+  >
+    <Text style={styles.retryButtonText}>
+      Retry loading payment details
+    </Text>
+  </Pressable>
+) : null}
         </ScrollView>
 
         <View style={styles.footer}>
@@ -746,7 +766,21 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: '#7E4038',
   },
+retryButton: {
+  minHeight: 46,
+  marginTop: 12,
+  paddingHorizontal: 16,
+  borderRadius: 12,
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#0A3972',
+},
 
+retryButtonText: {
+  color: '#FFFFFF',
+  fontSize: 14,
+  fontWeight: '700',
+},
   footer: {
     paddingHorizontal: 20,
     paddingTop: 10,

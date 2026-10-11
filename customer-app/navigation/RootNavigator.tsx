@@ -24,6 +24,7 @@ import {
 } from '../services/auth/auth.service'
 
 import {
+  getLatestCustomerAddress,
   getOrCreateCustomerAddress,
 } from '../services/addresses/customerAddress.service'
 
@@ -68,14 +69,18 @@ export default function RootNavigator() {
       supabase.auth.onAuthStateChange(
         event => {
           if (
-            event !== 'SIGNED_OUT'
-          ) {
-            return
-          }
+  event !== 'SIGNED_OUT'
+) {
+  return
+}
 
-          if (
-            !navigationRef.isReady()
-          ) {
+// Never carry one customer's service location into another session.
+setCustomerLocation(null)
+setPhone('')
+
+if (
+  !navigationRef.isReady()
+) {
             return
           }
 
@@ -137,7 +142,28 @@ export default function RootNavigator() {
       ],
     })
   }
+async function restoreSavedCustomerLocation() {
+  try {
+    const savedAddress =
+      await getLatestCustomerAddress()
 
+    if (!savedAddress) {
+      return
+    }
+
+    setCustomerLocation({
+      latitude: savedAddress.latitude,
+      longitude: savedAddress.longitude,
+      address: savedAddress.addressLine,
+    })
+  } catch (error) {
+    // Do not block sign-in if saved-address restoration fails.
+    console.error(
+      'Unable to restore saved customer location:',
+      error,
+    )
+  }
+}
   async function handleOtpVerified(
     verifiedPhone: string,
     navigation: {
@@ -200,7 +226,7 @@ export default function RootNavigator() {
     }
   }
 
-  function handleSplashFinished(
+  async function handleSplashFinished(
     authState: CustomerAuthState,
     navigation: {
       replace: (
@@ -220,13 +246,11 @@ export default function RootNavigator() {
       return
     }
 
-    /*
-     * Returning customers go directly to Home.
-     *
-     * Home will refresh the current GPS location
-     * without displaying the onboarding Location screen.
-     */
-    navigation.replace('Customer')
+   // Restore the saved service address before opening Home.
+// Returning customers should not need GPS permission if an address exists.
+await restoreSavedCustomerLocation()
+
+navigation.replace('Customer')
   }
 
   async function handleLocationFetched(
