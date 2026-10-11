@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import math
-
+from typing import Annotated
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
@@ -29,12 +29,15 @@ PROVIDER_ERROR_MESSAGE = (
 
 class GeocodeAddressRequest(BaseModel):
     address: str = Field(min_length=3, max_length=256)
-
+    
+    
     @field_validator("address", mode="before")
     @classmethod
     def normalize_address(cls, value: object) -> str:
         if not isinstance(value, str):
-            raise ValueError("Enter a valid service address.")
+            raise ValueError(
+                "Enter a valid service address."
+            )  # noqa: TRY004
 
         normalized = value.strip()
 
