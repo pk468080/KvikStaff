@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "KvikStaff",
-    "slug": "kvikstaff",
+    "slug": "customer-app",
+    "icon": "./assets/images/icon.png",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -11,7 +12,11 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "com.pk468080.customerapp"
+      "package": "com.pk468080.customerapp",
+      "adaptiveIcon": {
+    "foregroundImage": "./assets/images/icon.png",
+    "backgroundColor": "#FFFFFF"
+  }
     },
     "web": {},
     "plugins": [
