@@ -21,6 +21,7 @@ import * as Location from 'expo-location'
 import { useFocusEffect } from '@react-navigation/native'
 import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
 import CustomerIcon from '../../components/ui/CustomerIcon'
+import { geocodeCustomerAddress } from '../../services/addresses/customerGeocoding.service'
 
 import {
   getCustomerBookings,
@@ -551,7 +552,7 @@ const [
     }
   }
 
-  async function handleSearchLocation() {
+    async function handleSearchLocation() {
     const query = locationQuery.trim()
 
     if (query.length < 3) {
@@ -563,30 +564,14 @@ const [
     setLocationSearching(true)
 
     try {
-      const results =
-        await Location.geocodeAsync(query)
-
-      const first = results[0]
-
-      if (!first) {
-        setLocationError(
-          'Location not found. Try a more specific address or area.',
-        )
-        return
-      }
-
-      const formatted = await reverseGeocode(
-        first.latitude,
-        first.longitude,
-      )
-
-      const selectedAddress = formatted || query
+      const result = await geocodeCustomerAddress(query)
+      const selectedAddress = result.formattedAddress || query
 
       setAddress(selectedAddress)
 
-            await onLocationChange(
-        first.latitude,
-        first.longitude,
+      await onLocationChange(
+        result.latitude,
+        result.longitude,
         selectedAddress,
       )
 
@@ -600,7 +585,9 @@ const [
       )
 
       setLocationError(
-        'Unable to find that location. Please try again.',
+        err instanceof Error
+          ? err.message
+          : 'Unable to find that location. Please try again.',
       )
     } finally {
       setLocationSearching(false)

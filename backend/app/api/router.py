@@ -17,6 +17,7 @@ from app.api.v1.support import router as support_router
 from app.api.v1.worker_presence import (
     router as worker_presence_router,
 )
+from app.api.v1.locations import router as locations_router
 from app.api.v1.worker_schedule import (
     router as worker_schedule_router,
 )
@@ -50,6 +51,11 @@ api_router.include_router(
     addresses_router,
     prefix="/addresses",
     tags=["addresses"],
+)
+api_router.include_router(
+    locations_router,
+    prefix="/locations",
+    tags=["locations"],
 )
 
 api_router.include_router(

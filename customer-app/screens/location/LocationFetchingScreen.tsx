@@ -7,10 +7,12 @@ import {
   View,
 } from 'react-native'
 import * as Location from 'expo-location'
-
+import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import { AppButton } from '../../components/ui/AppButton'
 import CustomerIcon from '../../components/ui/CustomerIcon'
-import { ScreenContainer } from '../../components/layout/ScreenContainer'
+
+
+import { geocodeCustomerAddress } from '../../services/addresses/customerGeocoding.service'
 
 type LocationFetchingScreenProps = {
   onLocationFetched: (
@@ -117,7 +119,7 @@ export default function LocationFetchingScreen({
     }
   }
 
-  async function handleUseAddress() {
+   async function handleUseAddress() {
     if (loading || addressLoading) {
       return
     }
@@ -135,53 +137,12 @@ export default function LocationFetchingScreen({
     setAddressLoading(true)
 
     try {
-      const results =
-        await Location.geocodeAsync(query)
-
-      const first = results[0]
-
-      if (!first) {
-        setError(
-          'Address not found. Try a full address, nearby landmark, area, or PIN code.',
-        )
-        return
-      }
-
-      let address = query
-
-      try {
-        const reverseResults =
-          await Location.reverseGeocodeAsync({
-            latitude: first.latitude,
-            longitude: first.longitude,
-          })
-
-        const firstAddress =
-          reverseResults[0]
-
-        if (firstAddress) {
-          const formatted =
-            formatAddress(firstAddress)
-
-          if (formatted) {
-            address = formatted
-          }
-        }
-      } catch (reverseGeocodeError) {
-        /*
-         * Keep the address entered by the customer
-         * if reverse geocoding is unavailable.
-         */
-        console.error(
-          'Manual reverse geocoding error:',
-          reverseGeocodeError,
-        )
-      }
+      const result = await geocodeCustomerAddress(query)
 
       await onLocationFetched(
-        first.latitude,
-        first.longitude,
-        address,
+        result.latitude,
+        result.longitude,
+        result.formattedAddress,
       )
     } catch (err) {
       console.error(
@@ -190,7 +151,9 @@ export default function LocationFetchingScreen({
       )
 
       setError(
-        'Unable to select that address right now. Check your connection and try again.',
+        err instanceof Error
+          ? err.message
+          : 'Unable to select that address right now. Check your connection and try again.',
       )
     } finally {
       setAddressLoading(false)

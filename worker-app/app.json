@@ -11,7 +11,7 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "KvikStaff Worker needs your location to match you with nearby jobs while using the app.",
-          "locationAlwaysAndWhenInUsePermission": "KvikStaff Worker needs background location only when you are marked as 'Available' to receive job offers near you.",
+          "locationAlwaysAndWhenInUsePermission": "KvikStaff Worker uses background location only while you are marked Available or have an active booking, to support nearby job offers and customer live tracking during that booking.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
