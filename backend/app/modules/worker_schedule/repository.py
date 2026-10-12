@@ -39,10 +39,7 @@ class WorkerScheduleRepository:
             },
         )
 
-        return [
-            dict(row)
-            for row in result.mappings().all()
-        ]
+        return [dict(row) for row in result.mappings().all()]
 
     async def get_weekly_schedule(
         self,
@@ -106,9 +103,7 @@ class WorkerScheduleRepository:
                   AND id <> :exclude_schedule_id
             """
 
-            params["exclude_schedule_id"] = str(
-                exclude_schedule_id
-            )
+            params["exclude_schedule_id"] = str(exclude_schedule_id)
 
         query += """
             ) AS overlaps
@@ -164,9 +159,7 @@ class WorkerScheduleRepository:
                 },
             )
 
-            return dict(
-                result.mappings().one()
-            )
+            return dict(result.mappings().one())
 
     async def update_weekly_schedule(
         self,
@@ -210,11 +203,7 @@ class WorkerScheduleRepository:
 
             row = result.mappings().first()
 
-            return (
-                dict(row)
-                if row is not None
-                else None
-            )
+            return dict(row) if row is not None else None
 
     async def delete_weekly_schedule(
         self,
@@ -256,7 +245,17 @@ class WorkerScheduleRepository:
                 },
             )
 
-            for schedule in schedules:
+            if schedules:
+                params = [
+                    {
+                        "worker_id": str(worker_id),
+                        "day_of_week": schedule.day_of_week,
+                        "start_time": schedule.start_time,
+                        "end_time": schedule.end_time,
+                        "is_active": schedule.is_active,
+                    }
+                    for schedule in schedules
+                ]
                 await self.db.execute(
                     text(
                         """
@@ -276,13 +275,7 @@ class WorkerScheduleRepository:
                         )
                         """
                     ),
-                    {
-                        "worker_id": str(worker_id),
-                        "day_of_week": schedule.day_of_week,
-                        "start_time": schedule.start_time,
-                        "end_time": schedule.end_time,
-                        "is_active": schedule.is_active,
-                    },
+                    params,
                 )
 
             result = await self.db.execute(
@@ -307,7 +300,4 @@ class WorkerScheduleRepository:
                 },
             )
 
-            return [
-                dict(row)
-                for row in result.mappings().all()
-            ]
+            return [dict(row) for row in result.mappings().all()]
