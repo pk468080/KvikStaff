@@ -1,3 +1,5 @@
+jest.mock('../../lib/api', () => ({ apiRequest: jest.fn() }))
+
 import {
   sortBookingStatusHistory,
   type BookingStatusHistoryItem,
@@ -83,7 +85,7 @@ describe('bookingTracking.service', () => {
       expect(result.map((i) => i.id)).toEqual(['a', 'b'])
     })
 
-    it('should handle invalid dates gracefully by placing them after valid dates and sorting by id', () => {
+    it('should push invalid dates to the start and sort them by id', () => {
       const item1 = createItem('c', 'invalid-date-1', 'pending_payment', 'paid')
       const item2 = createItem('a', 'invalid-date-2', 'paid', 'assigned')
       const item3 = createItem('b', '2023-01-01T10:00:00.000Z', 'assigned', 'on_the_way')
