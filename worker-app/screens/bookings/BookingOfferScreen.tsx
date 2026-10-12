@@ -49,6 +49,7 @@ import {
 
 import {
   getWorkerBookingOffers,
+  getWorkerBookingOfferByBookingId,
   getWorkerBookingOfferRemainingSeconds,
   isWorkerBookingOfferPending,
   respondToWorkerBookingOffer,
@@ -342,27 +343,8 @@ export default function BookingOfferScreen({
         setDetailsError(null)
 
         try {
-          const offers =
-            await getWorkerBookingOffers()
-
           const matchingOffer =
-            offers.find(
-              item =>
-                item.bookingId ===
-                  bookingId &&
-                (
-                  item.status ===
-                    'pending' ||
-                  item.status ===
-                    'accepted' ||
-                  item.status ===
-                    'declined' ||
-                  item.status ===
-                    'expired' ||
-                  item.status ===
-                    'cancelled'
-                ),
-            )
+            await getWorkerBookingOfferByBookingId(bookingId)
 
           if (!matchingOffer) {
             throw new Error(
