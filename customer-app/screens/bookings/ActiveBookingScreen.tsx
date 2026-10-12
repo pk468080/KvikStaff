@@ -316,6 +316,10 @@ export default function ActiveBookingScreen({
     useState<CustomerRefundRecord[]>(
       [],
     )
+    const [
+    refundStatusError,
+    setRefundStatusError,
+  ] = useState<string | null>(null)
 
   const [
     location,
@@ -439,15 +443,28 @@ const [
 
 setBooking(nextBooking)
 
-      if (nextBooking.status === 'cancelled') {
-        const nextRefunds =
-          await getCustomerBookingRefunds(
-            bookingId,
+            if (nextBooking.status === 'cancelled') {
+        try {
+          const nextRefunds =
+            await getCustomerBookingRefunds(
+              bookingId,
+            )
+
+          setRefunds(nextRefunds)
+          setRefundStatusError(null)
+        } catch (cause) {
+          console.warn(
+            'Unable to refresh booking refund status:',
+            cause,
           )
 
-        setRefunds(nextRefunds)
+          setRefundStatusError(
+            'Refund status is temporarily unavailable. Your booking remains cancelled; we will retry automatically.',
+          )
+        }
       } else {
         setRefunds([])
+        setRefundStatusError(null)
       }
 
       const nextHistory =
@@ -541,7 +558,6 @@ setBooking(nextBooking)
       setLoading(false)
     }
   }
-    
 
   useEffect(() => {
     void refresh()
@@ -1517,8 +1533,6 @@ setBooking(nextBooking)
             )}
           />
 
-        
-
           <Row
             label="Start"
             value={formatDateTime(
@@ -1622,6 +1636,12 @@ setBooking(nextBooking)
           </View>
         ) : null}
 
+        {refundStatusError ? (
+          <Text style={styles.refundMessage}>
+            {refundStatusError}
+          </Text>
+        ) : null}
+
         {!terminal &&
         booking.status !==
           'pending_payment' &&
@@ -1679,8 +1699,6 @@ setBooking(nextBooking)
                   </Pressable>
                 </View>
 
-                
-
                 {tracking ? (
                   <View
                     style={
@@ -1717,7 +1735,6 @@ setBooking(nextBooking)
                     locationFreshness ===
                       'fresh' ? (
                       <>
-                        
 
                         <Text
                           style={
@@ -1863,6 +1880,7 @@ setBooking(nextBooking)
             </Text>
           </Pressable>
         ) : null}
+
 
         {!terminal &&
         !workerAssigned &&
