@@ -49,7 +49,10 @@
     "test": "jest --runInBand"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ]
   },
   "private": true
 }

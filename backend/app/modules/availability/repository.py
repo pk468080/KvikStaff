@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import text
@@ -143,11 +143,7 @@ class AvailabilityRepository:
 
         service_id = result.scalar_one_or_none()
 
-        return (
-            ServiceVariantContext(service_id=service_id)
-            if service_id is not None
-            else None
-        )
+        return ServiceVariantContext(service_id=service_id) if service_id is not None else None
 
     async def get_active_service_variant(
         self,
@@ -168,11 +164,7 @@ class AvailabilityRepository:
 
         service_id = result.scalar_one_or_none()
 
-        return (
-            ServiceVariantContext(service_id=service_id)
-            if service_id is not None
-            else None
-        )
+        return ServiceVariantContext(service_id=service_id) if service_id is not None else None
 
     async def get_customer_address(
         self,
@@ -333,11 +325,7 @@ class AvailabilityRepository:
         return InstantWorkerSnapshot(
             count=int(row["worker_count"] or 0),
             nearest_worker_id=row["nearest_worker_id"],
-            nearest_distance_km=(
-                float(nearest_distance)
-                if nearest_distance is not None
-                else None
-            ),
+            nearest_distance_km=(float(nearest_distance) if nearest_distance is not None else None),
         )
 
     async def count_instant_slot_workers(
@@ -463,3 +451,53 @@ class AvailabilityRepository:
         )
 
         return int(result.scalar_one() or 0)
+
+    async def count_scheduled_workers_bulk(
+        self,
+        service_id: UUID,
+        start: datetime,
+        end: datetime,
+        duration: timedelta,
+    ) -> dict[datetime, int]:
+        if start > end:
+            return {}
+
+        result = await self.session.execute(
+            text(
+                """
+                with slots as (
+                    select generate_series(
+                        :start_time::timestamptz,
+                        :end_time::timestamptz,
+                        interval '1 hour'
+                    ) as slot_start
+                )
+                select
+                    s.slot_start,
+                    count(ws.worker_id)::integer as worker_count
+                from slots s
+                join public.worker_services ws
+                    on ws.service_id = :service_id
+                join public.worker_profiles wp
+                    on wp.id = ws.worker_id
+                where wp.is_verified = true
+                  and wp.worker_status <>
+                      'suspended'::public.worker_status
+                  and public.worker_covers_booking_interval(
+                      :service_id,
+                      ws.worker_id,
+                      s.slot_start,
+                      s.slot_start + :duration::interval
+                  )
+                group by s.slot_start
+                """
+            ),
+            {
+                "service_id": service_id,
+                "start_time": start,
+                "end_time": end,
+                "duration": duration,
+            },
+        )
+
+        return {row["slot_start"]: row["worker_count"] for row in result.mappings().all()}

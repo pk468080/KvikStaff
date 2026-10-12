@@ -2,7 +2,6 @@ import pytest
 import uuid
 import json
 from datetime import datetime, date, time
-from typing import Any
 from fastapi import HTTPException
 from unittest.mock import AsyncMock, MagicMock
 from app.modules.bookings.service import BookingsService

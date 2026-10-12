@@ -36,7 +36,7 @@ def find_rpc_calls():
                                 callers[match].add('Supabase Edge Function')
                             else:
                                 callers[match].add(f'Other ({filepath})')
-                except Exception as e:
+                except Exception:
                     pass
     
     return {k: list(v) for k, v in callers.items()}

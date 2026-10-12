@@ -225,6 +225,42 @@ export async function getPendingWorkerBookingOffers(): Promise<
   )
 }
 
+
+export async function getWorkerBookingOfferByBookingId(
+  bookingId: string,
+): Promise<WorkerBookingOffer | null> {
+  if (!bookingId?.trim()) {
+    throw new Error('Booking id is required.');
+  }
+
+  const workerId =
+    await getCurrentWorkerId()
+
+  const {
+    data,
+    error,
+  } = await supabase
+    .from('booking_worker_offers')
+    .select(
+      OFFER_SELECT,
+    )
+    .eq('worker_id', workerId)
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+    ? mapWorkerBookingOffer(
+        data as WorkerBookingOfferRow,
+      )
+    : null
+}
+
 export async function getWorkerBookingOffer(
   offerId: string,
 ): Promise<WorkerBookingOffer | null> {
