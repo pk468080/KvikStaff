@@ -23,9 +23,7 @@ router = APIRouter()
 def get_availability_service(
     db=Depends(get_db),
 ) -> AvailabilityService:
-    return AvailabilityService(
-        AvailabilityRepository(db)
-    )
+    return AvailabilityService(AvailabilityRepository(db))
 
 
 @router.get(
@@ -33,9 +31,7 @@ def get_availability_service(
     response_model=list[ServiceAreaResponse],
 )
 async def get_service_areas(
-    service: AvailabilityService = Depends(
-        get_availability_service
-    ),
+    service: AvailabilityService = Depends(get_availability_service),
 ) -> list[ServiceAreaResponse]:
     return await service.get_active_service_areas()
 
@@ -55,12 +51,8 @@ async def get_available_service_ids(
         ge=-180,
         le=180,
     ),
-    service_ids: list[UUID] | None = Query(
-        default=None
-    ),
-    service: AvailabilityService = Depends(
-        get_availability_service
-    ),
+    service_ids: list[UUID] | None = Query(default=None),
+    service: AvailabilityService = Depends(get_availability_service),
 ) -> AvailableServiceIdsResponse:
     return await service.get_available_service_ids(
         latitude,
@@ -76,9 +68,7 @@ async def get_available_service_ids(
 async def check_instant_availability(
     request: InstantAvailabilityCheckRequest,
     _: CurrentUser = Depends(get_customer),
-    service: AvailabilityService = Depends(
-        get_availability_service
-    ),
+    service: AvailabilityService = Depends(get_availability_service),
 ) -> InstantAvailabilityCheckResponse:
     return await service.check_instant_availability(
         request.service_id,
@@ -94,9 +84,7 @@ async def check_instant_availability(
 async def get_instant_availability_slots(
     request: InstantAvailabilitySlotsRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: AvailabilityService = Depends(
-        get_availability_service
-    ),
+    service: AvailabilityService = Depends(get_availability_service),
 ) -> InstantAvailabilitySlotsResponse:
     return await service.get_instant_availability_slots(
         request.service_variant_id,
@@ -113,9 +101,7 @@ async def get_instant_availability_slots(
 async def get_scheduled_availability_slots(
     request: ScheduledAvailabilitySlotsRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: AvailabilityService = Depends(
-        get_availability_service
-    ),
+    service: AvailabilityService = Depends(get_availability_service),
 ) -> ScheduledAvailabilitySlotsResponse:
     return await service.get_scheduled_availability_slots(
         request,

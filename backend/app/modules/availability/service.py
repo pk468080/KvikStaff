@@ -91,12 +91,10 @@ class AvailabilityService:
     ) -> InstantAvailabilityCheckResponse:
         checked_at = datetime.now(timezone.utc)
 
-        service_area_available = (
-            await self.repository.is_service_area_available(
-                service_id,
-                latitude,
-                longitude,
-            )
+        service_area_available = await self.repository.is_service_area_available(
+            service_id,
+            latitude,
+            longitude,
         )
 
         if not service_area_available:
@@ -124,9 +122,7 @@ class AvailabilityService:
             nearby_worker_available=nearby_worker_available,
             instant_available=nearby_worker_available,
             recommended_booking_type=(
-                "instant"
-                if nearby_worker_available
-                else "scheduled"
+                "instant" if nearby_worker_available else "scheduled"
             ),
             nearby_worker_count=snapshot.count,
             nearest_worker_id=snapshot.nearest_worker_id,
@@ -141,10 +137,8 @@ class AvailabilityService:
         duration_hours: float,
         customer_id: UUID,
     ) -> InstantAvailabilitySlotsResponse:
-        service_context = (
-            await self.repository.get_active_hourly_service_variant(
-                service_variant_id
-            )
+        service_context = await self.repository.get_active_hourly_service_variant(
+            service_variant_id
         )
 
         if service_context is None:
@@ -166,12 +160,10 @@ class AvailabilityService:
                 400,
             )
 
-        service_area_available = (
-            await self.repository.is_service_area_available(
-                service_context.service_id,
-                address.latitude,
-                address.longitude,
-            )
+        service_area_available = await self.repository.is_service_area_available(
+            service_context.service_id,
+            address.latitude,
+            address.longitude,
         )
 
         if not service_area_available:
@@ -181,25 +173,19 @@ class AvailabilityService:
                 slots=[],
             )
 
-        timezone_name = (
-            await self.repository.get_platform_setting_value(
-                "operations.timezone",
-                "Asia/Kolkata",
-            )
+        timezone_name = await self.repository.get_platform_setting_value(
+            "operations.timezone",
+            "Asia/Kolkata",
         )
 
-        open_time_value = (
-            await self.repository.get_platform_setting_value(
-                "operations.default_start_time",
-                "08:00:00",
-            )
+        open_time_value = await self.repository.get_platform_setting_value(
+            "operations.default_start_time",
+            "08:00:00",
         )
 
-        close_time_value = (
-            await self.repository.get_platform_setting_value(
-                "operations.default_end_time",
-                "22:00:00",
-            )
+        close_time_value = await self.repository.get_platform_setting_value(
+            "operations.default_end_time",
+            "22:00:00",
         )
 
         tz = self._timezone(timezone_name)
@@ -231,9 +217,7 @@ class AvailabilityService:
 
         duration = timedelta(hours=duration_hours)
 
-        cursor = self._ceil_to_15_minutes(
-            now_utc + timedelta(minutes=15)
-        )
+        cursor = self._ceil_to_15_minutes(now_utc + timedelta(minutes=15))
 
         if cursor < operating_start:
             cursor = operating_start
@@ -243,29 +227,29 @@ class AvailabilityService:
             now_utc + timedelta(hours=4),
         )
 
-        slots: list[AvailabilitySlot] = []
-
+        slot_intervals: list[tuple[datetime, datetime]] = []
         while cursor <= last_start:
-            count = (
-                await self.repository.count_instant_slot_workers(
-                    service_context.service_id,
-                    address.latitude,
-                    address.longitude,
-                    cursor,
-                    cursor + duration,
-                )
-            )
+            slot_intervals.append((cursor, cursor + duration))
+            cursor += timedelta(minutes=15)
 
+        counts = await self.repository.count_instant_slot_workers_bulk(
+            service_context.service_id,
+            address.latitude,
+            address.longitude,
+            slot_intervals,
+        )
+
+        slots: list[AvailabilitySlot] = []
+        for start, end in slot_intervals:
+            count = counts.get(start, 0)
             if count > 0:
                 slots.append(
                     AvailabilitySlot(
-                        start=cursor,
-                        end=cursor + duration,
+                        start=start,
+                        end=end,
                         available_worker_count=count,
                     )
                 )
-
-            cursor += timedelta(minutes=15)
 
         return InstantAvailabilitySlotsResponse(
             service_area_available=True,
@@ -280,10 +264,8 @@ class AvailabilityService:
     ) -> ScheduledAvailabilitySlotsResponse:
         request.validate_window()
 
-        service_context = (
-            await self.repository.get_active_service_variant(
-                request.service_variant_id
-            )
+        service_context = await self.repository.get_active_service_variant(
+            request.service_variant_id
         )
 
         if service_context is None:
@@ -305,12 +287,10 @@ class AvailabilityService:
                 400,
             )
 
-        service_area_available = (
-            await self.repository.is_service_area_available(
-                service_context.service_id,
-                address.latitude,
-                address.longitude,
-            )
+        service_area_available = await self.repository.is_service_area_available(
+            service_context.service_id,
+            address.latitude,
+            address.longitude,
         )
 
         if not service_area_available:
@@ -319,11 +299,9 @@ class AvailabilityService:
                 slots=[],
             )
 
-        timezone_name = (
-            await self.repository.get_platform_setting_value(
-                "operations.timezone",
-                "Asia/Kolkata",
-            )
+        timezone_name = await self.repository.get_platform_setting_value(
+            "operations.timezone",
+            "Asia/Kolkata",
         )
 
         tz = self._timezone(timezone_name)
@@ -338,19 +316,20 @@ class AvailabilityService:
             tzinfo=tz,
         )
 
-        duration = timedelta(
-            hours=request.duration_hours
-        )
+        duration = timedelta(hours=request.duration_hours)
 
         cursor = max(
             request.start,
             now_utc,
         )
 
-        last_start = min(
-            request.end,
-            lookahead_limit,
-        ) - duration
+        last_start = (
+            min(
+                request.end,
+                lookahead_limit,
+            )
+            - duration
+        )
 
         slots: list[AvailabilitySlot] = []
 
@@ -423,13 +402,9 @@ class AvailabilityService:
     ) -> float:
         earth_radius_km = 6371
 
-        latitude_delta = math.radians(
-            latitude2 - latitude1
-        )
+        latitude_delta = math.radians(latitude2 - latitude1)
 
-        longitude_delta = math.radians(
-            longitude2 - longitude1
-        )
+        longitude_delta = math.radians(longitude2 - longitude1)
 
         a = (
             math.sin(latitude_delta / 2) ** 2

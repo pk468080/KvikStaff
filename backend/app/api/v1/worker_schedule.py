@@ -22,26 +22,18 @@ router = APIRouter()
 def get_worker_schedule_service(
     db=Depends(get_db),
 ) -> WorkerScheduleService:
-    return WorkerScheduleService(
-        WorkerScheduleRepository(db)
-    )
+    return WorkerScheduleService(WorkerScheduleRepository(db))
 
 
 @router.get(
     "/weekly",
-    response_model=list[
-        WorkerWeeklyScheduleResponse
-    ],
+    response_model=list[WorkerWeeklyScheduleResponse],
 )
 async def list_weekly_schedules(
     current_user: CurrentUser = Depends(get_worker),
-    service: WorkerScheduleService = Depends(
-        get_worker_schedule_service
-    ),
+    service: WorkerScheduleService = Depends(get_worker_schedule_service),
 ):
-    return await service.list_weekly_schedules(
-        UUID(current_user.id)
-    )
+    return await service.list_weekly_schedules(UUID(current_user.id))
 
 
 @router.post(
@@ -52,9 +44,7 @@ async def list_weekly_schedules(
 async def create_weekly_schedule(
     request: WorkerWeeklyScheduleRequest,
     current_user: CurrentUser = Depends(get_worker),
-    service: WorkerScheduleService = Depends(
-        get_worker_schedule_service
-    ),
+    service: WorkerScheduleService = Depends(get_worker_schedule_service),
 ):
     return await service.create_weekly_schedule(
         UUID(current_user.id),
@@ -70,9 +60,7 @@ async def update_weekly_schedule(
     schedule_id: UUID,
     request: WorkerWeeklyScheduleRequest,
     current_user: CurrentUser = Depends(get_worker),
-    service: WorkerScheduleService = Depends(
-        get_worker_schedule_service
-    ),
+    service: WorkerScheduleService = Depends(get_worker_schedule_service),
 ):
     return await service.update_weekly_schedule(
         UUID(current_user.id),
@@ -88,9 +76,7 @@ async def update_weekly_schedule(
 async def delete_weekly_schedule(
     schedule_id: UUID,
     current_user: CurrentUser = Depends(get_worker),
-    service: WorkerScheduleService = Depends(
-        get_worker_schedule_service
-    ),
+    service: WorkerScheduleService = Depends(get_worker_schedule_service),
 ) -> None:
     await service.delete_weekly_schedule(
         UUID(current_user.id),
@@ -100,16 +86,12 @@ async def delete_weekly_schedule(
 
 @router.put(
     "/weekly",
-    response_model=list[
-        WorkerWeeklyScheduleResponse
-    ],
+    response_model=list[WorkerWeeklyScheduleResponse],
 )
 async def replace_weekly_schedules(
     request: WorkerWeeklyScheduleReplaceRequest,
     current_user: CurrentUser = Depends(get_worker),
-    service: WorkerScheduleService = Depends(
-        get_worker_schedule_service
-    ),
+    service: WorkerScheduleService = Depends(get_worker_schedule_service),
 ):
     return await service.replace_weekly_schedules(
         UUID(current_user.id),

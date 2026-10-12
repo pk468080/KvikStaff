@@ -19,7 +19,6 @@ from app.modules.account.service import (
     AccountDeletionService,
 )
 
-
 router = APIRouter()
 
 
@@ -33,18 +32,11 @@ def get_account_deletion_service(
 
 @router.get(
     "/deletion-request",
-    response_model=(
-        AccountDeletionRequestResponse
-        | None
-    ),
+    response_model=(AccountDeletionRequestResponse | None),
 )
 async def get_latest_account_deletion_request(
-    current_user: CurrentUser = Depends(
-        get_customer
-    ),
-    service: AccountDeletionService = Depends(
-        get_account_deletion_service
-    ),
+    current_user: CurrentUser = Depends(get_customer),
+    service: AccountDeletionService = Depends(get_account_deletion_service),
 ) -> dict[str, Any] | None:
     return await service.get_latest_request(
         UUID(current_user.id),
@@ -57,12 +49,8 @@ async def get_latest_account_deletion_request(
 )
 async def request_account_deletion(
     request: AccountDeletionRequestCreateRequest,
-    current_user: CurrentUser = Depends(
-        get_customer
-    ),
-    service: AccountDeletionService = Depends(
-        get_account_deletion_service
-    ),
+    current_user: CurrentUser = Depends(get_customer),
+    service: AccountDeletionService = Depends(get_account_deletion_service),
 ) -> dict[str, Any]:
     return await service.request_account_deletion(
         customer_id=UUID(current_user.id),

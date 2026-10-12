@@ -19,8 +19,7 @@ class ChatRepository:
     ) -> dict[str, Any]:
         async with self.db.begin():
             booking_result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     SELECT
                         id,
                         customer_id,
@@ -31,8 +30,7 @@ class ChatRepository:
                     WHERE id = :booking_id
                       AND customer_id = :customer_id
                     FOR UPDATE
-                    '''
-                ),
+                    """),
                 {
                     "booking_id": str(booking_id),
                     "customer_id": str(customer_id),
@@ -41,9 +39,7 @@ class ChatRepository:
             booking = booking_result.mappings().first()
 
             if booking is None:
-                raise ValueError(
-                    "Booking not found or unavailable."
-                )
+                raise ValueError("Booking not found or unavailable.")
 
             booking_worker_id = booking["worker_id"]
 
@@ -53,9 +49,7 @@ class ChatRepository:
                 )
 
             if str(booking_worker_id) != str(worker_id):
-                raise ValueError(
-                    "The selected worker is not assigned to this booking."
-                )
+                raise ValueError("The selected worker is not assigned to this booking.")
 
             resolved_occurrence_id = occurrence_id
 
@@ -66,8 +60,7 @@ class ChatRepository:
                     )
 
                 occurrence_result = await self.db.execute(
-                    text(
-                        '''
+                    text("""
                         SELECT
                             id,
                             worker_id,
@@ -76,8 +69,7 @@ class ChatRepository:
                         WHERE id = :occurrence_id
                           AND booking_id = :booking_id
                         FOR UPDATE
-                        '''
-                    ),
+                        """),
                     {
                         "occurrence_id": str(resolved_occurrence_id),
                         "booking_id": str(booking_id),
@@ -86,9 +78,7 @@ class ChatRepository:
                 occurrence = occurrence_result.mappings().first()
 
                 if occurrence is None:
-                    raise ValueError(
-                        "Booking occurrence not found."
-                    )
+                    raise ValueError("Booking occurrence not found.")
 
                 if occurrence["worker_id"] is None:
                     raise ValueError(
@@ -100,13 +90,10 @@ class ChatRepository:
                         "The selected worker is not assigned to this occurrence."
                     )
             elif resolved_occurrence_id is not None:
-                raise ValueError(
-                    "Occurrence ID is only valid for recurring bookings."
-                )
+                raise ValueError("Occurrence ID is only valid for recurring bookings.")
 
             existing_result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     SELECT
                         id,
                         customer_id,
@@ -118,8 +105,7 @@ class ChatRepository:
                           OR occurrence_id = :occurrence_id
                       )
                     LIMIT 1
-                    '''
-                ),
+                    """),
                 {
                     "booking_id": str(booking_id),
                     "occurrence_id": (
@@ -133,9 +119,7 @@ class ChatRepository:
 
             if existing is not None:
                 if str(existing["customer_id"]) != str(customer_id):
-                    raise ValueError(
-                        "You do not have access to this booking chat."
-                    )
+                    raise ValueError("You do not have access to this booking chat.")
 
                 if str(existing["worker_id"]) != str(worker_id):
                     raise ValueError(
@@ -149,8 +133,7 @@ class ChatRepository:
 
             try:
                 insert_result = await self.db.execute(
-                    text(
-                        '''
+                    text("""
                         INSERT INTO public.conversations (
                             booking_id,
                             occurrence_id,
@@ -164,8 +147,7 @@ class ChatRepository:
                             :worker_id
                         )
                         RETURNING id
-                        '''
-                    ),
+                        """),
                     {
                         "booking_id": str(booking_id),
                         "occurrence_id": (
@@ -179,8 +161,7 @@ class ChatRepository:
                 )
             except IntegrityError:
                 existing_result = await self.db.execute(
-                    text(
-                        '''
+                    text("""
                         SELECT
                             id,
                             customer_id,
@@ -192,8 +173,7 @@ class ChatRepository:
                               OR occurrence_id = :occurrence_id
                           )
                         LIMIT 1
-                        '''
-                    ),
+                        """),
                     {
                         "booking_id": str(booking_id),
                         "occurrence_id": (
@@ -206,14 +186,10 @@ class ChatRepository:
                 existing = existing_result.mappings().first()
 
                 if existing is None:
-                    raise ValueError(
-                        "Unable to start the booking chat."
-                    )
+                    raise ValueError("Unable to start the booking chat.")
 
                 if str(existing["customer_id"]) != str(customer_id):
-                    raise ValueError(
-                        "You do not have access to this booking chat."
-                    )
+                    raise ValueError("You do not have access to this booking chat.")
 
                 if str(existing["worker_id"]) != str(worker_id):
                     raise ValueError(
@@ -239,15 +215,13 @@ class ChatRepository:
     ) -> list[dict[str, Any]]:
         async with self.db.begin():
             access_result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     SELECT id
                     FROM public.conversations
                     WHERE id = :conversation_id
                       AND customer_id = :customer_id
                     LIMIT 1
-                    '''
-                ),
+                    """),
                 {
                     "conversation_id": str(conversation_id),
                     "customer_id": str(customer_id),
@@ -255,13 +229,10 @@ class ChatRepository:
             )
 
             if access_result.scalar_one_or_none() is None:
-                raise ValueError(
-                    "Chat conversation not found or unavailable."
-                )
+                raise ValueError("Chat conversation not found or unavailable.")
 
             result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     SELECT
                         id,
                         sender_id,
@@ -273,17 +244,13 @@ class ChatRepository:
                       AND deleted_at IS NULL
                     ORDER BY created_at ASC
                     LIMIT 100
-                    '''
-                ),
+                    """),
                 {
                     "conversation_id": str(conversation_id),
                 },
             )
 
-            return [
-                dict(row)
-                for row in result.mappings().all()
-            ]
+            return [dict(row) for row in result.mappings().all()]
 
     async def send_customer_chat_message(
         self,
@@ -293,15 +260,13 @@ class ChatRepository:
     ) -> dict[str, Any]:
         async with self.db.begin():
             access_result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     SELECT id
                     FROM public.conversations
                     WHERE id = :conversation_id
                       AND customer_id = :customer_id
                     FOR UPDATE
-                    '''
-                ),
+                    """),
                 {
                     "conversation_id": str(conversation_id),
                     "customer_id": str(customer_id),
@@ -309,13 +274,10 @@ class ChatRepository:
             )
 
             if access_result.scalar_one_or_none() is None:
-                raise ValueError(
-                    "Chat conversation not found or unavailable."
-                )
+                raise ValueError("Chat conversation not found or unavailable.")
 
             insert_result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     INSERT INTO public.messages (
                         conversation_id,
                         sender_id,
@@ -336,8 +298,7 @@ class ChatRepository:
                         sender_role,
                         body,
                         created_at
-                    '''
-                ),
+                    """),
                 {
                     "conversation_id": str(conversation_id),
                     "sender_id": str(customer_id),
@@ -346,15 +307,13 @@ class ChatRepository:
             )
 
             await self.db.execute(
-                text(
-                    '''
+                text("""
                     UPDATE public.conversations
                     SET
                         last_message_at = now(),
                         updated_at = now()
                     WHERE id = :conversation_id
-                    '''
-                ),
+                    """),
                 {
                     "conversation_id": str(conversation_id),
                 },

@@ -95,12 +95,8 @@ async def enforce_booking_otp_rate_limit(
     now_ms = int(time.time() * 1000)
     request_token = f"{now_ms}:{uuid4().hex}"
 
-    booking_key = (
-        f"kvikstaff:rate:booking-otp:booking:{booking_id}:{otp_type}"
-    )
-    customer_key = (
-        f"kvikstaff:rate:booking-otp:customer:{customer_id}"
-    )
+    booking_key = f"kvikstaff:rate:booking-otp:booking:{booking_id}:{otp_type}"
+    customer_key = f"kvikstaff:rate:booking-otp:customer:{customer_id}"
 
     try:
         result = await client.eval(

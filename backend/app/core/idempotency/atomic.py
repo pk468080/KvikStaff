@@ -34,10 +34,7 @@ def validate_idempotency_key(
     if len(key) > 255:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Idempotency key exceeds maximum length "
-                "of 255 characters."
-            ),
+            detail=("Idempotency key exceeds maximum length " "of 255 characters."),
         )
 
     return key
@@ -61,13 +58,10 @@ async def claim_or_replay(
     A successful booking and this row are committed by the same
     surrounding transaction.
     """
-    key = validate_idempotency_key(
-        idempotency_key
-    )
+    key = validate_idempotency_key(idempotency_key)
 
     insert_result = await db.execute(
-        text(
-            """
+        text("""
             INSERT INTO public.idempotency_keys
             (
                 user_id,
@@ -92,8 +86,7 @@ async def claim_or_replay(
             )
             DO NOTHING
             RETURNING id
-            """
-        ),
+            """),
         {
             "user_id": str(user_id),
             "action": action,
@@ -108,8 +101,7 @@ async def claim_or_replay(
         return True, None
 
     existing_result = await db.execute(
-        text(
-            """
+        text("""
             SELECT
                 status,
                 request_hash,
@@ -120,8 +112,7 @@ async def claim_or_replay(
                 AND action = :action
                 AND idempotency_key = :key
             FOR UPDATE
-            """
-        ),
+            """),
         {
             "user_id": str(user_id),
             "action": action,
@@ -129,27 +120,19 @@ async def claim_or_replay(
         },
     )
 
-    existing = (
-        existing_result.mappings().first()
-    )
+    existing = existing_result.mappings().first()
 
     if not existing:
         raise HTTPException(
             status_code=409,
-            detail=(
-                "Unable to acquire idempotency key."
-            ),
+            detail=("Unable to acquire idempotency key."),
         )
 
-    if (
-        existing["request_hash"]
-        != request_hash
-    ):
+    if existing["request_hash"] != request_hash:
         raise HTTPException(
             status_code=409,
             detail=(
-                "Idempotency key reuse detected with "
-                "different request payload."
+                "Idempotency key reuse detected with " "different request payload."
             ),
         )
 
@@ -165,8 +148,7 @@ async def claim_or_replay(
 
     if status == "failed":
         retry_result = await db.execute(
-            text(
-                """
+            text("""
                 UPDATE public.idempotency_keys
                 SET
                     status = 'in_progress',
@@ -179,8 +161,7 @@ async def claim_or_replay(
                     AND request_hash = :request_hash
                     AND status = 'failed'
                 RETURNING id
-                """
-            ),
+                """),
             {
                 "user_id": str(user_id),
                 "action": action,
@@ -207,17 +188,12 @@ async def complete_idempotency(
     request_hash: str,
     response: Any,
 ) -> None:
-    key = validate_idempotency_key(
-        idempotency_key
-    )
+    key = validate_idempotency_key(idempotency_key)
 
-    safe_response = jsonable_encoder(
-        response
-    )
+    safe_response = jsonable_encoder(response)
 
     result = await db.execute(
-        text(
-            """
+        text("""
             UPDATE public.idempotency_keys
             SET
                 status = 'completed',
@@ -231,8 +207,7 @@ async def complete_idempotency(
                 AND request_hash = :request_hash
                 AND status = 'in_progress'
             RETURNING id
-            """
-        ),
+            """),
         {
             "user_id": str(user_id),
             "action": action,
@@ -246,6 +221,4 @@ async def complete_idempotency(
     )
 
     if not result.first():
-        raise RuntimeError(
-            "Unable to persist completed idempotency state."
-        )
+        raise RuntimeError("Unable to persist completed idempotency state.")

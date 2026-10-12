@@ -68,9 +68,7 @@ class RazorpayClient:
             )
 
         if not isinstance(data, dict):
-            raise RazorpayApiError(
-                "Razorpay returned an invalid order response."
-            )
+            raise RazorpayApiError("Razorpay returned an invalid order response.")
 
         order_id = data.get("id")
         amount = data.get("amount")
@@ -82,9 +80,7 @@ class RazorpayClient:
             or not isinstance(amount, int)
             or not isinstance(response_currency, str)
         ):
-            raise RazorpayApiError(
-                "Razorpay returned an invalid order."
-            )
+            raise RazorpayApiError("Razorpay returned an invalid order.")
 
         return data
 
@@ -97,8 +93,7 @@ class RazorpayClient:
                 timeout=15.0,
             ) as client:
                 response = await client.get(
-                    f"{self.BASE_URL}/orders/"
-                    f"{order_id}/payments",
+                    f"{self.BASE_URL}/orders/" f"{order_id}/payments",
                     auth=(
                         self.key_id,
                         self.key_secret,
@@ -120,22 +115,15 @@ class RazorpayClient:
                 response.status_code,
             )
 
-        if (
-            not isinstance(data, dict)
-            or not isinstance(
-                data.get("items"),
-                list,
-            )
+        if not isinstance(data, dict) or not isinstance(
+            data.get("items"),
+            list,
         ):
             raise RazorpayApiError(
                 "Razorpay returned an invalid order payments response."
             )
 
-        return [
-            item
-            for item in data["items"]
-            if isinstance(item, dict)
-        ]
+        return [item for item in data["items"] if isinstance(item, dict)]
 
     async def get_payment(
         self,
@@ -146,8 +134,7 @@ class RazorpayClient:
                 timeout=15.0,
             ) as client:
                 response = await client.get(
-                    f"{self.BASE_URL}/payments/"
-                    f"{payment_id}",
+                    f"{self.BASE_URL}/payments/" f"{payment_id}",
                     auth=(
                         self.key_id,
                         self.key_secret,
@@ -170,9 +157,7 @@ class RazorpayClient:
             )
 
         if not isinstance(data, dict):
-            raise RazorpayApiError(
-                "Razorpay returned an invalid payment response."
-            )
+            raise RazorpayApiError("Razorpay returned an invalid payment response.")
 
         return data
 
@@ -194,23 +179,14 @@ class RazorpayClient:
             error = data.get("error")
 
             if isinstance(error, dict):
-                description = error.get(
-                    "description"
-                )
+                description = error.get("description")
 
-                if (
-                    isinstance(description, str)
-                    and description.strip()
-                ):
+                if isinstance(description, str) and description.strip():
                     return description
 
                 reason = error.get("reason")
 
-                if (
-                    isinstance(reason, str)
-                    and reason.strip()
-                ):
+                if isinstance(reason, str) and reason.strip():
                     return reason
 
         return fallback
-    
