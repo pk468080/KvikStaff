@@ -100,12 +100,21 @@ export default function WorkerPayoutPanel({ formatAmount }: Props) {
     } else {
       body.upi_id = upiId.trim()
     }
-    await run(async () => { await createWorkerPayoutAccount(body) })
-    setAccountModal(false)
-    setHolderName('')
-    setAccountNumber('')
-    setIfsc('')
-    setUpiId('')
+    setBusy(true)
+    setError(null)
+    try {
+      await createWorkerPayoutAccount(body)
+      await load()
+      setAccountModal(false)
+      setHolderName('')
+      setAccountNumber('')
+      setIfsc('')
+      setUpiId('')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to update payout information.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   if (loading && !overview) {
@@ -123,7 +132,8 @@ export default function WorkerPayoutPanel({ formatAmount }: Props) {
             <Metric label="Gross" value={formatAmount(overview.grossEarnings)} />
             <Metric label="Platform fees" value={formatAmount(overview.platformFees)} />
             <Metric label="Net" value={formatAmount(overview.netEarnings)} />
-            <Metric label="Allocated / pending" value={formatAmount(overview.allocatedAmount + overview.pendingAmount)} />
+            <Metric label="Reserved" value={formatAmount(overview.allocatedAmount)} />
+            <Metric label="Paid Out" value={formatAmount(overview.pendingAmount)} />
             <Metric label="Available" value={formatAmount(payoutAmount)} />
           </View>
           {payoutDisabled ? <Text style={styles.notice}>Payout processing is currently disabled. Your earnings remain recorded, but payout requests cannot be processed yet.</Text> : null}
