@@ -25,6 +25,34 @@ class RazorpayClient:
         self.key_id = key_id
         self.key_secret = key_secret
 
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        fallback_message: str,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.request(
+                    method,
+                    f"{self.BASE_URL}{path}",
+                    auth=(self.key_id, self.key_secret),
+                    **kwargs,
+                )
+        except httpx.HTTPError as exc:
+            raise RazorpayApiError("Unable to reach Razorpay.") from exc
+
+        data = self._parse_response(response)
+
+        if not response.is_success:
+            raise RazorpayApiError(
+                self._provider_message(data, fallback_message),
+                response.status_code,
+            )
+
+        return data
+
     async def create_order(
         self,
         amount_paise: int,
@@ -39,33 +67,12 @@ class RazorpayClient:
             "notes": notes,
         }
 
-        try:
-            async with httpx.AsyncClient(
-                timeout=15.0,
-            ) as client:
-                response = await client.post(
-                    f"{self.BASE_URL}/orders",
-                    auth=(
-                        self.key_id,
-                        self.key_secret,
-                    ),
-                    json=payload,
-                )
-        except httpx.HTTPError as exc:
-            raise RazorpayApiError(
-                "Unable to reach Razorpay.",
-            ) from exc
-
-        data = self._parse_response(response)
-
-        if not response.is_success:
-            raise RazorpayApiError(
-                self._provider_message(
-                    data,
-                    "Unable to create Razorpay order.",
-                ),
-                response.status_code,
-            )
+        data = await self._request(
+            "POST",
+            "/orders",
+            "Unable to create Razorpay order.",
+            json=payload,
+        )
 
         if not isinstance(data, dict):
             raise RazorpayApiError(
@@ -92,33 +99,11 @@ class RazorpayClient:
         self,
         order_id: str,
     ) -> list[dict[str, Any]]:
-        try:
-            async with httpx.AsyncClient(
-                timeout=15.0,
-            ) as client:
-                response = await client.get(
-                    f"{self.BASE_URL}/orders/"
-                    f"{order_id}/payments",
-                    auth=(
-                        self.key_id,
-                        self.key_secret,
-                    ),
-                )
-        except httpx.HTTPError as exc:
-            raise RazorpayApiError(
-                "Unable to reach Razorpay.",
-            ) from exc
-
-        data = self._parse_response(response)
-
-        if not response.is_success:
-            raise RazorpayApiError(
-                self._provider_message(
-                    data,
-                    "Unable to verify the Razorpay order.",
-                ),
-                response.status_code,
-            )
+        data = await self._request(
+            "GET",
+            f"/orders/{order_id}/payments",
+            "Unable to verify the Razorpay order.",
+        )
 
         if (
             not isinstance(data, dict)
@@ -141,33 +126,11 @@ class RazorpayClient:
         self,
         payment_id: str,
     ) -> dict[str, Any]:
-        try:
-            async with httpx.AsyncClient(
-                timeout=15.0,
-            ) as client:
-                response = await client.get(
-                    f"{self.BASE_URL}/payments/"
-                    f"{payment_id}",
-                    auth=(
-                        self.key_id,
-                        self.key_secret,
-                    ),
-                )
-        except httpx.HTTPError as exc:
-            raise RazorpayApiError(
-                "Unable to reach Razorpay.",
-            ) from exc
-
-        data = self._parse_response(response)
-
-        if not response.is_success:
-            raise RazorpayApiError(
-                self._provider_message(
-                    data,
-                    "Unable to verify Razorpay payment.",
-                ),
-                response.status_code,
-            )
+        data = await self._request(
+            "GET",
+            f"/payments/{payment_id}",
+            "Unable to verify Razorpay payment.",
+        )
 
         if not isinstance(data, dict):
             raise RazorpayApiError(
