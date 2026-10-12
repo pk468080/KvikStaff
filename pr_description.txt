@@ -1,0 +1,13 @@
+🎯 What:
+- Verified `backend/app/modules/account/schemas.py` and it didn't have unused imports, however, it needed auto formatting applied.
+- Formatted Python files locally using `ruff format` and `ruff check --fix` effectively addressing styling and unused import issues in various modules (`analyze_rpc.py`, `app/api/v1/notifications.py`, `app/core/security.py`, `app/modules/account/schemas.py`, `app/modules/bookings/service.py`, `app/modules/services/service.py`, `tests/test_atomic_idempotency.py`).
+
+💡 Why:
+- Keeping our code base free of styling issues and unused imports allows for a cleaner code base and avoids potential compilation issues down the line.
+
+✅ Verification:
+- Ran `cd backend && ruff format .` and `cd backend && ruff check . --fix` locally to make sure all formatting was done properly and there were no unused imports.
+- Ran tests in backend locally via `pytest` to make sure we hadn't broken anything.
+
+✨ Result:
+- Fixed a handful of unused imports scattered across the backend.

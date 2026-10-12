@@ -13,7 +13,6 @@ from app.modules.bookings.schemas import (
     CustomerBookingOccurrenceCancellationRequest,
     CustomerBookingRescheduleRequest,
     InstantBookingCreateRequest,
-    InstantBookingPriceRequest,
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
 )
