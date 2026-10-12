@@ -319,7 +319,7 @@ export default function ActiveBookingScreen({
     const [
     refundStatusError,
     setRefundStatusError,
-  ] = useState<string | null>(null)  
+  ] = useState<string | null>(null)
 
   const [
     location,
@@ -558,7 +558,6 @@ setBooking(nextBooking)
       setLoading(false)
     }
   }
-    
 
   useEffect(() => {
     void refresh()
@@ -1534,8 +1533,6 @@ setBooking(nextBooking)
             )}
           />
 
-        
-
           <Row
             label="Start"
             value={formatDateTime(
@@ -1639,6 +1636,12 @@ setBooking(nextBooking)
           </View>
         ) : null}
 
+        {refundStatusError ? (
+          <Text style={styles.refundMessage}>
+            {refundStatusError}
+          </Text>
+        ) : null}
+
         {!terminal &&
         booking.status !==
           'pending_payment' &&
@@ -1696,8 +1699,6 @@ setBooking(nextBooking)
                   </Pressable>
                 </View>
 
-                
-
                 {tracking ? (
                   <View
                     style={
@@ -1734,7 +1735,6 @@ setBooking(nextBooking)
                     locationFreshness ===
                       'fresh' ? (
                       <>
-                        
 
                         <Text
                           style={
@@ -1880,13 +1880,7 @@ setBooking(nextBooking)
             </Text>
           </Pressable>
         ) : null}
-                {refundStatusError ? (
-          <Text
-            style={styles.refundMessage}
-          >
-            {refundStatusError}
-          </Text>
-        ) : null}
+
 
         {!terminal &&
         !workerAssigned &&
