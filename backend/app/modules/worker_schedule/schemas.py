@@ -30,29 +30,17 @@ class WorkerWeeklyScheduleRequest(BaseModel):
     ) -> time:
         start_time = info.data.get("start_time")
 
-        if (
-            start_time is not None
-            and value <= start_time
-        ):
-            raise ValueError(
-                "Schedule end time must be after the start time."
-            )
+        if start_time is not None and value <= start_time:
+            raise ValueError("Schedule end time must be after the start time.")
 
         duration_minutes = (
-            value.hour * 60
-            + value.minute
-            - (
-                start_time.hour * 60
-                + start_time.minute
-            )
+            value.hour * 60 + value.minute - (start_time.hour * 60 + start_time.minute)
             if start_time is not None
             else 0
         )
 
         if start_time is not None and duration_minutes < 30:
-            raise ValueError(
-                "A worker schedule window must be at least 30 minutes."
-            )
+            raise ValueError("A worker schedule window must be at least 30 minutes.")
 
         return value
 

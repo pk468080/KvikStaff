@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
@@ -41,9 +42,7 @@ class AvailabilityRepository:
         self.session = session
 
     async def get_active_service_areas(self) -> list[ServiceAreaRow]:
-        result = await self.session.execute(
-            text(
-                """
+        result = await self.session.execute(text("""
                 select
                     id,
                     service_id,
@@ -56,9 +55,7 @@ class AvailabilityRepository:
                 from public.service_areas
                 where is_active = true
                 order by city asc, name asc
-                """
-            )
-        )
+                """))
 
         return [
             ServiceAreaRow(
@@ -81,8 +78,7 @@ class AvailabilityRepository:
         longitude: float,
     ) -> bool:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 select exists (
                     select 1
                     from public.service_areas sa
@@ -109,8 +105,7 @@ class AvailabilityRepository:
                           sa.radius_km * 1000
                       )
                 ) as available
-                """
-            ),
+                """),
             {
                 "service_id": service_id,
                 "latitude": latitude,
@@ -125,8 +120,7 @@ class AvailabilityRepository:
         service_variant_id: UUID,
     ) -> ServiceVariantContext | None:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 select sv.service_id
                 from public.service_variants sv
                 join public.services s
@@ -136,8 +130,7 @@ class AvailabilityRepository:
                   and lower(sv.billing_type) = 'hourly'
                   and s.is_active = true
                 limit 1
-                """
-            ),
+                """),
             {"service_variant_id": service_variant_id},
         )
 
@@ -154,15 +147,13 @@ class AvailabilityRepository:
         service_variant_id: UUID,
     ) -> ServiceVariantContext | None:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 select service_id
                 from public.service_variants
                 where id = :service_variant_id
                   and is_active = true
                 limit 1
-                """
-            ),
+                """),
             {"service_variant_id": service_variant_id},
         )
 
@@ -180,8 +171,7 @@ class AvailabilityRepository:
         customer_id: UUID,
     ) -> CustomerAddressRow | None:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 select
                     latitude,
                     longitude
@@ -189,8 +179,7 @@ class AvailabilityRepository:
                 where id = :address_id
                   and user_id = :customer_id
                 limit 1
-                """
-            ),
+                """),
             {
                 "address_id": address_id,
                 "customer_id": customer_id,
@@ -207,14 +196,119 @@ class AvailabilityRepository:
             longitude=float(row["longitude"]),
         )
 
+    async def count_instant_slot_workers_bulk(
+        self,
+        service_id: UUID,
+        latitude: float,
+        longitude: float,
+        slots: list[tuple[datetime, datetime]],
+    ) -> dict[datetime, int]:
+        if not slots:
+            return {}
+
+        intervals_json = json.dumps(
+            [
+                {
+                    "start": slot[0].isoformat(),
+                    "end": slot[1].isoformat(),
+                }
+                for slot in slots
+            ]
+        )
+
+        result = await self.session.execute(
+            text("""
+                with intervals as (
+                    select
+                        (i->>'start')::timestamptz as start_time,
+                        (i->>'end')::timestamptz as end_time
+                    from jsonb_array_elements(:intervals::jsonb) i
+                ),
+                available_workers as (
+                    select wp.id
+                    from public.worker_profiles wp
+                    join public.worker_services ws
+                        on ws.worker_id = wp.id
+                       and ws.service_id = :service_id
+                    join public.worker_presence pr
+                        on pr.worker_id = wp.id
+                       and pr.is_available = true
+                       and pr.expires_at > now()
+                    join lateral (
+                        select wl.location
+                        from public.worker_locations wl
+                        where wl.worker_id = wp.id
+                          and wl.location is not null
+                          and wl.recorded_at >= now() - interval '10 minutes'
+                        order by wl.recorded_at desc
+                        limit 1
+                    ) wl on true
+                    where wp.is_verified = true
+                      and wp.worker_status = 'available'::public.worker_status
+                      and wp.service_radius_km > 0
+                      and st_dwithin(
+                          wl.location,
+                          st_setsrid(st_makepoint(:longitude, :latitude), 4326)::geography,
+                          least(wp.service_radius_km, 10) * 1000
+                      )
+                      and st_dwithin(
+                          wl.location,
+                          st_setsrid(st_makepoint(:longitude, :latitude), 4326)::geography,
+                          10000
+                      )
+                )
+                select
+                    i.start_time,
+                    count(aw.id)::integer as worker_count
+                from intervals i
+                left join available_workers aw on
+                    public.worker_covers_booking_interval(
+                        :service_id,
+                        aw.id,
+                        i.start_time,
+                        i.end_time
+                    )
+                    and not exists (
+                        select 1
+                        from public.bookings b
+                        where b.worker_id = aw.id
+                          and b.status in (
+                              'assigned'::public.booking_status,
+                              'on_the_way'::public.booking_status,
+                              'arrived'::public.booking_status,
+                              'in_progress'::public.booking_status
+                          )
+                          and b.scheduled_start < i.end_time
+                          and b.scheduled_end > i.start_time
+                    )
+                group by i.start_time
+                """),
+            {
+                "service_id": service_id,
+                "latitude": latitude,
+                "longitude": longitude,
+                "intervals": intervals_json,
+            },
+        )
+
+        counts = {}
+        for row in result.mappings():
+            counts[row["start_time"]] = int(row["worker_count"] or 0)
+
+        # Ensure all slots have an entry
+        for slot in slots:
+            if slot[0] not in counts:
+                counts[slot[0]] = 0
+
+        return counts
+
     async def get_platform_setting_value(
         self,
         key: str,
         default: str,
     ) -> str:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 select coalesce(
                     nullif(trim(value->>'value'), ''),
                     :default_value
@@ -224,8 +318,7 @@ class AvailabilityRepository:
                   and is_active = true
                 order by updated_at desc
                 limit 1
-                """
-            ),
+                """),
             {
                 "key": key,
                 "default_value": default,
@@ -243,8 +336,7 @@ class AvailabilityRepository:
         longitude: float,
     ) -> InstantWorkerSnapshot:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 with candidates as (
                     select
                         wp.id as worker_id,
@@ -318,8 +410,7 @@ class AvailabilityRepository:
                         3
                     ) as nearest_distance_km
                 from candidates
-                """
-            ),
+                """),
             {
                 "service_id": service_id,
                 "latitude": latitude,
@@ -334,9 +425,7 @@ class AvailabilityRepository:
             count=int(row["worker_count"] or 0),
             nearest_worker_id=row["nearest_worker_id"],
             nearest_distance_km=(
-                float(nearest_distance)
-                if nearest_distance is not None
-                else None
+                float(nearest_distance) if nearest_distance is not None else None
             ),
         )
 
@@ -349,8 +438,7 @@ class AvailabilityRepository:
         end: datetime,
     ) -> int:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 select count(*)::integer
                 from public.worker_profiles wp
                 join public.worker_services ws
@@ -417,8 +505,7 @@ class AvailabilityRepository:
                         and b.scheduled_start < :end_time
                         and b.scheduled_end > :start_time
                   )
-                """
-            ),
+                """),
             {
                 "service_id": service_id,
                 "latitude": latitude,
@@ -437,8 +524,7 @@ class AvailabilityRepository:
         end: datetime,
     ) -> int:
         result = await self.session.execute(
-            text(
-                """
+            text("""
                 select count(*)::integer
                 from public.worker_services ws
                 join public.worker_profiles wp
@@ -453,8 +539,7 @@ class AvailabilityRepository:
                       :start_time,
                       :end_time
                   )
-                """
-            ),
+                """),
             {
                 "service_id": service_id,
                 "start_time": start,

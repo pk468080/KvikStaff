@@ -15,9 +15,7 @@ router = APIRouter()
 def get_invoices_service(
     db=Depends(get_db),
 ) -> InvoicesService:
-    return InvoicesService(
-        InvoicesRepository(db)
-    )
+    return InvoicesService(InvoicesRepository(db))
 
 
 @router.get(
@@ -27,9 +25,7 @@ def get_invoices_service(
 async def get_customer_booking_invoice(
     booking_id: UUID,
     current_user: CurrentUser = Depends(get_customer),
-    service: InvoicesService = Depends(
-        get_invoices_service
-    ),
+    service: InvoicesService = Depends(get_invoices_service),
 ) -> dict[str, Any]:
     return await service.get_customer_invoice(
         customer_id=UUID(current_user.id),

@@ -20,9 +20,7 @@ router = APIRouter()
 def get_chat_service(
     db=Depends(get_db),
 ) -> ChatService:
-    return ChatService(
-        ChatRepository(db)
-    )
+    return ChatService(ChatRepository(db))
 
 
 @router.post(

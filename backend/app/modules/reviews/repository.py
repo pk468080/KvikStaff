@@ -18,8 +18,7 @@ class ReviewsRepository:
     ) -> dict[str, Any] | None:
         async with self.db.begin():
             result = await self.db.execute(
-                text(
-                    """
+                text("""
                     SELECT
                         r.id,
                         r.booking_id,
@@ -37,15 +36,12 @@ class ReviewsRepository:
                           OR r.occurrence_id = :occurrence_id
                       )
                     LIMIT 1
-                    """
-                ),
+                    """),
                 {
                     "customer_id": str(customer_id),
                     "booking_id": str(booking_id),
                     "occurrence_id": (
-                        str(occurrence_id)
-                        if occurrence_id is not None
-                        else None
+                        str(occurrence_id) if occurrence_id is not None else None
                     ),
                 },
             )
@@ -59,8 +55,7 @@ class ReviewsRepository:
     ) -> list[dict[str, Any]]:
         async with self.db.begin():
             result = await self.db.execute(
-                text(
-                    """
+                text("""
                     SELECT
                         o.id,
                         o.worker_id,
@@ -73,8 +68,7 @@ class ReviewsRepository:
                       AND o.booking_id = :booking_id
                       AND o.status = 'completed'
                     ORDER BY o.occurrence_index ASC
-                    """
-                ),
+                    """),
                 {
                     "customer_id": str(customer_id),
                     "booking_id": str(booking_id),
@@ -92,8 +86,7 @@ class ReviewsRepository:
     ) -> dict[str, Any]:
         async with self.db.begin():
             booking_result = await self.db.execute(
-                text(
-                    """
+                text("""
                     SELECT
                         id,
                         customer_id,
@@ -104,8 +97,7 @@ class ReviewsRepository:
                     WHERE id = :booking_id
                       AND customer_id = :customer_id
                     FOR UPDATE
-                    """
-                ),
+                    """),
                 {
                     "booking_id": str(booking_id),
                     "customer_id": str(customer_id),
@@ -117,21 +109,16 @@ class ReviewsRepository:
                 raise ValueError("Booking not found.")
 
             if booking["status"] != "completed":
-                raise ValueError(
-                    "This booking is not eligible for a review."
-                )
+                raise ValueError("This booking is not eligible for a review.")
 
-            fulfillment_type = str(
-                booking["fulfillment_type"] or ""
-            )
+            fulfillment_type = str(booking["fulfillment_type"] or "")
             resolved_occurrence_id = occurrence_id
             worker_id = booking["worker_id"]
 
             if fulfillment_type == "recurring":
                 if resolved_occurrence_id is None:
                     occurrence_result = await self.db.execute(
-                        text(
-                            """
+                        text("""
                             SELECT
                                 id,
                                 worker_id,
@@ -143,15 +130,13 @@ class ReviewsRepository:
                             ORDER BY occurrence_index ASC
                             LIMIT 1
                             FOR UPDATE
-                            """
-                        ),
+                            """),
                         {"booking_id": str(booking_id)},
                     )
                     occurrence = occurrence_result.mappings().first()
                 else:
                     occurrence_result = await self.db.execute(
-                        text(
-                            """
+                        text("""
                             SELECT
                                 id,
                                 worker_id,
@@ -162,8 +147,7 @@ class ReviewsRepository:
                               AND booking_id = :booking_id
                             LIMIT 1
                             FOR UPDATE
-                            """
-                        ),
+                            """),
                         {
                             "occurrence_id": str(resolved_occurrence_id),
                             "booking_id": str(booking_id),
@@ -172,21 +156,15 @@ class ReviewsRepository:
                     occurrence = occurrence_result.mappings().first()
 
                 if occurrence is None:
-                    raise ValueError(
-                        "This booking is not eligible for a review."
-                    )
+                    raise ValueError("This booking is not eligible for a review.")
 
                 if occurrence["status"] != "completed":
-                    raise ValueError(
-                        "This booking is not eligible for a review."
-                    )
+                    raise ValueError("This booking is not eligible for a review.")
 
                 resolved_occurrence_id = occurrence["id"]
                 worker_id = occurrence["worker_id"] or worker_id
             elif resolved_occurrence_id is not None:
-                raise ValueError(
-                    "Occurrence ID is only valid for recurring bookings."
-                )
+                raise ValueError("Occurrence ID is only valid for recurring bookings.")
 
             if worker_id is None:
                 raise ValueError(
@@ -194,8 +172,7 @@ class ReviewsRepository:
                 )
 
             existing_result = await self.db.execute(
-                text(
-                    """
+                text("""
                     SELECT id
                     FROM public.reviews
                     WHERE customer_id = :customer_id
@@ -205,8 +182,7 @@ class ReviewsRepository:
                           OR occurrence_id = :occurrence_id
                       )
                     LIMIT 1
-                    """
-                ),
+                    """),
                 {
                     "customer_id": str(customer_id),
                     "booking_id": str(booking_id),
@@ -218,14 +194,11 @@ class ReviewsRepository:
                 },
             )
             if existing_result.first() is not None:
-                raise ValueError(
-                    "You have already reviewed this booking."
-                )
+                raise ValueError("You have already reviewed this booking.")
 
             try:
                 insert_result = await self.db.execute(
-                    text(
-                        """
+                    text("""
                         INSERT INTO public.reviews (
                             booking_id,
                             occurrence_id,
@@ -251,8 +224,7 @@ class ReviewsRepository:
                             rating,
                             comment,
                             created_at
-                        """
-                    ),
+                        """),
                     {
                         "booking_id": str(booking_id),
                         "occurrence_id": (
@@ -267,9 +239,7 @@ class ReviewsRepository:
                     },
                 )
             except IntegrityError as exc:
-                raise ValueError(
-                    "You have already reviewed this booking."
-                ) from exc
+                raise ValueError("You have already reviewed this booking.") from exc
 
             row = insert_result.mappings().one()
             return dict(row)

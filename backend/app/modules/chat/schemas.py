@@ -30,8 +30,6 @@ class CustomerChatMessageRequest(BaseModel):
         normalized = value.strip()
 
         if not normalized:
-            raise ValueError(
-                "Enter a message before sending."
-            )
+            raise ValueError("Enter a message before sending.")
 
         return normalized

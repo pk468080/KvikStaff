@@ -64,11 +64,6 @@ class AccountDeletionService:
             None,
         )
 
-        message = str(
-            original or exc
-        ).strip()
+        message = str(original or exc).strip()
 
-        return (
-            message
-            or "Unable to complete the account deletion operation."
-        )
+        return message or "Unable to complete the account deletion operation."

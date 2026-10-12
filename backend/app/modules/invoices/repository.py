@@ -16,8 +16,7 @@ class InvoicesRepository:
     ) -> dict[str, Any] | None:
         async with self.db.begin():
             booking_result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     SELECT
                         b.id,
                         b.customer_id,
@@ -60,8 +59,7 @@ class InvoicesRepository:
                     WHERE b.id = :booking_id
                       AND b.customer_id = :customer_id
                     LIMIT 1
-                    '''
-                ),
+                    """),
                 {
                     "booking_id": str(booking_id),
                     "customer_id": str(customer_id),
@@ -74,8 +72,7 @@ class InvoicesRepository:
                 return None
 
             payment_result = await self.db.execute(
-                text(
-                    '''
+                text("""
                     SELECT
                         p.id,
                         p.booking_id,
@@ -101,8 +98,7 @@ class InvoicesRepository:
                         p.created_at DESC,
                         p.id DESC
                     LIMIT 1
-                    '''
-                ),
+                    """),
                 {
                     "booking_id": str(booking_id),
                 },

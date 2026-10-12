@@ -22,16 +22,12 @@ class WorkerPresenceService:
         self,
         worker_id: UUID,
     ) -> WorkerPresenceResponse | None:
-        presence = await self.repository.get_presence(
-            worker_id
-        )
+        presence = await self.repository.get_presence(worker_id)
 
         if presence is None:
             return None
 
-        location = await self.repository.get_latest_location(
-            worker_id
-        )
+        location = await self.repository.get_latest_location(worker_id)
 
         return self._map_presence(
             presence,
@@ -55,9 +51,7 @@ class WorkerPresenceService:
                 400,
             )
 
-        presence = await self.get_presence(
-            worker_id
-        )
+        presence = await self.get_presence(worker_id)
 
         if presence is None:
             raise AppError(
@@ -87,9 +81,7 @@ class WorkerPresenceService:
                 400,
             )
 
-        presence = await self.get_presence(
-            worker_id
-        )
+        presence = await self.get_presence(worker_id)
 
         if presence is None:
             raise AppError(
@@ -146,41 +138,22 @@ class WorkerPresenceService:
         presence: dict,
         location: dict | None,
     ) -> WorkerPresenceResponse:
-        status = (
-            "available"
-            if presence["is_available"]
-            else "offline"
-        )
+        status = "available" if presence["is_available"] else "offline"
 
         return WorkerPresenceResponse(
             worker_id=presence["worker_id"],
             status=status,
-            latitude=(
-                location["latitude"]
-                if location
-                else None
-            ),
-            longitude=(
-                location["longitude"]
-                if location
-                else None
-            ),
-            last_heartbeat_at=presence[
-                "last_seen_at"
-            ],
-            presence_expires_at=presence[
-                "expires_at"
-            ],
+            latitude=(location["latitude"] if location else None),
+            longitude=(location["longitude"] if location else None),
+            last_heartbeat_at=presence["last_seen_at"],
+            presence_expires_at=presence["expires_at"],
         )
+
     async def get_latest_location(
         self,
         worker_id: UUID,
     ) -> WorkerLocationResponse | None:
-        location = (
-            await self.repository.get_latest_location_any_booking(
-                worker_id
-            )
-        )
+        location = await self.repository.get_latest_location_any_booking(worker_id)
 
         if location is None:
             return None
@@ -190,4 +163,3 @@ class WorkerPresenceService:
             longitude=location["longitude"],
             recorded_at=location["recorded_at"],
         )
-    

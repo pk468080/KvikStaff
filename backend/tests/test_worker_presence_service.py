@@ -29,9 +29,7 @@ class FakeRepository:
 
 @pytest.mark.asyncio
 async def test_get_latest_worker_location() -> None:
-    service = WorkerPresenceService(
-        FakeRepository()
-    )
+    service = WorkerPresenceService(FakeRepository())
 
     result = await service.get_latest_location(
         UUID("11111111-1111-1111-1111-111111111111")

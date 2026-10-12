@@ -18,11 +18,14 @@ class CustomerPushTokenRequest(BaseModel):
         min_length=1,
         max_length=255,
     )
-    platform: Literal[
-        "android",
-        "ios",
-        "web",
-    ] | None = None
+    platform: (
+        Literal[
+            "android",
+            "ios",
+            "web",
+        ]
+        | None
+    ) = None
 
 
 class CustomerPushTokenResponse(BaseModel):

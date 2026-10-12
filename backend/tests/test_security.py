@@ -174,10 +174,7 @@ async def test_inactive_profile_is_rejected(
         )
 
     assert exc_info.value.status_code == 403
-    assert (
-        exc_info.value.detail
-        == "Account is inactive."
-    )
+    assert exc_info.value.detail == "Account is inactive."
 
 
 @pytest.mark.asyncio
@@ -212,7 +209,4 @@ async def test_missing_profile_is_rejected(
         )
 
     assert exc_info.value.status_code == 403
-    assert (
-        exc_info.value.detail
-        == "Account profile not found."
-    )
+    assert exc_info.value.detail == "Account profile not found."

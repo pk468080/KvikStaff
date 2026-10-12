@@ -54,8 +54,12 @@ class SupportRepository:
                     "booking_id": str(booking_id) if booking_id else None,
                     "payment_id": str(payment_id) if payment_id else None,
                     "worker_id": str(worker_id) if worker_id else None,
-                    "refund_request_id": str(refund_request_id) if refund_request_id else None,
-                    "payment_refund_id": str(payment_refund_id) if payment_refund_id else None,
+                    "refund_request_id": (
+                        str(refund_request_id) if refund_request_id else None
+                    ),
+                    "payment_refund_id": (
+                        str(payment_refund_id) if payment_refund_id else None
+                    ),
                 },
             )
 

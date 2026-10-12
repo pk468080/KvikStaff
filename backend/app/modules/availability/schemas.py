@@ -97,9 +97,7 @@ class ScheduledAvailabilitySlotsRequest(BaseModel):
         value: datetime,
     ) -> datetime:
         if value.tzinfo is None or value.utcoffset() is None:
-            raise ValueError(
-                "Availability datetimes must include a timezone offset."
-            )
+            raise ValueError("Availability datetimes must include a timezone offset.")
         return value
 
     @field_validator("end")
@@ -112,9 +110,7 @@ class ScheduledAvailabilitySlotsRequest(BaseModel):
         start = info.data.get("start")
 
         if start is not None and value <= start:
-            raise ValueError(
-                "Availability end must be after start."
-            )
+            raise ValueError("Availability end must be after start.")
 
         return value
 
