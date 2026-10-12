@@ -17,14 +17,15 @@
           "isAndroidForegroundServiceEnabled": true
         }
       ],
-            [
+      [
         "@sentry/react-native",
         {
           "url": "https://sentry.io/",
           "project": "worker-app",
           "organization": "KvikStaff"
         }
-      ]
+      ],
+      "expo-splash-screen"
     ],
     "ios": {
       "bundleIdentifier": "com.princerajput.workerapp"
@@ -44,6 +45,12 @@
         "projectId": "caf2c89e-2337-40c2-b962-dd34c394c174"
       }
     },
-    "owner": "pk468080"
+    "owner": "pk468080",
+    "splash": {
+      "image": "./assets/splash/splash_worker.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff"
+    },
+    "icon": "./assets/image/Icon.png"
   }
 }

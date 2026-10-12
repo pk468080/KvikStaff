@@ -33,21 +33,16 @@ module.exports = ({ config }) => {
     return true
   })
 
-      const plugins = [
+  const plugins = [
     ...filteredPlugins,
     'expo-font',
     'expo-sqlite',
-
-    ...(androidMapsApiKey
-      ? [
-          [
-            'react-native-maps',
-            {
-              androidGoogleMapsApiKey: androidMapsApiKey,
-            },
-          ],
-        ]
-      : []),
+    [
+      'react-native-maps',
+      {
+        androidGoogleMapsApiKey: androidMapsApiKey || 'MISSING_API_KEY',
+      },
+    ],
   ]
 
   return {
