@@ -1,10 +1,13 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.core.exceptions import AppError
+from app.core.idempotency.atomic import (
+    get_request_hash,
+)
 from app.modules.bookings.repository import (
     BookingsRepository,
 )
@@ -16,10 +19,6 @@ from app.modules.bookings.schemas import (
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
 )
-from app.core.idempotency.atomic import (
-    get_request_hash,
-)
-
 
 OCCURRENCE_LIFECYCLE_STATUSES = {
     "assigned",
@@ -343,39 +342,49 @@ request_hash=get_request_hash(request),
 
             for booking in bookings:
                 booking["active_occurrence"] = None
-
-            for booking_id in recurring_booking_ids:
-                occurrence_rows = (
-                    await self.repository.get_customer_booking_occurrences(
+            if recurring_booking_ids:
+                all_occurrences = (
+                    await self.repository.get_customer_bookings_occurrences(
                         customer_id=customer_id,
-                        booking_id=booking_id,
+                        booking_ids=recurring_booking_ids,
                     )
                 )
 
-                active_occurrence = (
-                    self.select_preferred_occurrence(
-                        occurrence_rows
-                    )
-                )
+                occurrences_by_booking_id = {}
+                for occ in all_occurrences:
+                    b_id = UUID(str(occ["booking_id"]))
+                    if b_id not in occurrences_by_booking_id:
+                        occurrences_by_booking_id[b_id] = []
+                    occurrences_by_booking_id[b_id].append(occ)
 
-                if active_occurrence is None:
-                    continue
+                for booking_id in recurring_booking_ids:
+                    occurrence_rows = occurrences_by_booking_id.get(booking_id, [])
 
-                for booking in bookings:
-                    if (
-                        UUID(str(booking["id"]))
-                        == booking_id
-                    ):
-                        self.apply_active_occurrence(
-                            booking,
-                            active_occurrence,
+                    active_occurrence = (
+                        self.select_preferred_occurrence(
+                            occurrence_rows
                         )
+                    )
 
-                        booking[
-                            "active_occurrence"
-                        ] = active_occurrence
+                    if active_occurrence is None:
+                        continue
 
-                        break
+                    for booking in bookings:
+                        if (
+                            UUID(str(booking["id"]))
+                            == booking_id
+                        ):
+                            self.apply_active_occurrence(
+                                booking,
+                                active_occurrence,
+                            )
+
+                            booking[
+                                "active_occurrence"
+                            ] = active_occurrence
+
+                            break
+
 
             return bookings
 
@@ -887,7 +896,7 @@ request_hash=get_request_hash(request),
             return None
 
         now = datetime.now(
-            timezone.utc
+            UTC
         )
 
         lifecycle = [
@@ -944,7 +953,7 @@ request_hash=get_request_hash(request),
                     if start.tzinfo is None:
                         start = (
                             start.replace(
-                                tzinfo=timezone.utc
+                                tzinfo=UTC
                             )
                         )
 
@@ -960,10 +969,7 @@ request_hash=get_request_hash(request),
                     distance,
                 )
 
-            return sorted(
-                lifecycle,
-                key=lifecycle_key,
-            )[0]
+            return min(lifecycle, key=lifecycle_key)
 
         future = []
 
@@ -984,7 +990,7 @@ request_hash=get_request_hash(request),
 
             if start.tzinfo is None:
                 start = start.replace(
-                    tzinfo=timezone.utc
+                    tzinfo=UTC
                 )
 
             if start >= now:
@@ -993,27 +999,20 @@ request_hash=get_request_hash(request),
                 )
 
         if future:
-            return sorted(
-                future,
-                key=lambda occurrence: (
+            return min(future, key=lambda occurrence: (
                     occurrence.get(
                         "scheduled_start"
                     )
-                ),
-            )[0]
+                ))
 
-        return sorted(
-            occurrences,
-            key=lambda occurrence: (
+        return max(occurrences, key=lambda occurrence: (
                 occurrence.get(
                     "scheduled_start"
                 )
                 or datetime.min.replace(
-                    tzinfo=timezone.utc
+                    tzinfo=UTC
                 )
-            ),
-            reverse=True,
-        )[0]
+            ))
 
     @staticmethod
     def sort_status_history(
@@ -1029,7 +1028,7 @@ request_hash=get_request_hash(request),
                     "created_at"
                 )
                 or datetime.min.replace(
-                    tzinfo=timezone.utc
+                    tzinfo=UTC
                 ),
                 str(
                     item.get("id")

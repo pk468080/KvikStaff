@@ -1,32 +1,18 @@
 from datetime import date, datetime, time
-
 from typing import Any
-
 from uuid import UUID
 
-
-
 from sqlalchemy import (
-
     Date,
-
     SmallInteger,
-
     Time,
-
     bindparam,
-
     text,
-
 )
-
 from sqlalchemy.dialects.postgresql import ARRAY
-
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.idempotency.atomic import claim_or_replay, complete_idempotency
-
-
-
 
 
 class BookingsRepository:
@@ -968,6 +954,59 @@ class BookingsRepository:
 
 
             return dict(row)
+    async def get_customer_bookings_occurrences(
+        self,
+        customer_id: UUID,
+        booking_ids: list[UUID],
+    ) -> list[dict[str, Any]]:
+        if not booking_ids:
+            return []
+
+        async with self.db.begin():
+            await self._set_customer_auth_context(
+                customer_id
+            )
+
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT
+                        o.id,
+                        o.booking_id,
+                        o.worker_id,
+                        o.occurrence_index,
+                        o.occurrence_date,
+                        o.scheduled_start,
+                        o.scheduled_end,
+                        o.status::text AS status,
+                        o.journey_started_at,
+                        o.arrived_at,
+                        o.started_at,
+                        o.completed_at,
+                        o.start_otp_verified_at,
+                        o.end_otp_verified_at,
+                        o.created_at,
+                        o.updated_at
+                    FROM public.booking_schedule_occurrences AS o
+                    INNER JOIN public.bookings AS b
+                        ON b.id = o.booking_id
+                    WHERE b.customer_id = :customer_id
+                      AND o.booking_id = ANY(:booking_ids)
+                    ORDER BY o.occurrence_index ASC
+                    """
+                ),
+                {
+                    "customer_id": str(customer_id),
+                    "booking_ids": [str(b_id) for b_id in booking_ids],
+                },
+            )
+
+            return [
+                dict(row)
+                for row in result.mappings().all()
+            ]
+
+
 
 
 
@@ -1248,9 +1287,7 @@ class BookingsRepository:
     ) -> dict[str, Any]:
 
         import hashlib
-
         import secrets
-
         from datetime import timedelta
 
 
