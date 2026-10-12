@@ -16,7 +16,7 @@ import type { WorkerPayoutAccount, WorkerPayoutOverview, WorkerPayoutRecord } fr
 import {
   createWorkerPayoutAccount,
   disableWorkerPayoutAccount,
-  getWorkerAvailableEarnings,
+  
   getWorkerPayoutOverview,
   listWorkerPayoutAccounts,
   listWorkerPayouts,
@@ -34,7 +34,7 @@ function formatDate(value: string): string {
 
 export default function WorkerPayoutPanel({ formatAmount }: Props) {
   const [overview, setOverview] = useState<WorkerPayoutOverview | null>(null)
-  const [availableAmount, setAvailableAmount] = useState(0)
+ 
   const [accounts, setAccounts] = useState<WorkerPayoutAccount[]>([])
   const [payouts, setPayouts] = useState<WorkerPayoutRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,14 +51,14 @@ export default function WorkerPayoutPanel({ formatAmount }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const [nextOverview, nextAvailable, nextAccounts, nextPayouts] = await Promise.all([
-        getWorkerPayoutOverview(),
-        getWorkerAvailableEarnings(),
-        listWorkerPayoutAccounts(),
-        listWorkerPayouts(),
-      ])
+            const [nextOverview, nextAccounts, nextPayouts] =
+        await Promise.all([
+          getWorkerPayoutOverview(),
+          listWorkerPayoutAccounts(),
+          listWorkerPayouts(),
+        ])
+
       setOverview(nextOverview)
-      setAvailableAmount(nextAvailable)
       setAccounts(nextAccounts)
       setPayouts(nextPayouts)
     } catch (cause) {
@@ -87,31 +87,62 @@ export default function WorkerPayoutPanel({ formatAmount }: Props) {
 
   const defaultAccount = accounts.find(account => account.isDefault && account.isVerified)
   const payoutDisabled = overview?.payoutDisabled === true
-  const payoutAmount = Math.max(0, availableAmount || overview?.availableAmount || 0)
+    const payoutAmount = Math.max(
+    0,
+    overview?.availableAmount ?? 0,
+  )
 
-  async function submitAccount(): Promise<void> {
+   async function submitAccount(): Promise<void> {
+    const accountHolderName = holderName.trim()
+
+    if (!accountHolderName) {
+      setError('Please enter the account holder name.')
+      return
+    }
+
     const body: Record<string, string> = {
-      account_type: accountMode,
-      account_holder_name: holderName.trim(),
+      accountType:
+        accountMode === 'bank'
+          ? 'bank_account'
+          : 'upi',
+      accountHolderName,
     }
+
     if (accountMode === 'bank') {
-      body.account_number = accountNumber.trim()
-      body.ifsc_code = ifsc.trim()
+      if (!accountNumber.trim() || !ifsc.trim()) {
+        setError('Please enter the account number and IFSC code.')
+        return
+      }
+
+      body.accountNumber = accountNumber.trim()
+      body.ifsc = ifsc.trim().toUpperCase()
     } else {
-      body.upi_id = upiId.trim()
+      if (!upiId.trim()) {
+        setError('Please enter your UPI ID.')
+        return
+      }
+
+      body.upiId = upiId.trim()
     }
+
     setBusy(true)
     setError(null)
+
     try {
       await createWorkerPayoutAccount(body)
       await load()
+
       setAccountModal(false)
       setHolderName('')
       setAccountNumber('')
       setIfsc('')
       setUpiId('')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update payout information.')
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Unable to update payout information.',
+      )
     } finally {
       setBusy(false)
     }
@@ -133,7 +164,7 @@ export default function WorkerPayoutPanel({ formatAmount }: Props) {
             <Metric label="Platform fees" value={formatAmount(overview.platformFees)} />
             <Metric label="Net" value={formatAmount(overview.netEarnings)} />
             <Metric label="Reserved" value={formatAmount(overview.allocatedAmount)} />
-            <Metric label="Paid Out" value={formatAmount(overview.pendingAmount)} />
+                        <Metric label="Paid Out" value={formatAmount(overview.paidOutAmount)} />
             <Metric label="Available" value={formatAmount(payoutAmount)} />
           </View>
           {payoutDisabled ? <Text style={styles.notice}>Payout processing is currently disabled. Your earnings remain recorded, but payout requests cannot be processed yet.</Text> : null}

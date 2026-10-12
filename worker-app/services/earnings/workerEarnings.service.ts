@@ -291,14 +291,59 @@ export async function getWorkerEarningForBooking(
 export async function getWorkerEarningsSummary(): Promise<
   WorkerEarningSummary
 > {
-  const earnings =
-    await getWorkerEarnings(
-      200,
+  const workerId = await getCurrentWorkerId()
+
+  const { data: aggregateData, error: aggregateError } =
+    await supabase.rpc(
+      'worker_get_available_earnings' as never,
     )
 
-  return buildSummary(
-    earnings,
-  )
+  if (aggregateError) {
+    throw aggregateError
+  }
+
+  const { count, error: countError } = await supabase
+    .from('worker_earnings')
+    .select('id', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('worker_id', workerId)
+
+  if (countError) {
+    throw countError
+  }
+
+  const aggregateValue = Array.isArray(aggregateData)
+    ? aggregateData[0]
+    : aggregateData
+
+  const aggregate =
+    aggregateValue &&
+    typeof aggregateValue === 'object'
+      ? aggregateValue as Record<string, unknown>
+      : {}
+
+  function readNumber(value: unknown): number {
+    const parsed = Number(value ?? 0)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+
+  return {
+    totalGrossAmount: readNumber(
+      aggregate.gross_earnings,
+    ),
+
+    totalPlatformFee: readNumber(
+      aggregate.platform_fees,
+    ),
+
+    totalNetAmount: readNumber(
+      aggregate.net_earnings,
+    ),
+
+    earningCount: count ?? 0,
+  }
 }
 
 export async function getWorkerEarningsForPeriod(
@@ -327,41 +372,41 @@ export async function getWorkerEarningsForPeriod(
     endExclusiveIso.getUTCDate() + 1,
   )
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('worker_earnings')
-    .select(
-      EARNING_SELECT,
-    )
-    .eq(
-      'worker_id',
-      workerId,
-    )
-    .gte(
-      'created_at',
-      startIso,
-    )
-    .lt(
-      'created_at',
-      endExclusiveIso.toISOString(),
-    )
-    .order('created_at', {
-      ascending: false,
-    })
+    const pageSize = 500
+  const earnings: WorkerEarning[] = []
 
-  if (error) {
-    throw error
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('worker_earnings')
+      .select(EARNING_SELECT)
+      .eq('worker_id', workerId)
+      .gte('created_at', startIso)
+      .lt(
+        'created_at',
+        endExclusiveIso.toISOString(),
+      )
+      .order('created_at', {
+        ascending: false,
+      })
+      .order('id', {
+        ascending: true,
+      })
+      .range(offset, offset + pageSize - 1)
+
+    if (error) {
+      throw error
+    }
+
+    const page = (data ?? []).map(
+      row => mapWorkerEarning(row as WorkerEarningRow),
+    )
+
+    earnings.push(...page)
+
+    if (page.length < pageSize) {
+      break
+    }
   }
-
-  const earnings =
-    (data ?? []).map(
-      (row) =>
-        mapWorkerEarning(
-          row as WorkerEarningRow,
-        ),
-    )
 
   return {
     startDate,

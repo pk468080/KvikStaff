@@ -1,3 +1,4 @@
+
 export type WorkerPayoutAccount = {
   id: string
   accountType: string
@@ -21,7 +22,7 @@ export type WorkerPayoutOverview = {
   platformFees: number
   netEarnings: number
   allocatedAmount: number
-  pendingAmount: number
+  paidOutAmount: number
   availableAmount: number
   payoutDisabled: boolean
 }

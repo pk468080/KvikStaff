@@ -26,11 +26,13 @@ Sentry.init({
 
   enableLogs: true,
 
-  replaysSessionSampleRate: __DEV__
-    ? 1.0
-    : 0.1,
+    replaysSessionSampleRate: __DEV__
+    ? 0
+    : 0.05,
 
-  replaysOnErrorSampleRate: 1.0,
+  replaysOnErrorSampleRate: __DEV__
+    ? 0
+    : 1.0,
 
   integrations: [
     Sentry.mobileReplayIntegration(),

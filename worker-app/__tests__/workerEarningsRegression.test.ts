@@ -1,36 +1,56 @@
-import { renderHook, act } from '@testing-library/react-hooks'
+import { act, renderHook } from '@testing-library/react-native'
 import { useWorkerEarnings } from '../hooks/useWorkerEarnings'
 
 jest.mock('../lib/supabase', () => ({
   supabase: {
     auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user-id' } }, error: null })
+      getUser: jest.fn().mockResolvedValue({
+        data: {
+          user: {
+            id: 'test-user-id',
+          },
+        },
+        error: null,
+      }),
     },
-    rpc: jest.fn().mockResolvedValue({ data: {
-      total_earned: 100,
-      available_earnings: 50,
-      period_earnings: 20
-    }, error: null })
-  }
+
+    rpc: jest.fn().mockResolvedValue({
+      data: {
+        gross_earnings: 1000,
+        platform_fees: 100,
+        net_earnings: 900,
+      },
+      error: null,
+    }),
+
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn().mockResolvedValue({
+          count: 237,
+          error: null,
+        }),
+      })),
+    })),
+  },
 }))
 
-describe('useWorkerEarnings regression test for >50 records', () => {
-  it('relies on the authoritative summary independent of local fetched subset', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => useWorkerEarnings(false))
+describe('useWorkerEarnings summary', () => {
+  it('loads the aggregate summary and exact earning count', async () => {
+    const { result } = await renderHook(
+      () => useWorkerEarnings(false),
+    )
 
-    // Mock local fetch array to simulate 50 elements loaded (paginated limit)
-    jest.spyOn(result.current, 'calculateSummary').mockReturnValue({
-      totalEarned: 50,
-      periodEarned: 10,
-      tips: 0,
-      commission: 0,
-    } as any)
-
-    // Wait for the independent summary to overwrite it (from RPC)
     await act(async () => {
       await result.current.refreshSummary()
     })
 
-    expect(result.current.summary).toBeDefined()
+    expect(result.current.summary).toEqual({
+      totalGrossAmount: 1000,
+      totalPlatformFee: 100,
+      totalNetAmount: 900,
+      earningCount: 237,
+    })
+
+    expect(result.current.error).toBeNull()
   })
 })

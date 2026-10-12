@@ -4,7 +4,7 @@ import type {
 
 import { supabase } from '../../lib/supabase'
 import {
-  deactivateActiveWorkerPushTokens,
+  deactivateCurrentWorkerPushToken,
 } from '../notifications/workerNotifications.service'
 import {
   goOffline,
@@ -736,9 +736,9 @@ export async function refreshWorkerSession(): Promise<Session | null> {
 
 export async function signOutWorker(): Promise<void> {
   // Best-effort cleanup must not block sign-out indefinitely.
-  const cleanupPromise = Promise.allSettled([
+    const cleanupPromise = Promise.allSettled([
     goOffline(),
-    deactivateActiveWorkerPushTokens(),
+    deactivateCurrentWorkerPushToken(),
   ])
 
   let timeoutId:
