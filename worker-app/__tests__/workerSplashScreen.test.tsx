@@ -43,7 +43,7 @@ describe('Worker SplashScreen', () => {
     const onFinished = jest.fn()
     mockGetWorkerAuthState.mockResolvedValue(restoredWorkerState)
 
-    render(<SplashScreen onFinished={onFinished} />)
+    await render(<SplashScreen onFinished={onFinished} />)
 
     expect(onFinished).not.toHaveBeenCalled()
 
@@ -59,7 +59,7 @@ describe('Worker SplashScreen', () => {
     const warning = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     mockGetWorkerAuthState.mockRejectedValue(new Error('network unavailable'))
 
-    const { getByText, getByLabelText } = render(
+    const { getByText, getByLabelText } = await render(
       <SplashScreen onFinished={onFinished} />,
     )
 
@@ -83,7 +83,7 @@ describe('Worker SplashScreen', () => {
       )
       .mockResolvedValueOnce(restoredWorkerState)
 
-    const { getByText, getByLabelText } = render(
+    const { getByText, getByLabelText } = await render(
       <SplashScreen onFinished={onFinished} />,
     )
 
@@ -95,7 +95,7 @@ describe('Worker SplashScreen', () => {
     expect(onFinished).not.toHaveBeenCalled()
     expect(warning).toHaveBeenCalled()
 
-    fireEvent.press(getByLabelText('Retry session restoration'))
+    await fireEvent.press(getByLabelText('Retry session restoration'))
 
     await act(async () => {
       await jest.advanceTimersByTimeAsync(UI.splashDuration)
