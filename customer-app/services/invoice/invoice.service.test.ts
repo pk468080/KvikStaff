@@ -1,5 +1,9 @@
 import { mapCustomerInvoice, CustomerInvoice } from './invoice.service';
 
+jest.mock('../../lib/api', () => ({
+  apiRequest: jest.fn(),
+}));
+
 describe('mapCustomerInvoice', () => {
   it('should return the invoice object passed to it', () => {
     const mockInvoice: CustomerInvoice = {
