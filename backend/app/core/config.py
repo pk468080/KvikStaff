@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     supabase_jwt_issuer: str | None = None
     supabase_jwt_secret: str | None = None
 
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str | None = None
 
     razorpay_key_id: str | None = None
     razorpay_key_secret: str | None = None
@@ -84,12 +84,12 @@ class Settings(BaseSettings):
                 "SUPABASE_URL must be configured in production."
             )
 
-        if not self.redis_url.strip():
+        if not self.redis_url or not self.redis_url.strip():
             raise ValueError(
                 "REDIS_URL must be configured in production."
             )
 
-        if self.redis_url.strip() == "redis://localhost:6379/0":
+        if self.redis_url and self.redis_url.strip() == "redis://localhost:6379/0":
             raise ValueError(
                 "REDIS_URL must not use the local default in production."
             )
@@ -153,10 +153,10 @@ class Settings(BaseSettings):
                 "SUPABASE_URL must point to your real Supabase project."
             )
 
-        redis_url = urlsplit(self.redis_url.strip())
-        redis_host = (redis_url.hostname or "").lower()
+        redis_url = urlsplit(self.redis_url.strip()) if self.redis_url else None
+        redis_host = (redis_url.hostname or "").lower() if redis_url else ""
 
-        if redis_url.scheme not in {"redis", "rediss"} or not redis_host:
+        if redis_url and (redis_url.scheme not in {"redis", "rediss"} or not redis_host):
             raise ValueError(
                 "REDIS_URL must use a valid redis:// or rediss:// URL."
             )
