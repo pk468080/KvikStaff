@@ -21,7 +21,6 @@ from app.api.v1.locations import router as locations_router
 from app.api.v1.worker_schedule import (
     router as worker_schedule_router,
 )
-
 api_router = APIRouter()
 
 

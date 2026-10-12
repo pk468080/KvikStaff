@@ -20,7 +20,9 @@ class WorkerScheduleService:
         self,
         worker_id: UUID,
     ):
-        return await self.repository.list_weekly_schedules(worker_id)
+        return await self.repository.list_weekly_schedules(
+            worker_id
+        )
 
     async def create_weekly_schedule(
         self,
@@ -114,16 +116,29 @@ class WorkerScheduleService:
         worker_id: UUID,
         schedules: list[WorkerWeeklyScheduleRequest],
     ):
-        active_schedules = [schedule for schedule in schedules if schedule.is_active]
+        active_schedules = [
+            schedule
+            for schedule in schedules
+            if schedule.is_active
+        ]
 
-        for index, current in enumerate(active_schedules):
-            for next_schedule in active_schedules[index + 1 :]:
-                if current.day_of_week != next_schedule.day_of_week:
+        for index, current in enumerate(
+            active_schedules
+        ):
+            for next_schedule in active_schedules[
+                index + 1:
+            ]:
+                if (
+                    current.day_of_week
+                    != next_schedule.day_of_week
+                ):
                     continue
 
                 if (
-                    current.start_time < next_schedule.end_time
-                    and current.end_time > next_schedule.start_time
+                    current.start_time
+                    < next_schedule.end_time
+                    and current.end_time
+                    > next_schedule.start_time
                 ):
                     raise AppError(
                         "WORKER_SCHEDULE_OVERLAP",

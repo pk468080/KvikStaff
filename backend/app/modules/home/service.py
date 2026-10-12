@@ -16,11 +16,17 @@ class HomeService:
         self,
         customer_id: UUID,
     ) -> list[str]:
-        service_ids = await self.repository.get_customer_favourite_service_ids(
-            customer_id,
+        service_ids = (
+            await self.repository
+            .get_customer_favourite_service_ids(
+                customer_id,
+            )
         )
 
-        return [str(service_id) for service_id in service_ids]
+        return [
+            str(service_id)
+            for service_id in service_ids
+        ]
 
     async def set_customer_favourite_service(
         self,
@@ -48,7 +54,10 @@ class HomeService:
         self,
         available_service_ids: set[UUID] | None = None,
     ) -> list[dict[str, Any]]:
-        rows = await self.repository.get_active_home_promotions()
+        rows = (
+            await self.repository
+            .get_active_home_promotions()
+        )
 
         now = datetime.now(timezone.utc)
 
@@ -59,13 +68,19 @@ class HomeService:
             ends_at = row.get("ends_at")
             service_id = row.get("service_id")
 
-            if starts_at is not None and starts_at > now:
+            if (
+                starts_at is not None
+                and starts_at > now
+            ):
                 continue
 
-            if ends_at is not None and now >= ends_at:
+            if (
+                ends_at is not None
+                and now >= ends_at
+            ):
                 continue
 
-                # When available_service_ids is supplied,
+                        # When available_service_ids is supplied,
             # service-specific promotions must match
             # one of the currently available services.
             #
@@ -95,8 +110,11 @@ class HomeService:
         self,
         customer_id: UUID,
     ) -> list[dict[str, Any]]:
-        rows = await self.repository.get_customer_rebook_rows(
-            customer_id,
+        rows = (
+            await self.repository
+            .get_customer_rebook_rows(
+                customer_id,
+            )
         )
 
         seen: set[UUID] = set()
@@ -105,7 +123,10 @@ class HomeService:
         for row in rows:
             service_id = row.get("service_id")
 
-            if service_id is None or service_id in seen:
+            if (
+                service_id is None
+                or service_id in seen
+            ):
                 continue
 
             seen.add(service_id)

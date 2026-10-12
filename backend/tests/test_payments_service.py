@@ -186,7 +186,9 @@ async def test_captured_payment_is_finalized(payment_context):
         "paymentPending": False,
     }
     ctx.repository.finalize_razorpay_payment.assert_awaited_once()
-    finalize_kwargs = ctx.repository.finalize_razorpay_payment.await_args.kwargs
+    finalize_kwargs = (
+        ctx.repository.finalize_razorpay_payment.await_args.kwargs
+    )
     assert finalize_kwargs["payment_id"] == ctx.payment_record_id
     assert finalize_kwargs["provider_payment_id"] == ctx.provider_payment_id
 

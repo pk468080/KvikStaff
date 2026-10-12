@@ -13,13 +13,13 @@ from app.modules.bookings.schemas import (
     CustomerBookingOccurrenceCancellationRequest,
     CustomerBookingRescheduleRequest,
     InstantBookingCreateRequest,
-    InstantBookingPriceRequest,
     MultiOccurrenceBookingCreateRequest,
     MultiOccurrenceBookingPriceRequest,
 )
 from app.core.idempotency.atomic import (
     get_request_hash,
 )
+
 
 OCCURRENCE_LIFECYCLE_STATUSES = {
     "assigned",
@@ -50,16 +50,22 @@ class BookingsService:
         total_working_hours: float,
     ) -> dict[str, Any]:
         try:
-            result = await self.repository.calculate_customer_instant_booking_price(
-                customer_id=customer_id,
-                service_variant_id=service_variant_id,
-                total_working_hours=total_working_hours,
+            result = (
+                await self.repository.calculate_customer_instant_booking_price(
+                    customer_id=customer_id,
+                    service_variant_id=service_variant_id,
+                    total_working_hours=total_working_hours,
+                )
             )
 
             result["booking_type"] = "instant"
             result["occurrence_count"] = 1
-            result["total_working_hours"] = total_working_hours
-            result["hours_per_occurrence"] = total_working_hours
+            result["total_working_hours"] = (
+                total_working_hours
+            )
+            result["hours_per_occurrence"] = (
+                total_working_hours
+            )
 
             return result
 
@@ -79,19 +85,27 @@ class BookingsService:
         request: MultiOccurrenceBookingPriceRequest,
     ) -> dict[str, Any]:
         try:
-            result = (
-                await (
-                    self.repository.calculate_customer_multi_occurrence_booking_price(
-                        customer_id=customer_id,
-                        service_variant_id=request.service_variant_id,
-                        schedule_start_date=(request.schedule_start_date),
-                        schedule_end_date=(request.schedule_end_date),
-                        daily_start_time=(request.daily_start_time),
-                        daily_end_time=(request.daily_end_time),
-                        selected_weekdays=(request.selected_weekdays),
-                        off_dates=request.off_dates,
-                        booking_type=request.booking_type,
-                    )
+            result = await (
+                self.repository.calculate_customer_multi_occurrence_booking_price(
+                    customer_id=customer_id,
+                    service_variant_id=request.service_variant_id,
+                    schedule_start_date=(
+                        request.schedule_start_date
+                    ),
+                    schedule_end_date=(
+                        request.schedule_end_date
+                    ),
+                    daily_start_time=(
+                        request.daily_start_time
+                    ),
+                    daily_end_time=(
+                        request.daily_end_time
+                    ),
+                    selected_weekdays=(
+                        request.selected_weekdays
+                    ),
+                    off_dates=request.off_dates,
+                    booking_type=request.booking_type,
                 )
             )
 
@@ -108,23 +122,23 @@ class BookingsService:
             ) from exc
 
     async def create_instant_booking(
-        self,
-        request: InstantBookingCreateRequest,
-        customer_id: UUID,
-        idempotency_key: str,
-    ) -> dict[str, Any]:
+    self,
+    request: InstantBookingCreateRequest,
+    customer_id: UUID,
+    idempotency_key: str,
+) -> dict[str, Any]:
         try:
             return await self.repository.create_hourly_booking(
-                customer_id=customer_id,
-                service_variant_id=request.service_variant_id,
-                address_id=request.address_id,
-                booking_type="instant",
-                scheduled_start=request.scheduled_start,
-                scheduled_end=request.scheduled_end,
-                notes=request.notes,
-                idempotency_key=idempotency_key,
-                request_hash=get_request_hash(request),
-            )
+    customer_id=customer_id,
+    service_variant_id=request.service_variant_id,
+    address_id=request.address_id,
+    booking_type="instant",
+    scheduled_start=request.scheduled_start,
+    scheduled_end=request.scheduled_end,
+    notes=request.notes,
+    idempotency_key=idempotency_key,
+    request_hash=get_request_hash(request),
+)
 
         except ValueError as exc:
             raise AppError(
@@ -134,7 +148,9 @@ class BookingsService:
             ) from exc
 
         except IntegrityError as exc:
-            if self._is_single_active_booking_violation(exc):
+            if self._is_single_active_booking_violation(
+                exc
+            ):
                 raise AppError(
                     "ACTIVE_BOOKING_EXISTS",
                     (
@@ -158,12 +174,15 @@ class BookingsService:
             ) from exc
 
     async def create_scheduled_booking(
-        self,
-        request: MultiOccurrenceBookingCreateRequest,
-        customer_id: UUID,
-        idempotency_key: str,
-    ) -> dict[str, Any]:
-        if request.schedule_start_date != request.schedule_end_date:
+    self,
+    request: MultiOccurrenceBookingCreateRequest,
+    customer_id: UUID,
+    idempotency_key: str,
+) -> dict[str, Any]:
+        if (
+            request.schedule_start_date
+            != request.schedule_end_date
+        ):
             raise AppError(
                 "INVALID_SCHEDULE",
                 "Scheduled booking must use a single date.",
@@ -171,20 +190,34 @@ class BookingsService:
             )
 
         try:
-            return await self.repository.create_multi_occurrence_booking(
-                customer_id=customer_id,
-                service_variant_id=(request.service_variant_id),
-                address_id=request.address_id,
-                schedule_start_date=(request.schedule_start_date),
-                schedule_end_date=(request.schedule_end_date),
-                daily_start_time=(request.daily_start_time),
-                daily_end_time=(request.daily_end_time),
-                selected_weekdays=(request.selected_weekdays),
-                off_dates=request.off_dates,
-                notes=request.notes,
-                booking_type="scheduled",
-                idempotency_key=idempotency_key,
-                request_hash=get_request_hash(request),
+            return await (
+                self.repository.create_multi_occurrence_booking(
+                    customer_id=customer_id,
+                    service_variant_id=(
+                        request.service_variant_id
+                    ),
+                    address_id=request.address_id,
+                    schedule_start_date=(
+                        request.schedule_start_date
+                    ),
+                    schedule_end_date=(
+                        request.schedule_end_date
+                    ),
+                    daily_start_time=(
+                        request.daily_start_time
+                    ),
+                    daily_end_time=(
+                        request.daily_end_time
+                    ),
+                    selected_weekdays=(
+                        request.selected_weekdays
+                    ),
+                    off_dates=request.off_dates,
+                    notes=request.notes,
+                    booking_type="scheduled",
+                    idempotency_key=idempotency_key,
+request_hash=get_request_hash(request),
+                )
             )
 
         except ValueError as exc:
@@ -195,7 +228,9 @@ class BookingsService:
             ) from exc
 
         except IntegrityError as exc:
-            if self._is_single_active_booking_violation(exc):
+            if self._is_single_active_booking_violation(
+                exc
+            ):
                 raise AppError(
                     "ACTIVE_BOOKING_EXISTS",
                     (
@@ -219,26 +254,40 @@ class BookingsService:
             ) from exc
 
     async def create_recurring_booking(
-        self,
-        request: MultiOccurrenceBookingCreateRequest,
-        customer_id: UUID,
-        idempotency_key: str,
-    ) -> dict[str, Any]:
+    self,
+    request: MultiOccurrenceBookingCreateRequest,
+    customer_id: UUID,
+    idempotency_key: str,
+) -> dict[str, Any]:
         try:
-            return await self.repository.create_multi_occurrence_booking(
-                customer_id=customer_id,
-                service_variant_id=(request.service_variant_id),
-                address_id=request.address_id,
-                schedule_start_date=(request.schedule_start_date),
-                schedule_end_date=(request.schedule_end_date),
-                daily_start_time=(request.daily_start_time),
-                daily_end_time=(request.daily_end_time),
-                selected_weekdays=(request.selected_weekdays),
-                off_dates=request.off_dates,
-                notes=request.notes,
-                booking_type="recurring",
-                idempotency_key=idempotency_key,
-                request_hash=get_request_hash(request),
+            return await (
+                self.repository.create_multi_occurrence_booking(
+                    customer_id=customer_id,
+                    service_variant_id=(
+                        request.service_variant_id
+                    ),
+                    address_id=request.address_id,
+                    schedule_start_date=(
+                        request.schedule_start_date
+                    ),
+                    schedule_end_date=(
+                        request.schedule_end_date
+                    ),
+                    daily_start_time=(
+                        request.daily_start_time
+                    ),
+                    daily_end_time=(
+                        request.daily_end_time
+                    ),
+                    selected_weekdays=(
+                        request.selected_weekdays
+                    ),
+                    off_dates=request.off_dates,
+                    notes=request.notes,
+                    booking_type="recurring",
+                    idempotency_key=idempotency_key,
+request_hash=get_request_hash(request),
+                )
             )
 
         except ValueError as exc:
@@ -249,7 +298,9 @@ class BookingsService:
             ) from exc
 
         except IntegrityError as exc:
-            if self._is_single_active_booking_violation(exc):
+            if self._is_single_active_booking_violation(
+                exc
+            ):
                 raise AppError(
                     "ACTIVE_BOOKING_EXISTS",
                     (
@@ -277,12 +328,17 @@ class BookingsService:
         customer_id: UUID,
     ) -> list[dict[str, Any]]:
         try:
-            bookings = await self.repository.get_customer_bookings(customer_id)
+            bookings = (
+                await self.repository.get_customer_bookings(
+                    customer_id
+                )
+            )
 
             recurring_booking_ids = [
                 UUID(str(booking["id"]))
                 for booking in bookings
-                if booking.get("fulfillment_type") == "recurring"
+                if booking.get("fulfillment_type")
+                == "recurring"
             ]
 
             for booking in bookings:
@@ -296,19 +352,28 @@ class BookingsService:
                     )
                 )
 
-                active_occurrence = self.select_preferred_occurrence(occurrence_rows)
+                active_occurrence = (
+                    self.select_preferred_occurrence(
+                        occurrence_rows
+                    )
+                )
 
                 if active_occurrence is None:
                     continue
 
                 for booking in bookings:
-                    if UUID(str(booking["id"])) == booking_id:
+                    if (
+                        UUID(str(booking["id"]))
+                        == booking_id
+                    ):
                         self.apply_active_occurrence(
                             booking,
                             active_occurrence,
                         )
 
-                        booking["active_occurrence"] = active_occurrence
+                        booking[
+                            "active_occurrence"
+                        ] = active_occurrence
 
                         break
 
@@ -330,9 +395,11 @@ class BookingsService:
         customer_id: UUID,
     ) -> dict[str, Any]:
         try:
-            booking = await self.repository.get_customer_booking(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            booking = (
+                await self.repository.get_customer_booking(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
             if booking is None:
@@ -344,13 +411,22 @@ class BookingsService:
 
             booking["active_occurrence"] = None
 
-            if booking.get("fulfillment_type") == "recurring":
-                occurrences = await self.repository.get_customer_booking_occurrences(
-                    customer_id=customer_id,
-                    booking_id=booking_id,
+            if (
+                booking.get("fulfillment_type")
+                == "recurring"
+            ):
+                occurrences = (
+                    await self.repository.get_customer_booking_occurrences(
+                        customer_id=customer_id,
+                        booking_id=booking_id,
+                    )
                 )
 
-                active_occurrence = self.select_preferred_occurrence(occurrences)
+                active_occurrence = (
+                    self.select_preferred_occurrence(
+                        occurrences
+                    )
+                )
 
                 if active_occurrence is not None:
                     self.apply_active_occurrence(
@@ -358,7 +434,9 @@ class BookingsService:
                         active_occurrence,
                     )
 
-                    booking["active_occurrence"] = active_occurrence
+                    booking[
+                        "active_occurrence"
+                    ] = active_occurrence
 
             return booking
 
@@ -381,9 +459,11 @@ class BookingsService:
         customer_id: UUID,
     ) -> list[dict[str, Any]]:
         try:
-            booking = await self.repository.get_customer_booking(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            booking = (
+                await self.repository.get_customer_booking(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
             if booking is None:
@@ -393,9 +473,11 @@ class BookingsService:
                     404,
                 )
 
-            return await self.repository.get_customer_booking_occurrences(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            return (
+                await self.repository.get_customer_booking_occurrences(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
         except AppError:
@@ -417,9 +499,11 @@ class BookingsService:
         customer_id: UUID,
     ) -> dict[str, Any] | None:
         try:
-            booking = await self.repository.get_customer_booking(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            booking = (
+                await self.repository.get_customer_booking(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
             if booking is None:
@@ -429,15 +513,22 @@ class BookingsService:
                     404,
                 )
 
-            if booking.get("fulfillment_type") != "recurring":
+            if (
+                booking.get("fulfillment_type")
+                != "recurring"
+            ):
                 return None
 
-            occurrences = await self.repository.get_customer_booking_occurrences(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            occurrences = (
+                await self.repository.get_customer_booking_occurrences(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
-            return self.select_preferred_occurrence(occurrences)
+            return self.select_preferred_occurrence(
+                occurrences
+            )
 
         except AppError:
             raise
@@ -458,9 +549,11 @@ class BookingsService:
         customer_id: UUID,
     ) -> list[dict[str, Any]]:
         try:
-            booking = await self.repository.get_customer_booking(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            booking = (
+                await self.repository.get_customer_booking(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
             if booking is None:
@@ -470,12 +563,16 @@ class BookingsService:
                     404,
                 )
 
-            history = await self.repository.get_customer_booking_history(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            history = (
+                await self.repository.get_customer_booking_history(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
-            return self.sort_status_history(history)
+            return self.sort_status_history(
+                history
+            )
 
         except AppError:
             raise
@@ -496,9 +593,11 @@ class BookingsService:
         customer_id: UUID,
     ) -> dict[str, Any] | None:
         try:
-            booking = await self.repository.get_customer_booking(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            booking = (
+                await self.repository.get_customer_booking(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
             if booking is None:
@@ -508,9 +607,11 @@ class BookingsService:
                     404,
                 )
 
-            return await self.repository.get_customer_booking_latest_worker_location(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            return (
+                await self.repository.get_customer_booking_latest_worker_location(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
         except AppError:
@@ -534,11 +635,13 @@ class BookingsService:
         occurrence_id: UUID | None,
     ) -> dict[str, Any]:
         try:
-            return await self.repository.create_customer_booking_otp(
-                customer_id=customer_id,
-                booking_id=booking_id,
-                otp_type=otp_type,
-                occurrence_id=occurrence_id,
+            return (
+                await self.repository.create_customer_booking_otp(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                    otp_type=otp_type,
+                    occurrence_id=occurrence_id,
+                )
             )
 
         except ValueError as exc:
@@ -547,14 +650,14 @@ class BookingsService:
             status = (
                 404
                 if "not found" in message.lower()
-                else (
-                    409
-                    if (
-                        "can only be generated" in message.lower()
-                        or "assignment is invalid" in message.lower()
-                    )
-                    else 400
+                else 409
+                if (
+                    "can only be generated"
+                    in message.lower()
+                    or "assignment is invalid"
+                    in message.lower()
                 )
+                else 400
             )
 
             raise AppError(
@@ -580,7 +683,10 @@ class BookingsService:
             return await self.repository.cancel_customer_booking(
                 customer_id=customer_id,
                 booking_id=booking_id,
-                reason=(request.reason or "Customer cancellation"),
+                reason=(
+                    request.reason
+                    or "Customer cancellation"
+                ),
             )
 
         except (ValueError, SQLAlchemyError) as exc:
@@ -600,10 +706,15 @@ class BookingsService:
         customer_id: UUID,
     ) -> dict[str, Any]:
         try:
-            return await self.repository.cancel_customer_booking_series(
-                customer_id=customer_id,
-                booking_id=booking_id,
-                reason=(request.reason or "Customer cancellation"),
+            return await (
+                self.repository.cancel_customer_booking_series(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                    reason=(
+                        request.reason
+                        or "Customer cancellation"
+                    ),
+                )
             )
 
         except (ValueError, SQLAlchemyError) as exc:
@@ -623,10 +734,15 @@ class BookingsService:
         customer_id: UUID,
     ) -> dict[str, Any]:
         try:
-            return await self.repository.cancel_customer_booking_occurrence(
-                customer_id=customer_id,
-                occurrence_id=occurrence_id,
-                reason=(request.reason or "Customer cancellation"),
+            return await (
+                self.repository.cancel_customer_booking_occurrence(
+                    customer_id=customer_id,
+                    occurrence_id=occurrence_id,
+                    reason=(
+                        request.reason
+                        or "Customer cancellation"
+                    ),
+                )
             )
 
         except (ValueError, SQLAlchemyError) as exc:
@@ -645,9 +761,11 @@ class BookingsService:
         customer_id: UUID,
     ) -> list[dict[str, Any]]:
         try:
-            return await self.repository.get_customer_booking_refunds(
-                customer_id=customer_id,
-                booking_id=booking_id,
+            return (
+                await self.repository.get_customer_booking_refunds(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                )
             )
 
         except (ValueError, SQLAlchemyError) as exc:
@@ -667,11 +785,13 @@ class BookingsService:
         customer_id: UUID,
     ) -> dict[str, Any]:
         try:
-            return await self.repository.reschedule_customer_booking(
-                customer_id=customer_id,
-                booking_id=booking_id,
-                new_start=request.new_start,
-                new_end=request.new_end,
+            return await (
+                self.repository.reschedule_customer_booking(
+                    customer_id=customer_id,
+                    booking_id=booking_id,
+                    new_start=request.new_start,
+                    new_end=request.new_end,
+                )
             )
 
         except (ValueError, SQLAlchemyError) as exc:
@@ -689,38 +809,75 @@ class BookingsService:
         booking: dict[str, Any],
         occurrence: dict[str, Any],
     ) -> None:
-        occurrence_worker_id = occurrence.get("worker_id")
+        occurrence_worker_id = occurrence.get(
+            "worker_id"
+        )
 
         if occurrence_worker_id is None:
             return
 
-        booking_worker_id = booking.get("worker_id")
+        booking_worker_id = booking.get(
+            "worker_id"
+        )
 
-        if booking_worker_id is not None and str(occurrence_worker_id) != str(
-            booking_worker_id
+        if (
+            booking_worker_id is not None
+            and str(occurrence_worker_id)
+            != str(booking_worker_id)
         ):
             return
 
-        status = str(occurrence.get("status") or "")
+        status = str(
+            occurrence.get("status") or ""
+        )
 
-        if status not in OCCURRENCE_LIFECYCLE_STATUSES:
+        if (
+            status
+            not in OCCURRENCE_LIFECYCLE_STATUSES
+        ):
             return
 
         booking["status"] = status
 
-        booking["scheduled_start"] = occurrence.get("scheduled_start")
+        booking["scheduled_start"] = (
+            occurrence.get(
+                "scheduled_start"
+            )
+        )
 
-        booking["scheduled_end"] = occurrence.get("scheduled_end")
+        booking["scheduled_end"] = (
+            occurrence.get(
+                "scheduled_end"
+            )
+        )
 
-        booking["journey_started_at"] = occurrence.get("journey_started_at")
+        booking["journey_started_at"] = (
+            occurrence.get(
+                "journey_started_at"
+            )
+        )
 
-        booking["arrived_at"] = occurrence.get("arrived_at")
+        booking["arrived_at"] = (
+            occurrence.get(
+                "arrived_at"
+            )
+        )
 
-        booking["started_at"] = occurrence.get("started_at")
+        booking["started_at"] = (
+            occurrence.get(
+                "started_at"
+            )
+        )
 
-        booking["completed_at"] = occurrence.get("completed_at")
+        booking["completed_at"] = (
+            occurrence.get(
+                "completed_at"
+            )
+        )
 
-        booking["worker_id"] = occurrence_worker_id
+        booking["worker_id"] = (
+            occurrence_worker_id
+        )
 
     @staticmethod
     def select_preferred_occurrence(
@@ -729,14 +886,25 @@ class BookingsService:
         if not occurrences:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(
+            timezone.utc
+        )
 
         lifecycle = [
             occurrence
             for occurrence in occurrences
             if (
-                occurrence.get("worker_id") is not None
-                and str(occurrence.get("status") or "") in OCCURRENCE_LIFECYCLE_STATUSES
+                occurrence.get(
+                    "worker_id"
+                )
+                is not None
+                and str(
+                    occurrence.get(
+                        "status"
+                    )
+                    or ""
+                )
+                in OCCURRENCE_LIFECYCLE_STATUSES
             )
         ]
 
@@ -745,14 +913,27 @@ class BookingsService:
             def lifecycle_key(
                 occurrence: dict[str, Any],
             ):
-                priority = OCCURRENCE_STATUS_PRIORITY.get(
-                    str(occurrence.get("status") or ""),
-                    0,
+                priority = (
+                    OCCURRENCE_STATUS_PRIORITY.get(
+                        str(
+                            occurrence.get(
+                                "status"
+                            )
+                            or ""
+                        ),
+                        0,
+                    )
                 )
 
-                scheduled_start = occurrence.get("scheduled_start")
+                scheduled_start = (
+                    occurrence.get(
+                        "scheduled_start"
+                    )
+                )
 
-                distance = float("inf")
+                distance = float(
+                    "inf"
+                )
 
                 if isinstance(
                     scheduled_start,
@@ -761,9 +942,18 @@ class BookingsService:
                     start = scheduled_start
 
                     if start.tzinfo is None:
-                        start = start.replace(tzinfo=timezone.utc)
+                        start = (
+                            start.replace(
+                                tzinfo=timezone.utc
+                            )
+                        )
 
-                    distance = abs((start - now).total_seconds())
+                    distance = abs(
+                        (
+                            start
+                            - now
+                        ).total_seconds()
+                    )
 
                 return (
                     -priority,
@@ -778,7 +968,11 @@ class BookingsService:
         future = []
 
         for occurrence in occurrences:
-            scheduled_start = occurrence.get("scheduled_start")
+            scheduled_start = (
+                occurrence.get(
+                    "scheduled_start"
+                )
+            )
 
             if not isinstance(
                 scheduled_start,
@@ -789,22 +983,34 @@ class BookingsService:
             start = scheduled_start
 
             if start.tzinfo is None:
-                start = start.replace(tzinfo=timezone.utc)
+                start = start.replace(
+                    tzinfo=timezone.utc
+                )
 
             if start >= now:
-                future.append(occurrence)
+                future.append(
+                    occurrence
+                )
 
         if future:
             return sorted(
                 future,
-                key=lambda occurrence: (occurrence.get("scheduled_start")),
+                key=lambda occurrence: (
+                    occurrence.get(
+                        "scheduled_start"
+                    )
+                ),
             )[0]
 
         return sorted(
             occurrences,
             key=lambda occurrence: (
-                occurrence.get("scheduled_start")
-                or datetime.min.replace(tzinfo=timezone.utc)
+                occurrence.get(
+                    "scheduled_start"
+                )
+                or datetime.min.replace(
+                    tzinfo=timezone.utc
+                )
             ),
             reverse=True,
         )[0]
@@ -819,8 +1025,16 @@ class BookingsService:
         items = sorted(
             history,
             key=lambda item: (
-                item.get("created_at") or datetime.min.replace(tzinfo=timezone.utc),
-                str(item.get("id") or ""),
+                item.get(
+                    "created_at"
+                )
+                or datetime.min.replace(
+                    tzinfo=timezone.utc
+                ),
+                str(
+                    item.get("id")
+                    or ""
+                ),
             ),
         )
 
@@ -832,53 +1046,105 @@ class BookingsService:
         while cursor < len(items):
             first = items[cursor]
 
-            first_time = first.get("created_at")
+            first_time = (
+                first.get(
+                    "created_at"
+                )
+            )
 
-            group: list[dict[str, Any]] = []
+            group: list[
+                dict[str, Any]
+            ] = []
 
             while cursor < len(items):
                 current = items[cursor]
 
-                if current.get("created_at") != first_time:
+                if (
+                    current.get(
+                        "created_at"
+                    )
+                    != first_time
+                ):
                     break
 
-                group.append(current)
+                group.append(
+                    current
+                )
 
                 cursor += 1
 
-            remaining = list(group)
+            remaining = list(
+                group
+            )
 
             while remaining:
                 next_index = -1
 
                 if previous_status is not None:
-                    for index, item in enumerate(remaining):
-                        if item.get("old_status") == previous_status:
+                    for index, item in enumerate(
+                        remaining
+                    ):
+                        if (
+                            item.get(
+                                "old_status"
+                            )
+                            == previous_status
+                        ):
                             next_index = index
                             break
 
                 else:
-                    for index, item in enumerate(remaining):
-                        if item.get("old_status") is None:
+                    for index, item in enumerate(
+                        remaining
+                    ):
+                        if (
+                            item.get(
+                                "old_status"
+                            )
+                            is None
+                        ):
                             next_index = index
                             break
 
                 if next_index == -1:
-                    remaining.sort(key=lambda item: str(item.get("id") or ""))
+                    remaining.sort(
+                        key=lambda item: str(
+                            item.get(
+                                "id"
+                            )
+                            or ""
+                        )
+                    )
 
-                    result.extend(remaining)
+                    result.extend(
+                        remaining
+                    )
 
                     if remaining:
-                        previous_status = remaining[-1].get("new_status")
+                        previous_status = (
+                            remaining[
+                                -1
+                            ].get(
+                                "new_status"
+                            )
+                        )
 
                     remaining.clear()
                     break
 
-                selected = remaining.pop(next_index)
+                selected = remaining.pop(
+                    next_index
+                )
 
-                result.append(selected)
+                result.append(
+                    selected
+                )
 
-                previous_status = selected.get("new_status")
+                previous_status = (
+                    selected.get(
+                        "new_status"
+                    )
+                )
 
         return result
 
@@ -898,10 +1164,18 @@ class BookingsService:
             None,
         )
 
-        if constraint_name == "uq_bookings_one_active_per_customer":
+        if (
+            constraint_name
+            == "uq_bookings_one_active_per_customer"
+        ):
             return True
 
-        return "uq_bookings_one_active_per_customer" in str(original or exc)
+        return (
+            "uq_bookings_one_active_per_customer"
+            in str(
+                original or exc
+            )
+        )
 
     @staticmethod
     def _database_message(
@@ -913,10 +1187,14 @@ class BookingsService:
             None,
         )
 
-        message = str(original or exc).strip()
+        message = str(
+            original or exc
+        ).strip()
 
         if not message:
-            return "Unable to complete the booking operation."
+            return (
+                "Unable to complete the booking operation."
+            )
 
         return message
 
@@ -925,6 +1203,11 @@ class BookingsService:
         exc: Exception,
         fallback: str,
     ) -> str:
-        message = str(exc).strip()
+        message = str(
+            exc
+        ).strip()
 
-        return message or fallback
+        return (
+            message
+            or fallback
+        )

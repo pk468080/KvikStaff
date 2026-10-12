@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     supabase_jwt_issuer: str | None = None
     supabase_jwt_secret: str | None = None
 
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str | None = None
 
     razorpay_key_id: str | None = None
     razorpay_key_secret: str | None = None
@@ -75,34 +75,55 @@ class Settings(BaseSettings):
             return self
 
         if not self.database_url.strip():
-            raise ValueError("DATABASE_URL must be configured in production.")
+            raise ValueError(
+                "DATABASE_URL must be configured in production."
+            )
 
         if not self.supabase_url.strip():
-            raise ValueError("SUPABASE_URL must be configured in production.")
+            raise ValueError(
+                "SUPABASE_URL must be configured in production."
+            )
 
-        if not self.redis_url.strip():
-            raise ValueError("REDIS_URL must be configured in production.")
+        if not self.redis_url or not self.redis_url.strip():
+            raise ValueError(
+                "REDIS_URL must be configured in production."
+            )
 
-        if self.redis_url.strip() == "redis://localhost:6379/0":
-            raise ValueError("REDIS_URL must not use the local default in production.")
+        if self.redis_url and self.redis_url.strip() == "redis://localhost:6379/0":
+            raise ValueError(
+                "REDIS_URL must not use the local default in production."
+            )
 
         if not self.cors_origins:
-            raise ValueError("CORS_ORIGINS must be configured in production.")
+            raise ValueError(
+                "CORS_ORIGINS must be configured in production."
+            )
 
         if any(origin.strip() == "*" for origin in self.cors_origins):
-            raise ValueError("Wildcard CORS origins are not allowed in production.")
+            raise ValueError(
+                "Wildcard CORS origins are not allowed in production."
+            )
 
         if self.debug:
-            raise ValueError("DEBUG must be false in production.")
+            raise ValueError(
+                "DEBUG must be false in production."
+            )
 
         database_url = urlsplit(self.database_url.strip())
         database_host = (database_url.hostname or "").lower()
 
-        if not database_url.scheme.startswith("postgresql") or not database_host:
-            raise ValueError("DATABASE_URL must be a valid PostgreSQL connection URL.")
+        if (
+            not database_url.scheme.startswith("postgresql")
+            or not database_host
+        ):
+            raise ValueError(
+                "DATABASE_URL must be a valid PostgreSQL connection URL."
+            )
 
         if database_host in {"localhost", "127.0.0.1", "::1"}:
-            raise ValueError("DATABASE_URL must not use localhost in production.")
+            raise ValueError(
+                "DATABASE_URL must not use localhost in production."
+            )
 
         supabase_url = urlsplit(self.supabase_url.strip())
         supabase_host = (supabase_url.hostname or "").lower()
@@ -114,11 +135,12 @@ class Settings(BaseSettings):
             or supabase_url.query
             or supabase_url.fragment
         ):
-            raise ValueError("SUPABASE_URL must be a valid HTTPS project origin.")
+            raise ValueError(
+                "SUPABASE_URL must be a valid HTTPS project origin."
+            )
 
         if (
-            supabase_host
-            in {
+            supabase_host in {
                 "example.supabase.co",
                 "localhost",
                 "127.0.0.1",
@@ -127,16 +149,22 @@ class Settings(BaseSettings):
             or "your-project" in supabase_host
             or "placeholder" in supabase_host
         ):
-            raise ValueError("SUPABASE_URL must point to your real Supabase project.")
+            raise ValueError(
+                "SUPABASE_URL must point to your real Supabase project."
+            )
 
-        redis_url = urlsplit(self.redis_url.strip())
-        redis_host = (redis_url.hostname or "").lower()
+        redis_url = urlsplit(self.redis_url.strip()) if self.redis_url else None
+        redis_host = (redis_url.hostname or "").lower() if redis_url else ""
 
-        if redis_url.scheme not in {"redis", "rediss"} or not redis_host:
-            raise ValueError("REDIS_URL must use a valid redis:// or rediss:// URL.")
+        if redis_url and (redis_url.scheme not in {"redis", "rediss"} or not redis_host):
+            raise ValueError(
+                "REDIS_URL must use a valid redis:// or rediss:// URL."
+            )
 
         if redis_host in {"localhost", "127.0.0.1", "::1"}:
-            raise ValueError("REDIS_URL must not use localhost in production.")
+            raise ValueError(
+                "REDIS_URL must not use localhost in production."
+            )
 
         for origin in self.cors_origins:
             parsed_origin = urlsplit(origin.strip())
@@ -149,7 +177,8 @@ class Settings(BaseSettings):
                 or parsed_origin.path not in ("", "/")
                 or parsed_origin.query
                 or parsed_origin.fragment
-                or parsed_origin.hostname.lower() in {"localhost", "127.0.0.1", "::1"}
+                or parsed_origin.hostname.lower()
+                in {"localhost", "127.0.0.1", "::1"}
             ):
                 raise ValueError(
                     "Production CORS origins must be valid HTTPS origins without paths."

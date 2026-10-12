@@ -37,7 +37,8 @@ class ServicesRepository:
         service_id: UUID | None = None,
     ) -> list[ServiceCatalogRow]:
         if service_id is None:
-            query = text("""
+            query = text(
+                """
                 SELECT
                     s.id,
                     v.id AS service_variant_id,
@@ -97,10 +98,12 @@ class ServicesRepository:
                     COALESCE(s.is_featured, false) DESC,
                     COALESCE(s.display_order, 0) ASC,
                     s.name ASC
-                """)
+                """
+            )
             parameters = {}
         else:
-            query = text("""
+            query = text(
+                """
                 SELECT
                     s.id,
                     v.id AS service_variant_id,
@@ -161,7 +164,8 @@ class ServicesRepository:
                     COALESCE(s.is_featured, false) DESC,
                     COALESCE(s.display_order, 0) ASC,
                     s.name ASC
-                """)
+                """
+            )
             parameters = {
                 "service_id": str(service_id),
             }
@@ -193,7 +197,8 @@ class ServicesRepository:
     async def get_active_service_areas(
         self,
     ) -> list[ServiceAreaRow]:
-        query = text("""
+        query = text(
+            """
             SELECT
                 service_id,
                 center_latitude::double precision AS center_latitude,
@@ -201,7 +206,8 @@ class ServicesRepository:
                 radius_km::double precision AS radius_km
             FROM public.service_areas
             WHERE is_active = true
-            """)
+            """
+        )
 
         result = await self.db.execute(query)
 

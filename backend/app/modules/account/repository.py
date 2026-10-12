@@ -17,7 +17,8 @@ class AccountDeletionRepository:
         customer_id: UUID,
     ) -> dict[str, Any] | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     id,
                     reason,
@@ -31,7 +32,8 @@ class AccountDeletionRepository:
                     requested_at DESC,
                     id DESC
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "customer_id": str(customer_id),
             },
@@ -39,7 +41,11 @@ class AccountDeletionRepository:
 
         row = result.mappings().first()
 
-        return dict(row) if row is not None else None
+        return (
+            dict(row)
+            if row is not None
+            else None
+        )
 
     async def request_account_deletion(
         self,
@@ -48,7 +54,8 @@ class AccountDeletionRepository:
     ) -> dict[str, Any]:
         async with self.db.begin():
             existing = await self.db.execute(
-                text("""
+                text(
+                    """
                     SELECT
                         id,
                         reason,
@@ -64,7 +71,8 @@ class AccountDeletionRepository:
                     ORDER BY requested_at DESC, id DESC
                     LIMIT 1
                     FOR UPDATE
-                    """),
+                    """
+                ),
                 {"customer_id": str(customer_id)},
             )
             existing_row = existing.mappings().first()
@@ -73,7 +81,8 @@ class AccountDeletionRepository:
                 return dict(existing_row)
 
             inserted = await self.db.execute(
-                text("""
+                text(
+                    """
                     INSERT INTO public.account_deletion_requests (
                         user_id,
                         reason,
@@ -93,7 +102,8 @@ class AccountDeletionRepository:
                         status,
                         requested_at,
                         reviewed_at
-                    """),
+                    """
+                ),
                 {
                     "customer_id": str(customer_id),
                     "reason": reason,
@@ -106,7 +116,8 @@ class AccountDeletionRepository:
                 return dict(row)
 
             existing = await self.db.execute(
-                text("""
+                text(
+                    """
                     SELECT
                         id,
                         reason,
@@ -123,7 +134,8 @@ class AccountDeletionRepository:
                         requested_at DESC,
                         id DESC
                     LIMIT 1
-                    """),
+                    """
+                ),
                 {
                     "customer_id": str(customer_id),
                 },
@@ -132,6 +144,8 @@ class AccountDeletionRepository:
             existing_row = existing.mappings().first()
 
             if existing_row is None:
-                raise ValueError("Your deletion request could not be submitted.")
+                raise ValueError(
+                    "Your deletion request could not be submitted."
+                )
 
             return dict(existing_row)

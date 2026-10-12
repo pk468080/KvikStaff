@@ -1,3 +1,4 @@
+
 from unittest.mock import AsyncMock
 
 import httpx
@@ -73,12 +74,10 @@ def install_google_response(monkeypatch, payload, error=None):
             return None
 
         async def get(self, url, *, params):
-            calls.append(
-                {
-                    "url": url,
-                    "params": params,
-                }
-            )
+            calls.append({
+                "url": url,
+                "params": params,
+            })
             return FakeResponse()
 
     monkeypatch.setattr(

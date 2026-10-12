@@ -13,7 +13,9 @@ router = APIRouter()
 def get_services_service(
     db=Depends(get_db),
 ) -> ServicesService:
-    return ServicesService(ServicesRepository(db))
+    return ServicesService(
+        ServicesRepository(db)
+    )
 
 
 @router.get(
@@ -35,8 +37,9 @@ async def get_services(
         get_services_service,
     ),
 ) -> list[ServiceResponse]:
-    if (latitude is None and longitude is not None) or (
-        latitude is not None and longitude is None
+    if (
+        (latitude is None and longitude is not None)
+        or (latitude is not None and longitude is None)
     ):
         raise HTTPException(
             status_code=422,

@@ -12,7 +12,10 @@ from app.modules.notifications.schemas import (
     CustomerPushTokenResponse,
 )
 
-_EXPO_PUSH_TOKEN_PATTERN = re.compile(r"^ExponentPushToken\[[^\]]+\]$")
+
+_EXPO_PUSH_TOKEN_PATTERN = re.compile(
+    r"^ExponentPushToken\[[^\]]+\]$"
+)
 
 
 class NotificationsService:
@@ -33,9 +36,12 @@ class NotificationsService:
         )
 
         try:
-            rows = await self.repository.get_customer_notifications(
-                customer_id=customer_id,
-                limit=safe_limit,
+            rows = (
+                await self.repository
+                .get_customer_notifications(
+                    customer_id=customer_id,
+                    limit=safe_limit,
+                )
             )
 
             return [
@@ -46,15 +52,26 @@ class NotificationsService:
                         if row.get("booking_id") is not None
                         else None
                     ),
-                    title=str(row["title"]),
-                    message=str(row["message"]),
+                    title=str(
+                        row["title"]
+                    ),
+                    message=str(
+                        row["message"]
+                    ),
                     notification_type=(
-                        str(row["notification_type"])
-                        if row.get("notification_type") is not None
+                        str(
+                            row["notification_type"]
+                        )
+                        if row.get("notification_type")
+                        is not None
                         else None
                     ),
-                    is_read=bool(row["is_read"]),
-                    created_at=str(row["created_at"]),
+                    is_read=bool(
+                        row["is_read"]
+                    ),
+                    created_at=str(
+                        row["created_at"]
+                    ),
                 )
                 for row in rows
             ]
@@ -97,8 +114,11 @@ class NotificationsService:
         customer_id: UUID,
     ) -> int:
         try:
-            return await self.repository.get_unread_customer_notification_count(
-                customer_id=customer_id,
+            return (
+                await self.repository
+                .get_unread_customer_notification_count(
+                    customer_id=customer_id,
+                )
             )
         except SQLAlchemyError as exc:
             raise AppError(
@@ -118,14 +138,20 @@ class NotificationsService:
     ) -> CustomerPushTokenResponse:
         normalized_token = token.strip()
 
-        if not _EXPO_PUSH_TOKEN_PATTERN.fullmatch(normalized_token):
+        if not _EXPO_PUSH_TOKEN_PATTERN.fullmatch(
+            normalized_token
+        ):
             raise AppError(
                 "INVALID_PUSH_TOKEN",
                 "Invalid Expo push token.",
                 400,
             )
 
-        normalized_platform = platform.strip().lower() if platform else None
+        normalized_platform = (
+            platform.strip().lower()
+            if platform
+            else None
+        )
 
         if normalized_platform not in {
             None,
@@ -140,13 +166,18 @@ class NotificationsService:
             )
 
         try:
-            row = await self.repository.register_customer_push_token(
-                customer_id=customer_id,
-                token=normalized_token,
-                platform=normalized_platform,
+            row = (
+                await self.repository
+                .register_customer_push_token(
+                    customer_id=customer_id,
+                    token=normalized_token,
+                    platform=normalized_platform,
+                )
             )
 
-            if str(row.get("user_id")) != str(customer_id):
+            if str(
+                row.get("user_id")
+            ) != str(customer_id):
                 raise AppError(
                     "PUSH_TOKEN_ACCOUNT_MISMATCH",
                     "Push token registration belongs to a different customer account.",
@@ -155,14 +186,24 @@ class NotificationsService:
 
             return CustomerPushTokenResponse(
                 id=str(row["id"]),
-                user_id=str(row["user_id"]),
+                user_id=str(
+                    row["user_id"]
+                ),
                 token=str(row["token"]),
                 platform=(
-                    str(row["platform"]) if row.get("platform") is not None else None
+                    str(row["platform"])
+                    if row.get("platform") is not None
+                    else None
                 ),
-                is_active=bool(row["is_active"]),
-                created_at=str(row["created_at"]),
-                updated_at=str(row["updated_at"]),
+                is_active=bool(
+                    row["is_active"]
+                ),
+                created_at=str(
+                    row["created_at"]
+                ),
+                updated_at=str(
+                    row["updated_at"]
+                ),
             )
 
         except AppError:
@@ -186,8 +227,11 @@ class NotificationsService:
         customer_id: UUID,
     ) -> None:
         try:
-            await self.repository.deactivate_customer_push_tokens(
-                customer_id=customer_id,
+            await (
+                self.repository
+                .deactivate_customer_push_tokens(
+                    customer_id=customer_id,
+                )
             )
         except SQLAlchemyError as exc:
             raise AppError(
@@ -206,4 +250,7 @@ class NotificationsService:
     ) -> str:
         message = str(exc).strip()
 
-        return message or fallback
+        return (
+            message
+            or fallback
+        )

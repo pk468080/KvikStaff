@@ -11,7 +11,9 @@ from app.modules.worker_schedule.service import (
     WorkerScheduleService,
 )
 
-WORKER_ID = UUID("11111111-1111-1111-1111-111111111111")
+WORKER_ID = UUID(
+    "11111111-1111-1111-1111-111111111111"
+)
 
 
 def schedule(
@@ -97,7 +99,9 @@ class FakeRepository:
 
 @pytest.mark.asyncio
 async def test_create_rejects_overlap():
-    service = WorkerScheduleService(FakeRepository(overlap=True))
+    service = WorkerScheduleService(
+        FakeRepository(overlap=True)
+    )
 
     with pytest.raises(AppError) as exc_info:
         await service.create_weekly_schedule(
@@ -105,12 +109,16 @@ async def test_create_rejects_overlap():
             schedule(),
         )
 
-    assert exc_info.value.code == ("WORKER_SCHEDULE_OVERLAP")
+    assert exc_info.value.code == (
+        "WORKER_SCHEDULE_OVERLAP"
+    )
 
 
 @pytest.mark.asyncio
 async def test_update_rejects_overlap():
-    service = WorkerScheduleService(FakeRepository(overlap=True))
+    service = WorkerScheduleService(
+        FakeRepository(overlap=True)
+    )
 
     with pytest.raises(AppError) as exc_info:
         await service.update_weekly_schedule(
@@ -119,12 +127,16 @@ async def test_update_rejects_overlap():
             schedule(),
         )
 
-    assert exc_info.value.code == ("WORKER_SCHEDULE_OVERLAP")
+    assert exc_info.value.code == (
+        "WORKER_SCHEDULE_OVERLAP"
+    )
 
 
 @pytest.mark.asyncio
 async def test_replace_rejects_duplicate_day_overlap():
-    service = WorkerScheduleService(FakeRepository())
+    service = WorkerScheduleService(
+        FakeRepository()
+    )
 
     with pytest.raises(AppError) as exc_info:
         await service.replace_weekly_schedules(
@@ -135,4 +147,6 @@ async def test_replace_rejects_duplicate_day_overlap():
             ],
         )
 
-    assert exc_info.value.code == ("WORKER_SCHEDULE_OVERLAP")
+    assert exc_info.value.code == (
+        "WORKER_SCHEDULE_OVERLAP"
+    )

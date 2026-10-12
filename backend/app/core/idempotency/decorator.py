@@ -37,7 +37,9 @@ def _hash_request(payload: Any) -> str:
         ensure_ascii=False,
     )
 
-    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+    return hashlib.sha256(
+        serialized.encode("utf-8")
+    ).hexdigest()
 
 
 def idempotent(action: str) -> Callable:
@@ -57,7 +59,9 @@ def idempotent(action: str) -> Callable:
                 )
 
             if not current_user:
-                raise RuntimeError("current_user not found in kwargs")
+                raise RuntimeError(
+                    "current_user not found in kwargs"
+                )
 
             idempotency_key = str(idempotency_key).strip()
 
@@ -71,7 +75,8 @@ def idempotent(action: str) -> Callable:
                 raise HTTPException(
                     status_code=400,
                     detail=(
-                        "Idempotency key exceeds maximum length " "of 255 characters."
+                        "Idempotency key exceeds maximum length "
+                        "of 255 characters."
                     ),
                 )
 
@@ -96,7 +101,8 @@ def idempotent(action: str) -> Callable:
                     # overwritten on conflict.
                     async with idemp_db.begin():
                         result = await idemp_db.execute(
-                            text("""
+                            text(
+                                """
                                 INSERT INTO public.idempotency_keys
                                 (
                                     user_id,
@@ -125,7 +131,8 @@ def idempotent(action: str) -> Callable:
                                     public.idempotency_keys.status = 'failed'
                                     AND public.idempotency_keys.request_hash = :hash
                                 RETURNING status
-                                """),
+                                """
+                            ),
                             {
                                 "user_id": user_id,
                                 "action": action,
@@ -143,7 +150,8 @@ def idempotent(action: str) -> Callable:
                     # Existing key. Read its state.
                     async with idemp_db.begin():
                         result = await idemp_db.execute(
-                            text("""
+                            text(
+                                """
                                 SELECT
                                     status,
                                     request_hash,
@@ -154,7 +162,8 @@ def idempotent(action: str) -> Callable:
                                     user_id = CAST(:user_id AS uuid)
                                     AND action = :action
                                     AND idempotency_key = :key
-                                """),
+                                """
+                            ),
                             {
                                 "user_id": user_id,
                                 "action": action,
@@ -221,10 +230,13 @@ def idempotent(action: str) -> Callable:
                     try:
                         async with final_db.begin():
                             if business_success:
-                                safe_response = jsonable_encoder(response)
+                                safe_response = jsonable_encoder(
+                                    response
+                                )
 
                                 await final_db.execute(
-                                    text("""
+                                    text(
+                                        """
                                         UPDATE public.idempotency_keys
                                         SET
                                             status = 'completed',
@@ -240,7 +252,8 @@ def idempotent(action: str) -> Callable:
                                             AND action = :action
                                             AND idempotency_key = :key
                                             AND request_hash = :hash
-                                        """),
+                                        """
+                                    ),
                                     {
                                         "user_id": user_id,
                                         "action": action,
@@ -254,7 +267,8 @@ def idempotent(action: str) -> Callable:
                                 )
                             else:
                                 await final_db.execute(
-                                    text("""
+                                    text(
+                                        """
                                         UPDATE public.idempotency_keys
                                         SET status = 'failed'
                                         WHERE
@@ -263,7 +277,8 @@ def idempotent(action: str) -> Callable:
                                             AND action = :action
                                             AND idempotency_key = :key
                                             AND request_hash = :hash
-                                        """),
+                                        """
+                                    ),
                                     {
                                         "user_id": user_id,
                                         "action": action,

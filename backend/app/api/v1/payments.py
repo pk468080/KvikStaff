@@ -41,11 +41,17 @@ def get_payments_service(
 )
 async def get_booking_payment_details(
     booking_id: UUID,
-    current_user: CurrentUser = Depends(get_customer),
-    service: PaymentsService = Depends(get_payments_service),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
+    service: PaymentsService = Depends(
+        get_payments_service
+    ),
 ) -> dict[str, Any]:
     return await service.get_booking_payment_details(
-        customer_id=UUID(current_user.id),
+        customer_id=UUID(
+            current_user.id
+        ),
         booking_id=booking_id,
     )
 
@@ -58,11 +64,17 @@ async def get_booking_payment_details(
 async def create_razorpay_order(
     request: CreateRazorpayOrderRequest,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
-    current_user: CurrentUser = Depends(get_customer),
-    service: PaymentsService = Depends(get_payments_service),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
+    service: PaymentsService = Depends(
+        get_payments_service
+    ),
 ) -> dict[str, Any]:
     return await service.create_order(
-        customer_id=UUID(current_user.id),
+        customer_id=UUID(
+            current_user.id
+        ),
         booking_id=request.booking_id,
     )
 
@@ -73,15 +85,24 @@ async def create_razorpay_order(
 )
 async def verify_razorpay_payment(
     request: VerifyRazorpayPaymentRequest,
-    current_user: CurrentUser = Depends(get_customer),
-    service: PaymentsService = Depends(get_payments_service),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
+    service: PaymentsService = Depends(
+        get_payments_service
+    ),
 ) -> dict[str, Any]:
     return await service.verify_payment(
-        customer_id=UUID(current_user.id),
+        customer_id=UUID(
+            current_user.id
+        ),
         booking_id=request.booking_id,
-        razorpay_order_id=request.razorpay_order_id,
-        razorpay_payment_id=request.razorpay_payment_id,
-        razorpay_signature=request.razorpay_signature,
+        razorpay_order_id=
+            request.razorpay_order_id,
+        razorpay_payment_id=
+            request.razorpay_payment_id,
+        razorpay_signature=
+            request.razorpay_signature,
     )
 
 
@@ -90,10 +111,16 @@ async def verify_razorpay_payment(
 )
 async def mark_payment_failed(
     request: MarkPaymentFailedRequest,
-    current_user: CurrentUser = Depends(get_customer),
-    service: PaymentsService = Depends(get_payments_service),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
+    service: PaymentsService = Depends(
+        get_payments_service
+    ),
 ) -> dict[str, Any]:
     return await service.mark_payment_failed(
-        customer_id=UUID(current_user.id),
+        customer_id=UUID(
+            current_user.id
+        ),
         booking_id=request.booking_id,
     )

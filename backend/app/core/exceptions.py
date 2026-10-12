@@ -43,5 +43,9 @@ async def app_error_handler(
             "data": None,
             "error": error,
         },
-        headers={"X-Request-ID": request_id} if request_id else None,
+        headers={
+            "X-Request-ID": request_id
+        }
+        if request_id
+        else None,
     )

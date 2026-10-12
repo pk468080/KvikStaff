@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field, field_validator
 
 def _require_timezone(value: datetime) -> datetime:
     if value.tzinfo is None or value.utcoffset() is None:
-        raise ValueError("Booking datetime must include timezone information.")
+        raise ValueError(
+            "Booking datetime must include timezone information."
+        )
 
     return value
 
@@ -54,10 +56,17 @@ class MultiOccurrenceBookingPriceRequest(BaseModel):
         value: date,
         info,
     ) -> date:
-        start_date = info.data.get("schedule_start_date")
+        start_date = info.data.get(
+            "schedule_start_date"
+        )
 
-        if start_date is not None and value < start_date:
-            raise ValueError("Booking end date cannot be before start date.")
+        if (
+            start_date is not None
+            and value < start_date
+        ):
+            raise ValueError(
+                "Booking end date cannot be before start date."
+            )
 
         return value
 
@@ -68,10 +77,17 @@ class MultiOccurrenceBookingPriceRequest(BaseModel):
         value: time,
         info,
     ) -> time:
-        start_time = info.data.get("daily_start_time")
+        start_time = info.data.get(
+            "daily_start_time"
+        )
 
-        if start_time is not None and value <= start_time:
-            raise ValueError("Daily end time must be after start time.")
+        if (
+            start_time is not None
+            and value <= start_time
+        ):
+            raise ValueError(
+                "Daily end time must be after start time."
+            )
 
         return value
 
@@ -82,10 +98,14 @@ class MultiOccurrenceBookingPriceRequest(BaseModel):
         value: list[int],
     ) -> list[int]:
         if len(set(value)) != len(value):
-            raise ValueError("Selected weekdays must be unique.")
+            raise ValueError(
+                "Selected weekdays must be unique."
+            )
 
         if any(day < 0 or day > 6 for day in value):
-            raise ValueError("Weekdays must use values from 0 to 6.")
+            raise ValueError(
+                "Weekdays must use values from 0 to 6."
+            )
 
         return value
 
@@ -126,11 +146,15 @@ class InstantBookingCreateRequest(BaseModel):
         start = info.data.get("scheduled_start")
 
         if start is not None and value <= start:
-            raise ValueError("Booking end time must be after start time.")
+            raise ValueError(
+                "Booking end time must be after start time."
+            )
 
         return value
 
-    _normalize_notes = field_validator("notes")(_normalize_notes)
+    _normalize_notes = field_validator("notes")(
+        _normalize_notes
+    )
 
 
 class MultiOccurrenceBookingCreateRequest(BaseModel):
@@ -159,10 +183,17 @@ class MultiOccurrenceBookingCreateRequest(BaseModel):
         value: date,
         info,
     ) -> date:
-        start_date = info.data.get("schedule_start_date")
+        start_date = info.data.get(
+            "schedule_start_date"
+        )
 
-        if start_date is not None and value < start_date:
-            raise ValueError("Booking end date cannot be before start date.")
+        if (
+            start_date is not None
+            and value < start_date
+        ):
+            raise ValueError(
+                "Booking end date cannot be before start date."
+            )
 
         return value
 
@@ -173,10 +204,17 @@ class MultiOccurrenceBookingCreateRequest(BaseModel):
         value: time,
         info,
     ) -> time:
-        start_time = info.data.get("daily_start_time")
+        start_time = info.data.get(
+            "daily_start_time"
+        )
 
-        if start_time is not None and value <= start_time:
-            raise ValueError("Daily end time must be after start time.")
+        if (
+            start_time is not None
+            and value <= start_time
+        ):
+            raise ValueError(
+                "Daily end time must be after start time."
+            )
 
         return value
 
@@ -187,10 +225,14 @@ class MultiOccurrenceBookingCreateRequest(BaseModel):
         value: list[int],
     ) -> list[int]:
         if len(set(value)) != len(value):
-            raise ValueError("Selected weekdays must be unique.")
+            raise ValueError(
+                "Selected weekdays must be unique."
+            )
 
         if any(day < 0 or day > 6 for day in value):
-            raise ValueError("Weekdays must use values from 0 to 6.")
+            raise ValueError(
+                "Weekdays must use values from 0 to 6."
+            )
 
         return value
 
@@ -202,7 +244,9 @@ class MultiOccurrenceBookingCreateRequest(BaseModel):
     ) -> list[date]:
         return list(dict.fromkeys(value))
 
-    _normalize_notes = field_validator("notes")(_normalize_notes)
+    _normalize_notes = field_validator("notes")(
+        _normalize_notes
+    )
 
 
 class CustomerBookingCancellationRequest(BaseModel):
@@ -247,7 +291,9 @@ class CustomerBookingRescheduleRequest(BaseModel):
         start = info.data.get("new_start")
 
         if start is not None and value <= start:
-            raise ValueError("New booking end time must be after start time.")
+            raise ValueError(
+                "New booking end time must be after start time."
+            )
 
         return value
 

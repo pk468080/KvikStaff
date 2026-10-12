@@ -15,7 +15,8 @@ class WorkerPresenceRepository:
         worker_id: UUID,
     ) -> dict[str, Any] | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     worker_id,
                     is_available,
@@ -24,7 +25,8 @@ class WorkerPresenceRepository:
                 FROM public.worker_presence
                 WHERE worker_id = :worker_id
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "worker_id": str(worker_id),
             },
@@ -42,7 +44,8 @@ class WorkerPresenceRepository:
         worker_id: UUID,
     ) -> dict[str, Any] | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     latitude,
                     longitude,
@@ -52,7 +55,8 @@ class WorkerPresenceRepository:
                   AND booking_id IS NULL
                 ORDER BY recorded_at DESC
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "worker_id": str(worker_id),
             },
@@ -74,7 +78,8 @@ class WorkerPresenceRepository:
         worker_id: UUID,
     ) -> dict[str, Any] | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     latitude,
                     longitude,
@@ -83,7 +88,8 @@ class WorkerPresenceRepository:
                 WHERE worker_id = :worker_id
                 ORDER BY recorded_at DESC
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "worker_id": str(worker_id),
             },
@@ -99,7 +105,6 @@ class WorkerPresenceRepository:
             "longitude": float(row["longitude"]),
             "recorded_at": row["recorded_at"],
         }
-
     async def set_presence(
         self,
         worker_id: UUID,
@@ -109,17 +114,21 @@ class WorkerPresenceRepository:
             await self._set_auth_context(worker_id)
 
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     SELECT public.worker_set_presence(
                         :available
                     ) AS result
-                    """),
+                    """
+                ),
                 {
                     "available": available,
                 },
             )
 
-            return self._to_dict(result.scalar_one())
+            return self._to_dict(
+                result.scalar_one()
+            )
 
     async def heartbeat(
         self,
@@ -131,19 +140,23 @@ class WorkerPresenceRepository:
             await self._set_auth_context(worker_id)
 
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     SELECT public.worker_presence_heartbeat(
                         :latitude,
                         :longitude
                     ) AS result
-                    """),
+                    """
+                ),
                 {
                     "latitude": latitude,
                     "longitude": longitude,
                 },
             )
 
-            return self._to_dict(result.scalar_one())
+            return self._to_dict(
+                result.scalar_one()
+            )
 
     async def update_location(
         self,
@@ -156,34 +169,44 @@ class WorkerPresenceRepository:
             await self._set_auth_context(worker_id)
 
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     SELECT public.worker_update_location(
                         :latitude,
                         :longitude,
                         CAST(:booking_id AS uuid)
                     ) AS result
-                    """),
+                    """
+                ),
                 {
                     "latitude": latitude,
                     "longitude": longitude,
-                    "booking_id": (str(booking_id) if booking_id is not None else None),
+                    "booking_id": (
+                        str(booking_id)
+                        if booking_id is not None
+                        else None
+                    ),
                 },
             )
 
-            return self._to_dict(result.scalar_one())
+            return self._to_dict(
+                result.scalar_one()
+            )
 
     async def _set_auth_context(
         self,
         worker_id: UUID,
     ) -> None:
         await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT set_config(
                     'request.jwt.claim.sub',
                     CAST(:worker_id AS text),
                     true
                 )
-                """),
+                """
+            ),
             {
                 "worker_id": str(worker_id),
             },
@@ -205,4 +228,6 @@ class WorkerPresenceRepository:
         if hasattr(value, "_mapping"):
             return dict(value._mapping)
 
-        raise ValueError("Worker presence function returned an invalid result.")
+        raise ValueError(
+            "Worker presence function returned an invalid result."
+        )

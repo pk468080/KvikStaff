@@ -13,6 +13,7 @@ from app.modules.home.schemas import (
 )
 from app.modules.home.service import HomeService
 
+
 router = APIRouter()
 
 
@@ -49,7 +50,9 @@ async def get_home_promotions(
                 continue
 
             try:
-                available_service_ids.add(UUID(normalized))
+                available_service_ids.add(
+                    UUID(normalized)
+                )
             except ValueError:
                 continue
 
@@ -63,7 +66,9 @@ async def get_home_promotions(
     response_model=list[str],
 )
 async def get_customer_favourites(
-    current_user: CurrentUser = Depends(get_customer),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
     service: HomeService = Depends(
         get_home_service,
     ),
@@ -79,7 +84,9 @@ async def get_customer_favourites(
 )
 async def add_customer_favourite(
     service_id: UUID,
-    current_user: CurrentUser = Depends(get_customer),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
     service: HomeService = Depends(
         get_home_service,
     ),
@@ -97,7 +104,9 @@ async def add_customer_favourite(
 )
 async def remove_customer_favourite(
     service_id: UUID,
-    current_user: CurrentUser = Depends(get_customer),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
     service: HomeService = Depends(
         get_home_service,
     ),
@@ -114,7 +123,9 @@ async def remove_customer_favourite(
     response_model=list[HomeRebookResponse],
 )
 async def get_customer_rebook_history(
-    current_user: CurrentUser = Depends(get_customer),
+    current_user: CurrentUser = Depends(
+        get_customer
+    ),
     service: HomeService = Depends(
         get_home_service,
     ),

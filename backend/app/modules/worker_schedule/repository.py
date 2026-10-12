@@ -18,7 +18,8 @@ class WorkerScheduleRepository:
         worker_id: UUID,
     ) -> list[dict[str, Any]]:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     id,
                     worker_id,
@@ -31,7 +32,8 @@ class WorkerScheduleRepository:
                 FROM public.worker_weekly_schedules
                 WHERE worker_id = :worker_id
                 ORDER BY day_of_week ASC, start_time ASC
-                """),
+                """
+            ),
             {
                 "worker_id": str(worker_id),
             },
@@ -45,7 +47,8 @@ class WorkerScheduleRepository:
         schedule_id: UUID,
     ) -> dict[str, Any] | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     id,
                     worker_id,
@@ -59,7 +62,8 @@ class WorkerScheduleRepository:
                 WHERE id = :schedule_id
                   AND worker_id = :worker_id
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "schedule_id": str(schedule_id),
                 "worker_id": str(worker_id),
@@ -119,7 +123,8 @@ class WorkerScheduleRepository:
     ) -> dict[str, Any]:
         async with self.db.begin():
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     INSERT INTO public.worker_weekly_schedules (
                         worker_id,
                         day_of_week,
@@ -143,7 +148,8 @@ class WorkerScheduleRepository:
                         is_active,
                         created_at,
                         updated_at
-                    """),
+                    """
+                ),
                 {
                     "worker_id": str(worker_id),
                     "day_of_week": schedule.day_of_week,
@@ -163,7 +169,8 @@ class WorkerScheduleRepository:
     ) -> dict[str, Any] | None:
         async with self.db.begin():
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     UPDATE public.worker_weekly_schedules
                     SET
                         day_of_week = :day_of_week,
@@ -182,7 +189,8 @@ class WorkerScheduleRepository:
                         is_active,
                         created_at,
                         updated_at
-                    """),
+                    """
+                ),
                 {
                     "schedule_id": str(schedule_id),
                     "worker_id": str(worker_id),
@@ -204,11 +212,13 @@ class WorkerScheduleRepository:
     ) -> bool:
         async with self.db.begin():
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     DELETE FROM public.worker_weekly_schedules
                     WHERE id = :schedule_id
                       AND worker_id = :worker_id
-                    """),
+                    """
+                ),
                 {
                     "schedule_id": str(schedule_id),
                     "worker_id": str(worker_id),
@@ -224,18 +234,31 @@ class WorkerScheduleRepository:
     ) -> list[dict[str, Any]]:
         async with self.db.begin():
             await self.db.execute(
-                text("""
+                text(
+                    """
                     DELETE FROM public.worker_weekly_schedules
                     WHERE worker_id = :worker_id
-                    """),
+                    """
+                ),
                 {
                     "worker_id": str(worker_id),
                 },
             )
 
-            for schedule in schedules:
+            if schedules:
+                params = [
+                    {
+                        "worker_id": str(worker_id),
+                        "day_of_week": schedule.day_of_week,
+                        "start_time": schedule.start_time,
+                        "end_time": schedule.end_time,
+                        "is_active": schedule.is_active,
+                    }
+                    for schedule in schedules
+                ]
                 await self.db.execute(
-                    text("""
+                    text(
+                        """
                         INSERT INTO public.worker_weekly_schedules (
                             worker_id,
                             day_of_week,
@@ -250,18 +273,14 @@ class WorkerScheduleRepository:
                             :end_time,
                             :is_active
                         )
-                        """),
-                    {
-                        "worker_id": str(worker_id),
-                        "day_of_week": schedule.day_of_week,
-                        "start_time": schedule.start_time,
-                        "end_time": schedule.end_time,
-                        "is_active": schedule.is_active,
-                    },
+                        """
+                    ),
+                    params,
                 )
 
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     SELECT
                         id,
                         worker_id,
@@ -274,7 +293,8 @@ class WorkerScheduleRepository:
                     FROM public.worker_weekly_schedules
                     WHERE worker_id = :worker_id
                     ORDER BY day_of_week ASC, start_time ASC
-                    """),
+                    """
+                ),
                 {
                     "worker_id": str(worker_id),
                 },

@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import logging
@@ -18,10 +19,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-GOOGLE_GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json"
+GOOGLE_GEOCODING_URL = (
+    "https://maps.googleapis.com/maps/api/geocode/json"
+)
 
 PROVIDER_ERROR_MESSAGE = (
-    "Address search is temporarily unavailable. " "Please try again shortly."
+    "Address search is temporarily unavailable. "
+    "Please try again shortly."
 )
 
 
@@ -32,7 +36,9 @@ class GeocodeAddressRequest(BaseModel):
     @classmethod
     def normalize_address(cls, value: object) -> str:
         if not isinstance(value, str):
-            raise ValueError("Enter a valid service address.")  # noqa: TRY004
+            raise ValueError(  # noqa: TRY004
+                "Enter a valid service address."
+            )
 
         normalized = value.strip()
 
@@ -74,7 +80,11 @@ def _parse_google_geocoding_payload(
         # Do not expose Google's raw diagnostic response to the client.
         logger.warning(
             "Google Geocoding API returned status %s.",
-            (provider_status if isinstance(provider_status, str) else "unknown"),
+            (
+                provider_status
+                if isinstance(provider_status, str)
+                else "unknown"
+            ),
         )
         raise HTTPException(
             status_code=503,
@@ -83,7 +93,11 @@ def _parse_google_geocoding_payload(
 
     results = payload.get("results")
 
-    if not isinstance(results, list) or not results or not isinstance(results[0], dict):
+    if (
+        not isinstance(results, list)
+        or not results
+        or not isinstance(results[0], dict)
+    ):
         raise HTTPException(
             status_code=502,
             detail=PROVIDER_ERROR_MESSAGE,
@@ -92,11 +106,18 @@ def _parse_google_geocoding_payload(
     result = results[0]
     geometry = result.get("geometry")
 
-    coordinates = geometry.get("location") if isinstance(geometry, dict) else None
+    coordinates = (
+        geometry.get("location")
+        if isinstance(geometry, dict)
+        else None
+    )
 
     formatted_address = result.get("formatted_address")
 
-    if not isinstance(coordinates, dict) or not isinstance(formatted_address, str):
+    if (
+        not isinstance(coordinates, dict)
+        or not isinstance(formatted_address, str)
+    ):
         raise HTTPException(
             status_code=502,
             detail=PROVIDER_ERROR_MESSAGE,
@@ -136,12 +157,17 @@ async def geocode_customer_address(
     request: GeocodeAddressRequest,
     current_user: Annotated[CurrentUser, Depends(get_customer)],
 ) -> GeocodeAddressResponse:
-    api_key = (settings.google_maps_geocoding_api_key or "").strip()
+    api_key = (
+        settings.google_maps_geocoding_api_key or ""
+    ).strip()
 
     if not api_key:
         raise HTTPException(
             status_code=503,
-            detail=("Address search is not configured yet. " "Please try again later."),
+            detail=(
+                "Address search is not configured yet. "
+                "Please try again later."
+            ),
         )
 
     await enforce_geocoding_rate_limit(

@@ -21,6 +21,7 @@ from app.modules.bookings.schemas import (
 )
 from app.modules.bookings.service import BookingsService
 
+
 router = APIRouter()
 
 
@@ -35,7 +36,9 @@ def get_bookings_service(
 @router.get("")
 async def list_customer_bookings(
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> list[dict[str, Any]]:
     return await service.list_customer_bookings(
         customer_id=UUID(current_user.id),
@@ -46,7 +49,9 @@ async def list_customer_bookings(
 async def calculate_instant_booking_price(
     request: InstantBookingPriceRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     return await service.calculate_customer_instant_booking_price(
         customer_id=UUID(current_user.id),
@@ -59,7 +64,9 @@ async def calculate_instant_booking_price(
 async def calculate_multi_occurrence_booking_price(
     request: MultiOccurrenceBookingPriceRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     return await service.calculate_customer_multi_occurrence_booking_price(
         customer_id=UUID(current_user.id),
@@ -113,7 +120,9 @@ async def create_recurring_booking(
 async def get_booking_history(
     booking_id: UUID,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> list[dict[str, Any]]:
     return await service.get_customer_booking_status_history(
         booking_id=booking_id,
@@ -125,7 +134,9 @@ async def get_booking_history(
 async def get_booking_occurrences(
     booking_id: UUID,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> list[dict[str, Any]]:
     return await service.get_customer_booking_occurrences(
         booking_id=booking_id,
@@ -137,7 +148,9 @@ async def get_booking_occurrences(
 async def get_active_booking_occurrence(
     booking_id: UUID,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any] | None:
     return await service.get_customer_active_booking_occurrence(
         booking_id=booking_id,
@@ -149,7 +162,9 @@ async def get_active_booking_occurrence(
 async def get_booking_worker_location(
     booking_id: UUID,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any] | None:
     return await service.get_customer_booking_latest_worker_location(
         booking_id=booking_id,
@@ -162,7 +177,9 @@ async def create_booking_otp(
     booking_id: UUID,
     request: CustomerBookingOtpRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     customer_id = UUID(current_user.id)
 
@@ -184,7 +201,9 @@ async def create_booking_otp(
 async def get_customer_booking(
     booking_id: UUID,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     return await service.get_customer_booking(
         booking_id=booking_id,
@@ -197,7 +216,9 @@ async def cancel_booking(
     booking_id: UUID,
     request: CustomerBookingCancellationRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     return await service.cancel_booking(
         booking_id=booking_id,
@@ -211,7 +232,9 @@ async def cancel_booking_series(
     booking_id: UUID,
     request: CustomerBookingCancellationRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     return await service.cancel_booking_series(
         booking_id=booking_id,
@@ -225,7 +248,9 @@ async def cancel_booking_occurrence(
     occurrence_id: UUID,
     request: CustomerBookingOccurrenceCancellationRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     return await service.cancel_booking_occurrence(
         occurrence_id=occurrence_id,
@@ -238,7 +263,9 @@ async def cancel_booking_occurrence(
 async def get_booking_refunds(
     booking_id: UUID,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> list[dict[str, Any]]:
     return await service.get_customer_booking_refunds(
         booking_id=booking_id,
@@ -251,7 +278,9 @@ async def reschedule_booking(
     booking_id: UUID,
     request: CustomerBookingRescheduleRequest,
     current_user: CurrentUser = Depends(get_customer),
-    service: BookingsService = Depends(get_bookings_service),
+    service: BookingsService = Depends(
+        get_bookings_service
+    ),
 ) -> dict[str, Any]:
     return await service.reschedule_booking(
         booking_id=booking_id,

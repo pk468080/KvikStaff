@@ -24,7 +24,8 @@ class AddressesRepository:
         self,
         customer_id: UUID,
     ) -> list[CustomerAddressRow]:
-        query = text("""
+        query = text(
+            """
             SELECT
                 id,
                 label,
@@ -35,7 +36,8 @@ class AddressesRepository:
             FROM public.addresses
             WHERE user_id = :customer_id
             ORDER BY created_at DESC
-            """)
+            """
+        )
 
         result = await self.db.execute(
             query,
@@ -61,7 +63,8 @@ class AddressesRepository:
         address_id: UUID,
         customer_id: UUID,
     ) -> CustomerAddressRow | None:
-        query = text("""
+        query = text(
+            """
             SELECT
                 id,
                 label,
@@ -74,7 +77,8 @@ class AddressesRepository:
                 id = :address_id
                 AND user_id = :customer_id
             LIMIT 1
-            """)
+            """
+        )
 
         result = await self.db.execute(
             query,
@@ -105,7 +109,8 @@ class AddressesRepository:
         latitude: float,
         longitude: float,
     ) -> CustomerAddressRow | None:
-        query = text("""
+        query = text(
+            """
             SELECT
                 id,
                 label,
@@ -121,7 +126,8 @@ class AddressesRepository:
                 AND longitude = :longitude
             ORDER BY created_at DESC
             LIMIT 1
-            """)
+            """
+        )
 
         result = await self.db.execute(
             query,
@@ -155,7 +161,8 @@ class AddressesRepository:
         longitude: float,
         label: str | None,
     ) -> CustomerAddressRow:
-        query = text("""
+        query = text(
+            """
             INSERT INTO public.addresses (
                 user_id,
                 label,
@@ -182,7 +189,8 @@ class AddressesRepository:
                 latitude,
                 longitude,
                 created_at
-            """)
+            """
+        )
 
         result = await self.db.execute(
             query,
@@ -211,13 +219,15 @@ class AddressesRepository:
         address_id: UUID,
         customer_id: UUID,
     ) -> bool:
-        query = text("""
+        query = text(
+            """
             DELETE FROM public.addresses
             WHERE
                 id = :address_id
                 AND user_id = :customer_id
             RETURNING id
-            """)
+            """
+        )
 
         result = await self.db.execute(
             query,

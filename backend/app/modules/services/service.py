@@ -2,7 +2,6 @@ import math
 from uuid import UUID
 
 from app.modules.services.repository import (
-    ServiceAreaRow,
     ServiceCatalogRow,
     ServicesRepository,
 )
@@ -24,10 +23,15 @@ class ServicesService:
         services = await self.repository.get_active_services()
 
         if latitude is None and longitude is None:
-            return [self._to_response(service) for service in services]
+            return [
+                self._to_response(service)
+                for service in services
+            ]
 
         if latitude is None or longitude is None:
-            raise ValueError("Latitude and longitude must be provided together.")
+            raise ValueError(
+                "Latitude and longitude must be provided together."
+            )
 
         areas = await self.repository.get_active_service_areas()
 
@@ -59,7 +63,10 @@ class ServicesService:
                 available_service_ids.add(area.service_id)
 
         if generic_area_available:
-            return [self._to_response(service) for service in services]
+            return [
+                self._to_response(service)
+                for service in services
+            ]
 
         return [
             self._to_response(service)
@@ -107,8 +114,12 @@ class ServicesService:
     ) -> float:
         earth_radius_km = 6371.0
 
-        latitude_delta = math.radians(latitude2 - latitude1)
-        longitude_delta = math.radians(longitude2 - longitude1)
+        latitude_delta = math.radians(
+            latitude2 - latitude1
+        )
+        longitude_delta = math.radians(
+            longitude2 - longitude1
+        )
 
         a = (
             math.sin(latitude_delta / 2) ** 2

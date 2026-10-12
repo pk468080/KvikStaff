@@ -23,7 +23,10 @@ class AddressesService:
             customer_id,
         )
 
-        return [self._to_response(row) for row in rows]
+        return [
+            self._to_response(row)
+            for row in rows
+        ]
 
     async def get_address(
         self,
@@ -45,11 +48,13 @@ class AddressesService:
         request: CustomerAddressCreateRequest,
         customer_id: UUID,
     ) -> CustomerAddressResponse:
-        existing = await self.repository.find_existing_customer_address(
-            customer_id=customer_id,
-            address_line=request.address,
-            latitude=request.latitude,
-            longitude=request.longitude,
+        existing = (
+            await self.repository.find_existing_customer_address(
+                customer_id=customer_id,
+                address_line=request.address,
+                latitude=request.latitude,
+                longitude=request.longitude,
+            )
         )
 
         if existing is not None:

@@ -169,7 +169,7 @@ async function verifyBookingOtp(
 
   const otpHash =
     await sha256(
-      normalizedOtp,
+      `${bookingId}:${normalizedOtp}`,
     )
 
   const {
@@ -250,7 +250,7 @@ async function verifyOccurrenceOtp(
 
   const otpHash =
     await sha256(
-      normalizedOtp,
+      `${occurrenceId}:${normalizedOtp}`,
     )
 
   const {

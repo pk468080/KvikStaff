@@ -64,7 +64,8 @@ def assess_function(f):
 
 report = []
 for f in functions:
-    if f['schema_name'] == 'pgbouncer': continue
+    if f['schema_name'] == 'pgbouncer':
+        continue
     a = assess_function(f)
     
     callers = ", ".join(f.get('callers', []))

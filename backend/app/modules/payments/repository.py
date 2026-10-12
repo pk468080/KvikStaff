@@ -17,6 +17,7 @@ class PaymentsRepository:
     async def commit_transaction(self) -> None:
         await self.db.commit()
 
+
     async def get_customer_booking(
         self,
         customer_id: UUID,
@@ -66,13 +67,15 @@ class PaymentsRepository:
 
         return dict(row)
 
+
     async def mark_payment_failed(
         self,
         customer_id: UUID,
         booking_id: UUID,
     ) -> str | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 UPDATE public.bookings
                 SET
                     status = 'payment_failed',
@@ -83,7 +86,8 @@ class PaymentsRepository:
                     CAST(:customer_id AS uuid)
                   AND status = 'pending_payment'
                 RETURNING status::text AS status
-                """),
+                """
+            ),
             {
                 "booking_id": str(booking_id),
                 "customer_id": str(customer_id),
@@ -105,7 +109,10 @@ class PaymentsRepository:
         if booking is None:
             return None
 
-        return str(booking.get("status"))
+        return str(
+            booking.get("status")
+        )
+
 
     async def reset_payment_failed(
         self,
@@ -115,7 +122,8 @@ class PaymentsRepository:
         commit: bool = True,
     ) -> bool:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 UPDATE public.bookings
                 SET
                     status = 'pending_payment',
@@ -125,7 +133,8 @@ class PaymentsRepository:
                   AND customer_id =
                     CAST(:customer_id AS uuid)
                   AND status = 'payment_failed'
-                """),
+                """
+            ),
             {
                 "booking_id": str(booking_id),
                 "customer_id": str(customer_id),
@@ -137,13 +146,15 @@ class PaymentsRepository:
 
         return result.rowcount > 0
 
+
     async def expire_payment_booking(
         self,
         customer_id: UUID,
         booking_id: UUID,
     ) -> bool:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 UPDATE public.bookings
                 SET
                     status = 'expired',
@@ -156,7 +167,8 @@ class PaymentsRepository:
                       'pending_payment',
                       'payment_failed'
                   )
-                """),
+                """
+            ),
             {
                 "booking_id": str(booking_id),
                 "customer_id": str(customer_id),
@@ -172,7 +184,8 @@ class PaymentsRepository:
         booking_id: UUID,
     ) -> dict[str, Any] | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     id,
                     booking_id,
@@ -191,7 +204,8 @@ class PaymentsRepository:
                   AND provider = 'razorpay'
                 ORDER BY created_at DESC
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "booking_id": str(booking_id),
             },
@@ -211,7 +225,8 @@ class PaymentsRepository:
         provider_order_id: str,
     ) -> dict[str, Any] | None:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     p.id,
                     p.booking_id,
@@ -235,11 +250,13 @@ class PaymentsRepository:
                   AND p.provider_order_id =
                     :provider_order_id
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "booking_id": str(booking_id),
                 "customer_id": str(customer_id),
-                "provider_order_id": provider_order_id,
+                "provider_order_id":
+                    provider_order_id,
             },
         )
 
@@ -258,7 +275,8 @@ class PaymentsRepository:
         currency: str,
     ) -> dict[str, Any]:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 INSERT INTO public.payments (
                     booking_id,
                     provider,
@@ -289,10 +307,14 @@ class PaymentsRepository:
                     paid_at,
                     created_at,
                     updated_at
-                """),
+                """
+            ),
             {
-                "booking_id": str(booking_id),
-                "provider_order_id": provider_order_id,
+                "booking_id": str(
+                    booking_id
+                ),
+                "provider_order_id":
+                    provider_order_id,
                 "amount": amount,
                 "currency": currency,
             },
@@ -305,10 +327,14 @@ class PaymentsRepository:
         if row is not None:
             return dict(row)
 
-        existing = await self.get_latest_payment(booking_id)
+        existing = await self.get_latest_payment(
+            booking_id
+        )
 
         if existing is None:
-            raise ValueError("Payment record could not be created.")
+            raise ValueError(
+                "Payment record could not be created."
+            )
 
         return existing
 
@@ -324,26 +350,39 @@ class PaymentsRepository:
         await self.db.rollback()
 
         async with self.db.begin():
-            await self.db.execute(text("""
+            await self.db.execute(
+                text(
+                    """
                     SELECT set_config(
                         'request.jwt.claim.role',
                         'service_role',
                         true
                     )
-                    """))
+                    """
+                )
+            )
 
             result = await self.db.execute(
-                text("""
+                text(
+                    """
                     SELECT public.finalize_razorpay_payment(
                         CAST(:payment_id AS uuid),
                         :provider_payment_id,
                         CAST(:paid_at AS timestamptz)
                     ) AS result
-                    """),
+                    """
+                ),
                 {
-                    "payment_id": str(payment_id),
-                    "provider_payment_id": provider_payment_id,
-                    "paid_at": paid_at or datetime.now(timezone.utc),
+                    "payment_id": str(
+                        payment_id
+                    ),
+                    "provider_payment_id":
+                        provider_payment_id,
+                    "paid_at":
+                        paid_at
+                        or datetime.now(
+                            timezone.utc
+                        ),
                 },
             )
 
@@ -366,4 +405,6 @@ class PaymentsRepository:
             if isinstance(parsed, dict):
                 return parsed
 
-        raise ValueError("Payment function returned an invalid result.")
+        raise ValueError(
+            "Payment function returned an invalid result."
+        )

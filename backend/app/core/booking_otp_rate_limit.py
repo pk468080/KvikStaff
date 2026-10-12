@@ -50,11 +50,13 @@ return 0
 """
 
 
-def get_redis_client() -> Redis:
+def get_redis_client() -> Redis | None:
     """Return the shared asynchronous Redis client."""
     global _redis_client
 
     if _redis_client is None:
+        if not settings.redis_url:
+            return None
         _redis_client = Redis.from_url(
             settings.redis_url,
             encoding="utf-8",
@@ -65,7 +67,6 @@ def get_redis_client() -> Redis:
         )
 
     return _redis_client
-
 
 async def close_redis_client() -> None:
     """Close the shared Redis client during application shutdown."""
@@ -92,11 +93,17 @@ async def enforce_booking_otp_rate_limit(
     environments, a Redis outage does not block local development.
     """
     client = get_redis_client()
+    if not client:
+        return
     now_ms = int(time.time() * 1000)
     request_token = f"{now_ms}:{uuid4().hex}"
 
-    booking_key = f"kvikstaff:rate:booking-otp:booking:{booking_id}:{otp_type}"
-    customer_key = f"kvikstaff:rate:booking-otp:customer:{customer_id}"
+    booking_key = (
+        f"kvikstaff:rate:booking-otp:booking:{booking_id}:{otp_type}"
+    )
+    customer_key = (
+        f"kvikstaff:rate:booking-otp:customer:{customer_id}"
+    )
 
     try:
         result = await client.eval(

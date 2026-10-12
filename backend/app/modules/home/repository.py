@@ -17,12 +17,14 @@ class HomeRepository:
         customer_id: UUID,
     ) -> list[UUID]:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT service_id
                 FROM public.customer_favourite_services
                 WHERE customer_id = CAST(:customer_id AS uuid)
                 ORDER BY created_at ASC, service_id ASC
-                """),
+                """
+            ),
             {
                 "customer_id": str(customer_id),
             },
@@ -30,7 +32,10 @@ class HomeRepository:
 
         rows = result.mappings().all()
 
-        return [row["service_id"] for row in rows]
+        return [
+            row["service_id"]
+            for row in rows
+        ]
 
     async def add_customer_favourite_service(
         self,
@@ -39,7 +44,8 @@ class HomeRepository:
     ) -> None:
         async with self.db.begin():
             await self.db.execute(
-                text("""
+                text(
+                    """
                     INSERT INTO public.customer_favourite_services (
                         customer_id,
                         service_id
@@ -53,7 +59,8 @@ class HomeRepository:
                         service_id
                     )
                     DO NOTHING
-                    """),
+                    """
+                ),
                 {
                     "customer_id": str(customer_id),
                     "service_id": str(service_id),
@@ -67,11 +74,13 @@ class HomeRepository:
     ) -> None:
         async with self.db.begin():
             await self.db.execute(
-                text("""
+                text(
+                    """
                     DELETE FROM public.customer_favourite_services
                     WHERE customer_id = CAST(:customer_id AS uuid)
                       AND service_id = CAST(:service_id AS uuid)
-                    """),
+                    """
+                ),
                 {
                     "customer_id": str(customer_id),
                     "service_id": str(service_id),
@@ -81,7 +90,9 @@ class HomeRepository:
     async def get_active_home_promotions(
         self,
     ) -> list[dict[str, Any]]:
-        result = await self.db.execute(text("""
+        result = await self.db.execute(
+            text(
+                """
                 SELECT
                     id,
                     title,
@@ -95,16 +106,22 @@ class HomeRepository:
                 FROM public.home_promotions
                 WHERE is_active = true
                 ORDER BY sort_order ASC, id ASC
-                """))
+                """
+            )
+        )
 
-        return [dict(row) for row in result.mappings().all()]
+        return [
+            dict(row)
+            for row in result.mappings().all()
+        ]
 
     async def get_customer_rebook_rows(
         self,
         customer_id: UUID,
     ) -> list[dict[str, Any]]:
         result = await self.db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     service_id,
                     created_at,
@@ -120,10 +137,14 @@ class HomeRepository:
                   AND service_id IS NOT NULL
                 ORDER BY created_at DESC
                 LIMIT 20
-                """),
+                """
+            ),
             {
                 "customer_id": str(customer_id),
             },
         )
 
-        return [dict(row) for row in result.mappings().all()]
+        return [
+            dict(row)
+            for row in result.mappings().all()
+        ]

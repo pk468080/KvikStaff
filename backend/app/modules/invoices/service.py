@@ -67,10 +67,14 @@ class InvoicesService:
             )
 
             return {
-                "invoice_reference": self.create_receipt_reference(booking["id"]),
+                "invoice_reference": self.create_receipt_reference(
+                    booking["id"]
+                ),
                 "booking_id": booking["id"],
                 "payment_id": payment["id"],
-                "service_name": (booking["service_name"] or "Service"),
+                "service_name": (
+                    booking["service_name"] or "Service"
+                ),
                 "booking_type": booking["fulfillment_type"],
                 "scheduled_start": booking["scheduled_start"],
                 "scheduled_end": booking["scheduled_end"],
@@ -121,7 +125,10 @@ class InvoicesService:
     def create_receipt_reference(
         booking_id: UUID,
     ) -> str:
-        return "KvikStaff-REC-" f"{str(booking_id)[:8].upper()}"
+        return (
+            "KvikStaff-REC-"
+            f"{str(booking_id)[:8].upper()}"
+        )
 
     @staticmethod
     def _require_money(
@@ -156,4 +163,7 @@ class InvoicesService:
     ) -> str:
         original = getattr(exc, "orig", None)
         message = str(original or exc).strip()
-        return message or "Unable to load the payment receipt."
+        return (
+            message
+            or "Unable to load the payment receipt."
+        )

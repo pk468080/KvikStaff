@@ -153,7 +153,7 @@ function validatePushToken(
     )
   }
 
-  if (!/^ExponentPushToken\\[[^\\]]+\\]$/.test(normalized)) {
+  if (!/^ExponentPushToken\[[^\]]+\]$/.test(normalized)) {
     throw new Error(
       'Invalid Expo push token.',
     )

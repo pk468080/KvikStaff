@@ -8,10 +8,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import text
 
 from app.core.database import AsyncSessionLocal
-from app.core.database import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -38,7 +37,8 @@ class CurrentUser:
 
 def _issuer() -> str:
     return (
-        settings.supabase_jwt_issuer or f"{settings.supabase_url.rstrip('/')}/auth/v1"
+        settings.supabase_jwt_issuer
+        or f"{settings.supabase_url.rstrip('/')}/auth/v1"
     )
 
 
@@ -85,7 +85,9 @@ async def _fetch_jwks(
     keys = payload.get("keys")
 
     if not isinstance(keys, list):
-        raise TypeError("Supabase JWKS response does not contain a valid keys list.")
+        raise TypeError(
+            "Supabase JWKS response does not contain a valid keys list."
+        )
 
     indexed_keys: dict[str, dict] = {}
 
@@ -99,7 +101,9 @@ async def _fetch_jwks(
             indexed_keys[kid] = key
 
     if not indexed_keys:
-        raise ValueError("Supabase JWKS response does not contain usable signing keys.")
+        raise ValueError(
+            "Supabase JWKS response does not contain usable signing keys."
+        )
 
     _jwks_cache[issuer] = (
         now,
@@ -134,7 +138,10 @@ async def verify_access_token(
             algorithm = header.get("alg")
             kid = header.get("kid")
 
-            if algorithm not in SUPPORTED_ASYMMETRIC_ALGORITHMS:
+            if (
+                algorithm
+                not in SUPPORTED_ASYMMETRIC_ALGORITHMS
+            ):
                 raise _unauthorized()
 
             if not isinstance(kid, str) or not kid:
@@ -185,7 +192,10 @@ async def verify_access_token(
         if not isinstance(user_id, str) or not user_id:
             raise _unauthorized()
 
-        app_metadata = payload.get("app_metadata") or {}
+        app_metadata = (
+            payload.get("app_metadata")
+            or {}
+        )
 
         role = (
             app_metadata.get("role")
@@ -235,7 +245,10 @@ async def get_current_user(
     session so it does not start a transaction on the session owned by the
     actual API route.
     """
-    if credentials is None or credentials.scheme.lower() != "bearer":
+    if (
+        credentials is None
+        or credentials.scheme.lower() != "bearer"
+    ):
         raise _unauthorized()
 
     token_user = await verify_access_token(
@@ -244,14 +257,16 @@ async def get_current_user(
 
     async with AsyncSessionLocal() as auth_db:
         result = await auth_db.execute(
-            text("""
+            text(
+                """
                 SELECT
                     role,
                     is_active
                 FROM public.profiles
                 WHERE id = CAST(:user_id AS uuid)
                 LIMIT 1
-                """),
+                """
+            ),
             {
                 "user_id": token_user.id,
             },
@@ -273,13 +288,10 @@ async def get_current_user(
 
     role = profile["role"]
 
-    if (
-        not isinstance(
-            role,
-            str,
-        )
-        or not role
-    ):
+    if not isinstance(
+        role,
+        str,
+    ) or not role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account role is not configured.",
