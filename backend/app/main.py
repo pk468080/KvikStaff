@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
@@ -11,14 +10,20 @@ from app.core.exceptions import AppError, app_error_handler
 from app.core.logging import configure_logging
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    configure_logging()
+class LifespanManager:
+    def __init__(self, app: FastAPI):
+        self.app = app
 
-    try:
-        yield
-    finally:
+    async def __aenter__(self):
+        configure_logging()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         await close_redis_client()
+
+
+def lifespan(app: FastAPI):
+    return LifespanManager(app)
 
 
 def build_docs_config() -> dict[str, str | None]:

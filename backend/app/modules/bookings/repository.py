@@ -1595,9 +1595,11 @@ class BookingsRepository:
 
 
 
+            salt_id = occurrence_id if occurrence_id else booking_id
             otp_hash = hashlib.sha256(
+                f"{salt_id}:{otp}".encode("utf-8")
 
-                otp.encode("utf-8")
+
 
             ).hexdigest()
 
