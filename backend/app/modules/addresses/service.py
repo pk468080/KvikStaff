@@ -19,9 +19,16 @@ class AddressesService:
         self,
         customer_id: UUID,
     ) -> list[CustomerAddressResponse]:
-        rows = await self.repository.get_customer_addresses(
-            customer_id,
-        )
+        try:
+            rows = await self.repository.get_customer_addresses(
+                customer_id,
+            )
+        except Exception as exc:
+            raise AppError(
+                "ADDRESS_FETCH_FAILED",
+                "Unable to fetch customer addresses.",
+                400,
+            ) from exc
 
         return [
             self._to_response(row)
