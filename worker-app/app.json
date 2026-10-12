@@ -17,8 +17,8 @@
           "isAndroidForegroundServiceEnabled": true
         }
       ],
-      [
-        "@sentry/react-native/expo",
+            [
+        "@sentry/react-native",
         {
           "url": "https://sentry.io/",
           "project": "worker-app",

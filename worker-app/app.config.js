@@ -33,8 +33,10 @@ module.exports = ({ config }) => {
     return true
   })
 
-  const plugins = [
+      const plugins = [
     ...filteredPlugins,
+    'expo-font',
+    'expo-sqlite',
 
     ...(androidMapsApiKey
       ? [
