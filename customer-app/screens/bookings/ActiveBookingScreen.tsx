@@ -316,6 +316,10 @@ export default function ActiveBookingScreen({
     useState<CustomerRefundRecord[]>(
       [],
     )
+    const [
+    refundStatusError,
+    setRefundStatusError,
+  ] = useState<string | null>(null)  
 
   const [
     location,
@@ -439,15 +443,28 @@ const [
 
 setBooking(nextBooking)
 
-      if (nextBooking.status === 'cancelled') {
-        const nextRefunds =
-          await getCustomerBookingRefunds(
-            bookingId,
+            if (nextBooking.status === 'cancelled') {
+        try {
+          const nextRefunds =
+            await getCustomerBookingRefunds(
+              bookingId,
+            )
+
+          setRefunds(nextRefunds)
+          setRefundStatusError(null)
+        } catch (cause) {
+          console.warn(
+            'Unable to refresh booking refund status:',
+            cause,
           )
 
-        setRefunds(nextRefunds)
+          setRefundStatusError(
+            'Refund status is temporarily unavailable. Your booking remains cancelled; we will retry automatically.',
+          )
+        }
       } else {
         setRefunds([])
+        setRefundStatusError(null)
       }
 
       const nextHistory =
@@ -1862,6 +1879,13 @@ setBooking(nextBooking)
               Reschedule booking
             </Text>
           </Pressable>
+        ) : null}
+                {refundStatusError ? (
+          <Text
+            style={styles.refundMessage}
+          >
+            {refundStatusError}
+          </Text>
         ) : null}
 
         {!terminal &&
