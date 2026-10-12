@@ -36,13 +36,13 @@ function firstValue(
 function mapOverview(value: unknown): WorkerPayoutOverview {
   const source = record(value)
   return {
-    grossEarnings: numberValue(firstValue(source, ['gross_earnings', 'grossEarnings'])),
+    grossEarnings: numberValue(firstValue(source, ['total_earned', 'gross_earnings', 'grossEarnings'])),
     platformFees: numberValue(firstValue(source, ['platform_fees', 'platformFees', 'platform_fee'])),
-    netEarnings: numberValue(firstValue(source, ['net_earnings', 'netEarnings'])),
-    allocatedAmount: numberValue(firstValue(source, ['allocated_amount', 'allocatedAmount', 'allocated_payout_amount'])),
-    pendingAmount: numberValue(firstValue(source, ['pending_amount', 'pendingAmount', 'pending_payout_amount'])),
-    availableAmount: numberValue(firstValue(source, ['available_amount', 'availableAmount', 'available_earnings'])),
-    payoutDisabled: Boolean(firstValue(source, ['payout_disabled', 'payoutDisabled', 'is_payout_disabled'])),
+    netEarnings: numberValue(firstValue(source, ['total_earned', 'net_earnings', 'netEarnings'])),
+    allocatedAmount: numberValue(firstValue(source, ['reserved_for_payout', 'allocated_amount', 'allocatedAmount', 'allocated_payout_amount'])),
+    pendingAmount: numberValue(firstValue(source, ['paid_out', 'pending_amount', 'pendingAmount', 'pending_payout_amount'])),
+    availableAmount: numberValue(firstValue(source, ['available_for_payout', 'available_amount', 'availableAmount', 'available_earnings'])),
+    payoutDisabled: source.payout_enabled === false || Boolean(firstValue(source, ['payout_disabled', 'payoutDisabled', 'is_payout_disabled'])),
   }
 }
 
@@ -105,21 +105,39 @@ export async function listWorkerPayouts(limit = 25): Promise<WorkerPayoutRecord[
   return Array.isArray(rows) ? rows.map(mapPayout) : []
 }
 
+let payoutIdempotencyKey: string | null = null;
+let currentPayoutAmount = 0;
+let currentPayoutAccountId = '';
+
 export async function requestWorkerPayout(
   amount: number,
   payoutAccountId: string,
 ): Promise<unknown> {
-  return callRpc('worker_request_payout', {
-    p_amount: amount,
-    p_payout_account_id: payoutAccountId,
-  })
+  if (!payoutIdempotencyKey || currentPayoutAmount !== amount || currentPayoutAccountId !== payoutAccountId) {
+    payoutIdempotencyKey = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    currentPayoutAmount = amount;
+    currentPayoutAccountId = payoutAccountId;
+  }
+
+  try {
+    const result = await callRpc('worker_request_payout', {
+      p_amount: amount,
+      p_payout_account_id: payoutAccountId,
+      p_idempotency_key: payoutIdempotencyKey,
+    });
+    // On success, reset idempotency key so a new request can be made later
+    payoutIdempotencyKey = null;
+    return result;
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function setWorkerDefaultPayoutAccount(
   accountId: string,
 ): Promise<unknown> {
   return callRpc('worker_set_default_payout_account', {
-    p_account_id: accountId,
+    p_payout_account_id: accountId,
   })
 }
 
@@ -127,7 +145,7 @@ export async function disableWorkerPayoutAccount(
   accountId: string,
 ): Promise<unknown> {
   return callRpc('worker_disable_payout_account', {
-    p_account_id: accountId,
+    p_payout_account_id: accountId,
   })
 }
 

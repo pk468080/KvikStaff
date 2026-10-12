@@ -121,11 +121,8 @@ export function useWorkerEarnings(
             nextEarnings,
           )
 
-          setSummary(
-            calculateWorkerEarningSummary(
-              nextEarnings,
-            ),
-          )
+          const nextSummary = await getWorkerEarningsSummary()
+          setSummary(nextSummary)
         } catch (cause) {
           const message =
             cause instanceof Error
