@@ -16,15 +16,8 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
-      ],
-            [
-        "@sentry/react-native",
-        {
-          "url": "https://sentry.io/",
-          "project": "worker-app",
-          "organization": "KvikStaff"
-        }
       ]
+            
     ],
     "ios": {
       "bundleIdentifier": "com.princerajput.workerapp"

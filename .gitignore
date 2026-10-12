@@ -17,3 +17,5 @@ node_modules/
 
 # Project-specific backups
 customer-app/android.backup/
+# Local backup archives
+worker-native-backup.tar.gz

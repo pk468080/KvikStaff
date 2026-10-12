@@ -8,28 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		201F5E8F34AF98939D4E3AF2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 885AF7ACB248B92C97069338 /* PrivacyInfo.xcprivacy */; };
+		1E8878E74142231E2BD18845 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 05A82A90ADF52A36EE5E8671 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		B21AD8B8316E89EFE15BEC75 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9EC25B35C96CE48BEB3144 /* ExpoModulesProvider.swift */; };
+		A5D791A12C9D9C3F72899709 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6774173BE0C08B59C1E185 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E27F41214AC3D6E3004735FD /* libPods-workerapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 98A211E9AB2FCD13E9E36B7F /* libPods-workerapp.a */; };
+		C0E7176D9BAE5CDADDE0D03B /* libPods-KvikStaffWorker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AD91C7F3F48633CD33BC9FB /* libPods-KvikStaffWorker.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		13B07F961A680F5B00A75B9A /* workerapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = workerapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = workerapp/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = workerapp/Info.plist; sourceTree = "<group>"; };
-		885AF7ACB248B92C97069338 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = workerapp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		919FB8BC89D577DEA91130E9 /* Pods-workerapp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-workerapp.release.xcconfig"; path = "Target Support Files/Pods-workerapp/Pods-workerapp.release.xcconfig"; sourceTree = "<group>"; };
-		98A211E9AB2FCD13E9E36B7F /* libPods-workerapp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-workerapp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		9F9EC25B35C96CE48BEB3144 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-workerapp/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = workerapp/SplashScreen.storyboard; sourceTree = "<group>"; };
+		05A82A90ADF52A36EE5E8671 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = KvikStaffWorker/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* KvikStaffWorker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KvikStaffWorker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = KvikStaffWorker/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = KvikStaffWorker/Info.plist; sourceTree = "<group>"; };
+		1D6774173BE0C08B59C1E185 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-KvikStaffWorker/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		2AD91C7F3F48633CD33BC9FB /* libPods-KvikStaffWorker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-KvikStaffWorker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5DAE0E90CC23D8C932C020EB /* Pods-KvikStaffWorker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-KvikStaffWorker.debug.xcconfig"; path = "Target Support Files/Pods-KvikStaffWorker/Pods-KvikStaffWorker.debug.xcconfig"; sourceTree = "<group>"; };
+		932775E0FF49B2C83F1EEA1E /* Pods-KvikStaffWorker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-KvikStaffWorker.release.xcconfig"; path = "Target Support Files/Pods-KvikStaffWorker/Pods-KvikStaffWorker.release.xcconfig"; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = KvikStaffWorker/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		DA008D56B8527DF00EDEF09D /* Pods-workerapp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-workerapp.debug.xcconfig"; path = "Target Support Files/Pods-workerapp/Pods-workerapp.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = workerapp/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* workerapp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "workerapp-Bridging-Header.h"; path = "workerapp/workerapp-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = KvikStaffWorker/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* KvikStaffWorker-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "KvikStaffWorker-Bridging-Header.h"; path = "KvikStaffWorker/KvikStaffWorker-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,42 +37,42 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E27F41214AC3D6E3004735FD /* libPods-workerapp.a in Frameworks */,
+				C0E7176D9BAE5CDADDE0D03B /* libPods-KvikStaffWorker.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* workerapp */ = {
+		13B07FAE1A68108700A75B9A /* KvikStaffWorker */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* workerapp-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* KvikStaffWorker-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				885AF7ACB248B92C97069338 /* PrivacyInfo.xcprivacy */,
+				05A82A90ADF52A36EE5E8671 /* PrivacyInfo.xcprivacy */,
 			);
-			name = workerapp;
+			name = KvikStaffWorker;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				98A211E9AB2FCD13E9E36B7F /* libPods-workerapp.a */,
+				2AD91C7F3F48633CD33BC9FB /* libPods-KvikStaffWorker.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		623A6942642DE556A13E1442 /* workerapp */ = {
+		48E39ABABA6B929B48E91783 /* KvikStaffWorker */ = {
 			isa = PBXGroup;
 			children = (
-				9F9EC25B35C96CE48BEB3144 /* ExpoModulesProvider.swift */,
+				1D6774173BE0C08B59C1E185 /* ExpoModulesProvider.swift */,
 			);
-			name = workerapp;
+			name = KvikStaffWorker;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -85,12 +85,12 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* workerapp */,
+				13B07FAE1A68108700A75B9A /* KvikStaffWorker */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				85A1B98446852D4CF283D39A /* Pods */,
-				91E4BF4980E203729B7039B5 /* ExpoModulesProviders */,
+				DCF6558504B43C0C11ED65D6 /* Pods */,
+				99C52E95967CF129903CD730 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -100,25 +100,15 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* workerapp.app */,
+				13B07F961A680F5B00A75B9A /* KvikStaffWorker.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		85A1B98446852D4CF283D39A /* Pods */ = {
+		99C52E95967CF129903CD730 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				DA008D56B8527DF00EDEF09D /* Pods-workerapp.debug.xcconfig */,
-				919FB8BC89D577DEA91130E9 /* Pods-workerapp.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
-		91E4BF4980E203729B7039B5 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				623A6942642DE556A13E1442 /* workerapp */,
+				48E39ABABA6B929B48E91783 /* KvikStaffWorker */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -129,34 +119,43 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = workerapp/Supporting;
+			path = KvikStaffWorker/Supporting;
+			sourceTree = "<group>";
+		};
+		DCF6558504B43C0C11ED65D6 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				5DAE0E90CC23D8C932C020EB /* Pods-KvikStaffWorker.debug.xcconfig */,
+				932775E0FF49B2C83F1EEA1E /* Pods-KvikStaffWorker.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* workerapp */ = {
+		13B07F861A680F5B00A75B9A /* KvikStaffWorker */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "workerapp" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "KvikStaffWorker" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				49DF14E75F4194538DA1E5B4 /* [Expo] Configure project */,
+				1CA608EA2DD2CF1196EE6B24 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				C9B340B9665A44B69065D015 /* [Expo Dev Launcher] Strip Local Network Keys for Release */,
-				6984C77CB7F64D87A5A171C0 /* Upload Debug Symbols to Sentry */,
-				3CF45F138CC23B98DDD660C9 /* [CP] Embed Pods Frameworks */,
+				9943E8C2694E4A36BCB62991 /* [Expo Dev Launcher] Strip Local Network Keys for Release */,
+				607B9A392AB998C3DDA09F68 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = workerapp;
-			productName = workerapp;
-			productReference = 13B07F961A680F5B00A75B9A /* workerapp.app */;
+			name = KvikStaffWorker;
+			productName = KvikStaffWorker;
+			productReference = 13B07F961A680F5B00A75B9A /* KvikStaffWorker.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -172,7 +171,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "workerapp" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "KvikStaffWorker" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -185,7 +184,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* workerapp */,
+				13B07F861A680F5B00A75B9A /* KvikStaffWorker */,
 			);
 		};
 /* End PBXProject section */
@@ -198,7 +197,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				201F5E8F34AF98939D4E3AF2 /* PrivacyInfo.xcprivacy in Resources */,
+				1E8878E74142231E2BD18845 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,7 +219,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n/bin/sh \"`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\"`\" \"`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\"\n\n";
+			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
 		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -237,20 +236,44 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-workerapp-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-KvikStaffWorker-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		3CF45F138CC23B98DDD660C9 /* [CP] Embed Pods Frameworks */ = {
+		1CA608EA2DD2CF1196EE6B24 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/KvikStaffWorker/KvikStaffWorker.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-KvikStaffWorker/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-KvikStaffWorker/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-KvikStaffWorker/expo-configure-project.sh\"\n";
+		};
+		607B9A392AB998C3DDA09F68 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-workerapp/Pods-workerapp-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-KvikStaffWorker/Pods-KvikStaffWorker-frameworks.sh",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem.framework/ExpoFileSystem",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoFont/ExpoFont.framework/ExpoFont",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoLocation/ExpoLocation.framework/ExpoLocation",
@@ -275,46 +298,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-workerapp/Pods-workerapp-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-KvikStaffWorker/Pods-KvikStaffWorker-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
-		};
-		49DF14E75F4194538DA1E5B4 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/workerapp/workerapp.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-workerapp/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-workerapp/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-workerapp/expo-configure-project.sh\"\n";
-		};
-		6984C77CB7F64D87A5A171C0 /* Upload Debug Symbols to Sentry */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Upload Debug Symbols to Sentry";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"`${NODE_BINARY:-node} --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode-debug-files.sh'\"`\"";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -322,7 +307,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-workerapp/Pods-workerapp-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-KvikStaffWorker/Pods-KvikStaffWorker-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
@@ -351,10 +336,10 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-workerapp/Pods-workerapp-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-KvikStaffWorker/Pods-KvikStaffWorker-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C9B340B9665A44B69065D015 /* [Expo Dev Launcher] Strip Local Network Keys for Release */ = {
+		9943E8C2694E4A36BCB62991 /* [Expo Dev Launcher] Strip Local Network Keys for Release */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -376,7 +361,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				B21AD8B8316E89EFE15BEC75 /* ExpoModulesProvider.swift in Sources */,
+				A5D791A12C9D9C3F72899709 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,18 +370,18 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DA008D56B8527DF00EDEF09D /* Pods-workerapp.debug.xcconfig */;
+			baseConfigurationReference = 5DAE0E90CC23D8C932C020EB /* Pods-KvikStaffWorker.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = workerapp/workerapp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = KvikStaffWorker/KvikStaffWorker.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = workerapp/Info.plist;
+				INFOPLIST_FILE = KvikStaffWorker/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -411,8 +396,8 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.princerajput.workerapp;
-				PRODUCT_NAME = workerapp;
-				SWIFT_OBJC_BRIDGING_HEADER = "workerapp/workerapp-Bridging-Header.h";
+				PRODUCT_NAME = KvikStaffWorker;
+				SWIFT_OBJC_BRIDGING_HEADER = "KvikStaffWorker/KvikStaffWorker-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -422,13 +407,13 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 919FB8BC89D577DEA91130E9 /* Pods-workerapp.release.xcconfig */;
+			baseConfigurationReference = 932775E0FF49B2C83F1EEA1E /* Pods-KvikStaffWorker.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = workerapp/workerapp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = KvikStaffWorker/KvikStaffWorker.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = workerapp/Info.plist;
+				INFOPLIST_FILE = KvikStaffWorker/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -443,8 +428,8 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.princerajput.workerapp;
-				PRODUCT_NAME = workerapp;
-				SWIFT_OBJC_BRIDGING_HEADER = "workerapp/workerapp-Bridging-Header.h";
+				PRODUCT_NAME = KvikStaffWorker;
+				SWIFT_OBJC_BRIDGING_HEADER = "KvikStaffWorker/KvikStaffWorker-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -590,7 +575,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "workerapp" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "KvikStaffWorker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -599,7 +584,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "workerapp" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "KvikStaffWorker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

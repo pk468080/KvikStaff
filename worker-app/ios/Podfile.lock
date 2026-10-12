@@ -1,12 +1,12 @@
 PODS:
   - EXApplication (57.0.3):
     - ExpoModulesCore
-  - EXConstants (57.0.20):
+  - EXConstants (57.0.21):
     - ExpoModulesCore
   - EXJSONUtils (57.0.2)
   - EXManifests (57.0.2):
     - ExpoModulesCore
-  - Expo (57.0.26):
+  - Expo (57.0.27):
     - ExpoModulesCore
     - ExpoModulesJSI
     - hermes-engine
@@ -180,7 +180,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - ExpoAsset (57.0.18):
+  - ExpoAsset (57.0.19):
     - ExpoModulesCore
   - ExpoCrypto (57.0.3):
     - ExpoModulesCore
@@ -198,7 +198,7 @@ PODS:
     - ExpoModulesCore
   - ExpoLogBox (57.0.4):
     - React-Core
-  - ExpoModulesCore (57.0.20):
+  - ExpoModulesCore (57.0.21):
     - ExpoModulesJSI
     - hermes-engine
     - RCTRequired
@@ -225,12 +225,12 @@ PODS:
   - ExpoModulesJSI (57.1.1):
     - React-Core
     - ReactCommon
-  - ExpoModulesWorklets (57.0.20):
+  - ExpoModulesWorklets (57.0.21):
     - ExpoModulesCore
     - ExpoModulesJSI
-  - ExpoNotifications (57.0.21):
+  - ExpoNotifications (57.0.22):
     - ExpoModulesCore
-  - ExpoSQLite (57.0.3):
+  - ExpoSQLite (57.0.4):
     - ExpoModulesCore
   - ExpoTaskManager (57.0.21):
     - ExpoModulesCore
@@ -2224,29 +2224,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - RNSentry (8.29.0):
-    - hermes-engine
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-Core-prebuilt
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - ReactNativeDependencies
-    - Yoga
   - UMAppLoader (57.0.2)
   - Yoga (0.0.0)
 
@@ -2354,7 +2331,6 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - RNScreens (from `../node_modules/react-native-screens`)
-  - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - UMAppLoader (from `../node_modules/unimodules-app-loader/ios`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -2564,8 +2540,6 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
   RNScreens:
     :path: "../node_modules/react-native-screens"
-  RNSentry:
-    :path: "../node_modules/@sentry/react-native"
   UMAppLoader:
     :path: "../node_modules/unimodules-app-loader/ios"
   Yoga:
@@ -2573,15 +2547,15 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   EXApplication: a727f05eb8592f0bc764f6ab8d51eacc158652ec
-  EXConstants: fdc6f92b1559e5bd69df9e684e8c7ba5d912890e
+  EXConstants: b4e9051547ee9b8337155565fbdbe66036865120
   EXJSONUtils: a49e3ef80dff762108e5690c7b2f360675dcf7f6
   EXManifests: 4c53b2602e03ccf44d0b4ff9c5d655b2c5acba3f
-  Expo: 404a8f48f74f2d062911f965440380d98bfa879b
+  Expo: ad082d060a56d674d482aa528689e7eda8d8480f
   expo-dev-client: 9cd43bb07fb625c51b436d4cb23be2fc932f8d26
   expo-dev-launcher: 05c72f3a22b4c742b06bd36fa391a30a990556a0
   expo-dev-menu: 272e23ced973a0e401c2b9a679595ea6c7c05d78
   expo-dev-menu-interface: 7a59e803916fbfd1b96c75ff91ea8dddac7e722f
-  ExpoAsset: a917b756b2e4fe12cef1ac3bca5fd849ddb2b919
+  ExpoAsset: 78dbecc7bc9f60d839fb37ba8b10317b64779685
   ExpoCrypto: 3ba3d7fcf244a3ae8cb888c5759e0db70ecc236d
   ExpoDocumentPicker: 3cb0c283969538c03ced2b405e519c91abf39f8e
   ExpoDomWebView: beaec034e51bd028428b98bb1f2633ab79c6d095
@@ -2590,11 +2564,11 @@ SPEC CHECKSUMS:
   ExpoKeepAwake: 72af0b3be3615e59bc819d26061ff4e06b155ee0
   ExpoLocation: 52c126a493087ac247cf213ef9f737c5b298c1d4
   ExpoLogBox: 80957303325cd4439137765c90a87d7f22aaf2ff
-  ExpoModulesCore: 816cf9cc2632fd4598e493cfe474485b49873447
+  ExpoModulesCore: b6eba42b1d8f67c8bf114caca342ef35822fee33
   ExpoModulesJSI: 383849017851b1ebacbd78cfaa32b18b6152585e
-  ExpoModulesWorklets: 40d29262efc034e4357f2713e6037a41a27218d6
-  ExpoNotifications: d432d5b2904f700a6a2dc29eca52e531c4cc1611
-  ExpoSQLite: 72e6ada0504a27cd043eb1bf172db70485a761b6
+  ExpoModulesWorklets: 1916bfde983876e6caf849398b91a0b492b73869
+  ExpoNotifications: b91c7c9e21df9b9649b382d8fbf297262c6c4c76
+  ExpoSQLite: 1aa77d01fba0d1377b969d24f9845972d8fb0500
   ExpoTaskManager: ede265f5b4a6e075b422eb4d45c8cb393b0dc465
   EXUpdatesInterface: 4c96533f11c8cefe879bd506564cc2d537f56804
   FBLazyVector: 2138c6c2ab66c31bf5754dc18097fbc498a49c7f
@@ -2674,10 +2648,9 @@ SPEC CHECKSUMS:
   ReactCommon: 02f6a489d5eb4ab79d7deba5cd4434e0ba351a07
   ReactNativeDependencies: 6738e602b46fd24aa453cd58267ec3bb8bf29d27
   RNScreens: 7118cd7715c226856125b5bece3c4d9abec90356
-  RNSentry: b47821e820ba08b24690b10d0dbf8b818366193a
   UMAppLoader: d69910810f31d2e2cfd49706e89ad372161b0561
   Yoga: 18b74b3ade30bebc1904004dfaceae1dd02a330a
 
-PODFILE CHECKSUM: ffcaa3d4907b77c6b9ebd961c276494dc9c4bdc9
+PODFILE CHECKSUM: 8835fcee3c547b004b88f3faf6b413b41977c7a8
 
 COCOAPODS: 1.17.0
