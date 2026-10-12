@@ -267,7 +267,7 @@ async def get_booking_refunds(
         get_bookings_service
     ),
 ) -> list[dict[str, Any]]:
-    return await service.get_customer_booking_refunds(
+    return await service.get_booking_refunds(
         booking_id=booking_id,
         customer_id=UUID(current_user.id),
     )

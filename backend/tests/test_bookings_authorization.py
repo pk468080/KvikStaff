@@ -32,3 +32,38 @@ async def test_cancel_booking_idor():
         booking_id=booking_id,
         reason="Test cancellation"
     )
+@pytest.mark.asyncio
+async def test_get_booking_refunds_route_uses_service_method():
+    from types import SimpleNamespace
+
+    from app.api.v1.bookings import get_booking_refunds
+
+    booking_id = uuid4()
+    customer_id = uuid4()
+    expected_refunds = [
+        {
+            "id": str(uuid4()),
+            "booking_id": str(booking_id),
+            "amount": 100,
+            "currency": "INR",
+            "status": "pending",
+        }
+    ]
+
+    service = AsyncMock(spec=BookingsService)
+    service.get_booking_refunds.return_value = expected_refunds
+
+    result = await get_booking_refunds(
+        booking_id=booking_id,
+        current_user=SimpleNamespace(
+            id=str(customer_id)
+        ),
+        service=service,
+    )
+
+    assert result == expected_refunds
+
+    service.get_booking_refunds.assert_awaited_once_with(
+        booking_id=booking_id,
+        customer_id=customer_id,
+    )
