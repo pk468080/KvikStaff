@@ -670,21 +670,23 @@ export type Database = {
   worker_request_payout: {
     Args: {
       p_amount: number
+      p_idempotency_key: string
       p_payout_account_id: string
+      p_mode?: string
     }
     Returns: Json
   }
 
   worker_set_default_payout_account: {
     Args: {
-      p_account_id: string
+      p_payout_account_id: string
     }
     Returns: Json
   }
 
   worker_disable_payout_account: {
     Args: {
-      p_account_id: string
+      p_payout_account_id: string
     }
     Returns: Json
   }
