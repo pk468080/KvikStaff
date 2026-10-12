@@ -9,6 +9,8 @@ functions.sort(key=lambda x: (risk_order.get(x['risk'], 4), x['name']))
 print("| Function | Signature | Caller | Auth check | Ownership check | Mutates data | Risk | Recommendation |")
 print("|---|---|---|---|---|---|---|---|")
 for f in functions:
-    if f['name'] == 'st_estimatedextent': continue
-    if f['schema'] != 'public': continue
+    if f['name'] == 'st_estimatedextent':
+        continue
+    if f['schema'] != 'public':
+        continue
     print(f"| {f['name']} | `{f['signature']}` | {f['callers']} | {f['auth_check']} | {f['ownership_check']} | {f['mutates_data']} | {f['risk']} | {f['recommendation']} |")
