@@ -44,6 +44,7 @@ import {
 import {
   cancelCustomerBooking,
   getCustomerBookingRefunds,
+  requireConfirmedCancellation,
   type CustomerRefundRecord,
 } from '../../services/booking/bookingCancellation.service'
 
@@ -432,18 +433,25 @@ const [
       ],
     )
 
-    async function refresh() {
+    async function refresh(suppressError = false) {
     try {
       const nextBooking =
         await getCustomerBooking(
           bookingId,
         )
 
+      if (
+        bookingStatusRef.current === 'cancelled' &&
+        nextBooking.status !== 'cancelled'
+      ) {
+        console.warn('Ignoring a stale booking response after cancellation.')
+        return
+      }
+
       bookingStatusRef.current = nextBooking.status
+      setBooking(nextBooking)
 
-setBooking(nextBooking)
-
-            if (nextBooking.status === 'cancelled') {
+      if (nextBooking.status === 'cancelled') {
         try {
           const nextRefunds =
             await getCustomerBookingRefunds(
@@ -549,11 +557,18 @@ setBooking(nextBooking)
     } catch (
       nextError
     ) {
-      setError(
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to load booking.',
-      )
+      if (suppressError || bookingStatusRef.current === 'cancelled') {
+        console.warn(
+          'Booking details could not be refreshed after cancellation:',
+          nextError,
+        )
+      } else {
+        setError(
+          nextError instanceof Error
+            ? nextError.message
+            : 'Unable to load booking.',
+        )
+      }
     } finally {
       setLoading(false)
     }
@@ -789,14 +804,29 @@ setBooking(nextBooking)
                 setError(null)
 
                 const cancellationResult =
-                  await cancelCustomerBooking(
-                    currentBooking.id,
-                    currentBooking.booking_type,
+                  requireConfirmedCancellation(
+                    await cancelCustomerBooking(
+                      currentBooking.id,
+                      currentBooking.booking_type,
+                    ),
                   )
 
+                // The cancellation API confirmed the terminal state. Reflect it
+                // immediately so a secondary detail-refresh failure cannot make
+                // a successful cancellation look like a failed operation.
+                bookingStatusRef.current = 'cancelled'
+                setBooking(current =>
+                  current
+                    ? { ...current, status: 'cancelled' }
+                    : current,
+                )
                 setOtp(null)
+                setOtpType(null)
+                setOtpLoadingType(null)
+                setError(null)
 
-                await refresh()
+                // Treat this as a best-effort refresh after cancellation.
+                void refresh(true)
 
                 const refundAmount = Number(
                   cancellationResult.refund_amount ??
@@ -810,15 +840,49 @@ setBooking(nextBooking)
                     ? `A refund of ₹${refundAmount.toFixed(2)} has been initiated. You can track its status in the Refund section below.`
                     : 'The booking has been cancelled. No refund is due under the cancellation policy.',
                 )
-              } catch (
-                nextError
-              ) {
-                setError(
-                  nextError instanceof Error
-                    ? nextError.message
-                    : 'Unable to cancel the booking.',
-                )
+
+              } catch (nextError) {
+                try {
+                  // The cancellation response may have been lost even if
+                  // the server completed the operation.
+                  const latestBooking =
+                    await getCustomerBooking(bookingId)
+
+                  bookingStatusRef.current = latestBooking.status
+                  setBooking(latestBooking)
+
+                  if (latestBooking.status === 'cancelled') {
+                    setOtp(null)
+                    setOtpType(null)
+                    setOtpLoadingType(null)
+                    setError(null)
+
+                    Alert.alert(
+                      'Booking cancelled',
+                      'The server confirms that this booking is cancelled. Check the Refund section separately for the latest refund status.',
+                    )
+
+                    void refresh(true)
+                    return
+                  }
+
+                  setError(
+                    nextError instanceof Error
+                      ? nextError.message
+                      : 'Cancellation was not confirmed. Check the booking status before trying again.',
+                  )
+                } catch (verificationError) {
+                  console.warn(
+                    'Unable to verify booking cancellation outcome:',
+                    verificationError,
+                  )
+
+                  setError(
+                    'We could not confirm whether cancellation completed. Refresh the booking status before trying again.',
+                  )
+                }
               }
+
             })()
           },
         },
@@ -826,80 +890,80 @@ setBooking(nextBooking)
     )
   }
 
+
   async function showOtp(type: 'start' | 'end') {
-  if (!booking || otpRequestInFlightRef.current) {
-    return
-  }
-
-  if (type === 'start' && booking.status !== 'arrived') {
-    setError('The start OTP is available after the worker arrives.')
-    return
-  }
-
-  if (type === 'end' && booking.status !== 'in_progress') {
-    setError('The end OTP is available while the service is in progress.')
-    return
-  }
-
-  otpRequestInFlightRef.current = true
-  const requestId = ++otpRequestIdRef.current
-
-  setOtpLoadingType(type)
-  setOtp(null)
-  setOtpType(null)
-  setError(null)
-
-  try {
-    const result = await requestBookingOtp(
-      bookingId,
-      type,
-      booking.activeOccurrenceId ?? undefined,
-    )
-
-    // Ignore responses belonging to an older screen/request.
-    if (otpRequestIdRef.current !== requestId) {
+    if (!booking || otpRequestInFlightRef.current) {
       return
     }
 
-    const expectedStatus =
-      type === 'start' ? 'arrived' : 'in_progress'
-
-    // Do not display an OTP if the booking status changed while waiting.
-    if (bookingStatusRef.current !== expectedStatus) {
-      setOtp(null)
-      setOtpType(null)
+    if (type === 'start' && booking.status !== 'arrived') {
+      setError('The start OTP is available after the worker arrives.')
       return
     }
 
-    if (
-      typeof result.otp !== 'string' ||
-      !/^\d{6}$/.test(result.otp)
-    ) {
-      throw new Error(
-        'The server did not return a valid six-digit booking OTP. Please try again.',
-      )
+    if (type === 'end' && booking.status !== 'in_progress') {
+      setError('The end OTP is available while the service is in progress.')
+      return
     }
 
-    setOtp(result.otp)
-    setOtpType(type)
-  } catch (nextError) {
-    if (otpRequestIdRef.current === requestId) {
-      setOtp(null)
-      setOtpType(null)
+    otpRequestInFlightRef.current = true
+    const requestId = ++otpRequestIdRef.current
 
-      setError(
-        nextError instanceof Error
-          ? nextError.message
-          : 'Unable to generate the booking OTP.',
+    setOtpLoadingType(type)
+    setOtp(null)
+    setOtpType(null)
+    setError(null)
+
+    try {
+      const result = await requestBookingOtp(
+        bookingId,
+        type,
+        booking.activeOccurrenceId ?? undefined,
       )
-    }
-  } finally {
-    if (otpRequestIdRef.current === requestId) {
-      otpRequestInFlightRef.current = false
-      setOtpLoadingType(null)
+
+      if (otpRequestIdRef.current !== requestId) {
+        return
+      }
+
+      const expectedStatus =
+        type === 'start' ? 'arrived' : 'in_progress'
+
+      if (bookingStatusRef.current !== expectedStatus) {
+        setOtp(null)
+        setOtpType(null)
+        return
+      }
+
+      if (
+        typeof result.otp !== 'string' ||
+        !/^\d{6}$/.test(result.otp)
+      ) {
+        throw new Error(
+          'The server did not return a valid six-digit booking OTP. Please try again.',
+        )
+      }
+
+      setOtp(result.otp)
+      setOtpType(type)
+    } catch (nextError) {
+      if (otpRequestIdRef.current === requestId) {
+        setOtp(null)
+        setOtpType(null)
+
+        setError(
+          nextError instanceof Error
+            ? nextError.message
+            : 'Unable to generate the booking OTP.',
+        )
+      }
+    } finally {
+      if (otpRequestIdRef.current === requestId) {
+        otpRequestInFlightRef.current = false
+        setOtpLoadingType(null)
+      }
     }
   }
-}
+
 
   if (loading) {
     return (
