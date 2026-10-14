@@ -1590,7 +1590,7 @@ class BookingsRepository:
 
                             (
 
-                                :occurrence_id IS NULL
+                                CAST(:occurrence_id AS uuid) IS NULL
 
                                 AND occurrence_id IS NULL
 
@@ -1598,7 +1598,7 @@ class BookingsRepository:
 
                             OR
 
-                            occurrence_id = :occurrence_id
+                            occurrence_id = CAST(:occurrence_id AS uuid)
 
                           )
 

@@ -850,7 +850,11 @@ setBooking(nextBooking)
   setError(null)
 
   try {
-    const result = await requestBookingOtp(bookingId, type)
+    const result = await requestBookingOtp(
+      bookingId,
+      type,
+      booking.activeOccurrenceId ?? undefined,
+    )
 
     // Ignore responses belonging to an older screen/request.
     if (otpRequestIdRef.current !== requestId) {
