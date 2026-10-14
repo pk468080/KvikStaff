@@ -52,6 +52,18 @@ export type CustomerCancellationResult = {
   refund_id?: string | null
 }
 
+export function requireConfirmedCancellation(
+  result: CustomerCancellationResult,
+): CustomerCancellationResult {
+  if (result.success !== true || result.status !== 'cancelled') {
+    throw new Error(
+      'The server did not confirm the cancellation. Refresh and check the booking status before trying again.',
+    )
+  }
+
+  return result
+}
+
 export async function cancelCustomerBooking(
   bookingId: string,
   bookingType?: string | null,

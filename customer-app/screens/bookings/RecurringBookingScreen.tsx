@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -32,6 +33,7 @@ import {
 
 import {
   cancelCustomerBooking,
+  requireConfirmedCancellation,
 } from '../../services/booking/bookingCancellation.service'
 
 import {
@@ -236,6 +238,8 @@ function StatusBadge({
 export default function RecurringBookingScreen({
   bookingId,
 }: RecurringBookingScreenProps) {
+  const cancellationConfirmedBookingIdRef = useRef<string | null>(null)
+
   const [
     booking,
     setBooking,
@@ -309,6 +313,7 @@ export default function RecurringBookingScreen({
     useCallback(
       async (
         isRefresh = false,
+        suppressError = false,
       ) => {
         if (isRefresh) {
           setRefreshing(true)
@@ -347,6 +352,14 @@ export default function RecurringBookingScreen({
             )
           }
 
+          if (
+            cancellationConfirmedBookingIdRef.current === bookingId &&
+            nextBooking.status !== 'cancelled'
+          ) {
+            console.warn('Ignoring a stale recurring booking response after cancellation.')
+            return
+          }
+
           setBooking(
             nextBooking,
           )
@@ -373,11 +386,21 @@ export default function RecurringBookingScreen({
         } catch (
           cause
         ) {
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : 'Unable to load recurring booking.',
-          )
+          if (
+            suppressError ||
+            cancellationConfirmedBookingIdRef.current === bookingId
+          ) {
+            console.warn(
+              'Recurring booking details could not be refreshed after cancellation:',
+              cause,
+            )
+          } else {
+            setError(
+              cause instanceof Error
+                ? cause.message
+                : 'Unable to load recurring booking.',
+            )
+          }
         } finally {
           setLoading(false)
           setRefreshing(false)
@@ -578,23 +601,96 @@ export default function RecurringBookingScreen({
               try {
                 setError(null)
 
-                await cancelCustomerBooking(
-                  bookingId,
-                  'recurring',
+                const cancellationResult =
+                  requireConfirmedCancellation(
+                    await cancelCustomerBooking(
+                      bookingId,
+                      'recurring',
+                    ),
+                  )
+                cancellationConfirmedBookingIdRef.current = bookingId
+
+                // The server confirmed series cancellation. Update the visible
+                // state before refreshing nonessential booking details.
+                setBooking(current =>
+                  current
+                    ? { ...current, status: 'cancelled' }
+                    : current,
+                )
+                setOccurrences(current =>
+                  current.map(occurrence =>
+                    occurrence.status === 'completed' ||
+                    occurrence.status === 'cancelled'
+                      ? occurrence
+                      : {
+                          ...occurrence,
+                          status: 'cancelled',
+                          worker_id: null,
+                        },
+                  ),
+                )
+                setActiveOccurrence(null)
+                setOtp(null)
+                setOtpType(null)
+                setError(null)
+
+                const refundAmount = Number(
+                  cancellationResult.refund_amount ??
+                    0,
+                )
+                Alert.alert(
+                  'Recurring booking cancelled',
+                  refundAmount > 0
+                    ? `A refund of ₹${refundAmount.toFixed(2)} has been initiated. You can track its status separately.`
+                    : 'The recurring booking has been cancelled. No refund is due under the cancellation policy.',
                 )
 
-                await loadData(
-                  true,
-                )
-              } catch (
-                cause
-              ) {
-                setError(
-                  cause instanceof Error
-                    ? cause.message
-                    : 'Unable to cancel the recurring booking.',
-                )
+                // A failed read after a successful cancel must not be reported
+                // as if the cancellation itself failed.
+                await loadData(true, true)
+
+              } catch (cause) {
+                try {
+                  // Verify the server state if the cancellation request
+                  // failed or its response was interrupted.
+                  const latestBooking =
+                    await getCustomerBooking(bookingId)
+
+                  setBooking(latestBooking)
+
+                  if (latestBooking.status === 'cancelled') {
+                    cancellationConfirmedBookingIdRef.current = bookingId
+                    setError(null)
+                    setOtp(null)
+                    setOtpType(null)
+                    setActiveOccurrence(null)
+
+                    await loadData(true, true)
+
+                    Alert.alert(
+                      'Recurring booking cancelled',
+                      'The server confirms that this recurring series is cancelled. Check the refund status separately.',
+                    )
+                    return
+                  }
+
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : 'Cancellation was not confirmed. Check the booking status before trying again.',
+                  )
+                } catch (verificationError) {
+                  console.warn(
+                    'Unable to verify recurring cancellation outcome:',
+                    verificationError,
+                  )
+
+                  setError(
+                    'We could not confirm whether the recurring booking was cancelled. Refresh its status before trying again.',
+                  )
+                }
               }
+
             })()
           },
         },
