@@ -135,7 +135,7 @@ export default function CustomerNavigator({
       screenOptions={{
         headerShown: true,
         headerBackTitle: 'Back',
-        headerTintColor: '#111827',
+        headerTintColor: UI.colors.text,
         headerTitleStyle: {
           fontSize: 17,
           fontWeight: '700',

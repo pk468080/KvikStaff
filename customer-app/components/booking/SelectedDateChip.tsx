@@ -44,12 +44,12 @@ const styles = StyleSheet.create({
   text: {
     fontSize: UI.typography.small,
     fontWeight: '600',
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   removeIcon: {
     fontSize: UI.typography.small,
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
     fontWeight: '700',
   },
 })

@@ -66,6 +66,7 @@ export default function NotificationsScreen({
   )
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
   }, [load])
 
@@ -135,7 +136,8 @@ export default function NotificationsScreen({
         }
         refreshing={loading}
         onRefresh={() =>
-          void load()
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load()
         }
         ListHeaderComponent={
           error ? (
@@ -382,7 +384,7 @@ const styles = StyleSheet.create({
 
   title: {
     flex: 1,
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: UI.typography.body,
     fontWeight: '800',
   },
@@ -437,7 +439,7 @@ const styles = StyleSheet.create({
   },
 
   emptyTitle: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',

@@ -53,6 +53,7 @@ export default function SupportRequestsScreen() {
   )
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
   }, [load])
 
@@ -86,7 +87,8 @@ export default function SupportRequestsScreen() {
         }
         refreshing={loading}
         onRefresh={() =>
-          void load()
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load()
         }
         ListHeaderComponent={
           error ? (
@@ -315,7 +317,7 @@ const styles = StyleSheet.create({
   },
 
   subject: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 15,
     fontWeight: '800',
     marginTop: 10,
@@ -363,7 +365,7 @@ const styles = StyleSheet.create({
   },
 
   emptyTitle: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',

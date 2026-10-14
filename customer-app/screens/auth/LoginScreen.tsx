@@ -305,7 +305,7 @@ requestError: {
     backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E2EDF2',
-    shadowColor: '#0A3972',
+    shadowColor: UI.colors.primary,
     shadowOffset: {
       width: 0,
       height: 5,

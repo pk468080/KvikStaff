@@ -432,7 +432,7 @@ const styles =
 
     overlayText: {
       color:
-        '#0A3972',
+        UI.colors.primary,
       fontSize: UI.typography.caption,
       fontWeight:
         '700',

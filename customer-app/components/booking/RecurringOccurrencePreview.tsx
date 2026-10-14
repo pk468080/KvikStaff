@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: UI.typography.body,
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
     fontWeight: '500',
   },
 
@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: UI.typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   count: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   timeInfo: {
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
 
   timeText: {
     fontSize: 13,
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
     fontWeight: '500',
   },
 

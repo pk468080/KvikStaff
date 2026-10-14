@@ -2107,7 +2107,7 @@ const styles =
     },
 
     loadingText: {
-      color: '#6B7280',
+      color: UI.colors.textMuted,
     },
 
     container: {
@@ -2266,7 +2266,7 @@ const styles =
 
     mapUnavailableMessage: {
       marginTop: UI.spacing.sm,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       lineHeight: 20,
       textAlign: 'center',
     },
@@ -2293,7 +2293,7 @@ const styles =
 
     timelineSubtitle: {
       marginTop: -4,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       fontSize: UI.typography.small,
       lineHeight: 18,
     },
@@ -2394,7 +2394,7 @@ const styles =
 
     timelineTransition: {
       marginTop: UI.spacing.xs,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       fontSize: UI.typography.small,
     },
 
@@ -2418,7 +2418,7 @@ const styles =
 
     timelineEmptyMessage: {
       marginTop: 5,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       fontSize: UI.typography.small,
       lineHeight: 18,
     },
@@ -2445,7 +2445,7 @@ const styles =
     },
 
     label: {
-      color: '#6B7280',
+      color: UI.colors.textMuted,
     },
 
     value: {
@@ -2492,7 +2492,7 @@ const styles =
 
     workerId: {
       marginTop: 6,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       fontSize: UI.typography.small,
     },
 
@@ -2530,13 +2530,13 @@ const styles =
 
     locationAge: {
       marginTop: UI.spacing.xs,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       fontSize: UI.typography.small,
     },
 
     staleMessage: {
       marginTop: UI.spacing.md,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       lineHeight: 20,
     },
 
@@ -2549,7 +2549,7 @@ const styles =
     },
 
     timerLabel: {
-      color: '#6B7280',
+      color: UI.colors.textMuted,
     },
 
     timer: {
@@ -2615,7 +2615,7 @@ const styles =
     },
 
     otpLabel: {
-      color: '#6B7280',
+      color: UI.colors.textMuted,
     },
 
     otp: {
@@ -2629,7 +2629,7 @@ const styles =
     refreshHint: {
       marginTop: UI.spacing.xs,
       marginBottom: UI.spacing.lg,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       textAlign: 'center',
       lineHeight: 20,
     },

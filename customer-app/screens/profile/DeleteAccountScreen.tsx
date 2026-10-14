@@ -49,6 +49,7 @@ export default function DeleteAccountScreen() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
   }, [load])
 
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  statusTitle: { color: '#111827', fontSize: 15, fontWeight: '800' },
+  statusTitle: { color: UI.colors.text, fontSize: 15, fontWeight: '800' },
   statusPill: { paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10 },
   statusPillText: { fontSize: 10, fontWeight: '800' },
   statusDate: { color: '#A0A7B2', fontSize: 10, marginTop: 9 },
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
   },
   completedTitle: { color: '#166534', fontSize: 15, fontWeight: '800' },
   completedText: { color: '#326345', fontSize: UI.typography.small, lineHeight: 18, marginTop: 5 },
-  title: { color: '#111827', fontSize: UI.typography.title, fontWeight: '800', marginTop: 22 },
+  title: { color: UI.colors.text, fontSize: UI.typography.title, fontWeight: '800', marginTop: 22 },
   subtitle: {
     color: '#707987',
     fontSize: 13,
@@ -354,7 +355,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DDE3EB',
     backgroundColor: UI.colors.surface,
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: UI.typography.body,
   },
   deleteButton: {

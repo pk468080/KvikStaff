@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: UI.typography.largeTitle,
     fontWeight: '700',
-    color: '#111827',
+    color: UI.colors.text,
     textAlign: 'center',
   },
 
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     marginTop: UI.spacing.md,
     fontSize: 15,
     lineHeight: 22,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     textAlign: 'center',
   },
 
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     backgroundColor: UI.colors.surface,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   buttonSpacing: {

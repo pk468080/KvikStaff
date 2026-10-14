@@ -632,6 +632,7 @@ const [
     let active = true
     setBookingLocationsLoading(true)
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void getCustomerBookingLocations()
       .then(nextLocations => {
         if (active) {
@@ -668,6 +669,7 @@ const [
   }, [location])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadHome(location)
   }, [
     location?.latitude,
@@ -675,11 +677,13 @@ const [
     location?.address,
   ])
   useEffect(() => {
-  void loadActiveBookings()
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadActiveBookings()
 
   const interval =
     setInterval(() => {
-      void loadActiveBookings()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadActiveBookings()
     }, 15000)
 
   return () =>
@@ -1974,8 +1978,8 @@ function formatAddress(
 const COLORS = {
   ink: '#071B2E',
   inkSoft: '#4B6480',
-  primary: '#0784FB',
-  primaryDark: '#0A3972',
+  primary: UI.colors.primaryBlue,
+  primaryDark: UI.colors.primary,
   primarySoft: '#EEF6FF',
   accent: '#57E07D',
   canvas: '#F5F9FF',

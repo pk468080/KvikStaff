@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: UI.typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   weekdayGrid: {
@@ -86,8 +86,8 @@ const styles = StyleSheet.create({
   },
 
   weekdayButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: UI.colors.primaryBlue,
+    borderColor: UI.colors.primaryBlue,
   },
 
   weekdayButtonDisabled: {
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   weekdayText: {
     fontSize: UI.typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   weekdayTextSelected: {
@@ -105,12 +105,12 @@ const styles = StyleSheet.create({
   },
 
   weekdayTextDisabled: {
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
   },
 
   selectedCount: {
     fontSize: UI.typography.small,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     fontWeight: '500',
     marginTop: UI.spacing.xs,
   },

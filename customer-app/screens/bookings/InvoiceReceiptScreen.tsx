@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   mutedText: {
     marginTop: UI.spacing.md,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
   },
   errorTitle: {
     fontSize: UI.typography.subtitle,

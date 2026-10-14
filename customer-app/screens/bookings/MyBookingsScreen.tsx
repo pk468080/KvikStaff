@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DFEAF0',
     backgroundColor: UI.colors.surface,
-    shadowColor: '#0A3972',
+    shadowColor: UI.colors.primary,
     shadowOpacity: 0.06,
     shadowRadius: 16,
     shadowOffset: {

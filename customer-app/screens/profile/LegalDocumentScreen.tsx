@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 25,
     fontWeight: '800',
   },
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 15,
     fontWeight: '800',
     marginTop: UI.spacing.lg,
