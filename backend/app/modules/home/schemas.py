@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ class HomeFavouriteResponse(BaseModel):
 
 class HomeRebookResponse(BaseModel):
     service_id: UUID
-    created_at: str
+    created_at: datetime
     duration_value: float | None
     duration_unit: str | None
-    scheduled_start: str | None
+    scheduled_start: datetime | None

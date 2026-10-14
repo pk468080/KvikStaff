@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 
@@ -8,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -124,6 +126,8 @@ export default function CompletedBookingScreen({
   const [occurrenceReviews, setOccurrenceReviews] = useState<
     Record<string, CustomerReview | null>
   >({})
+  const [reviewPromptVisible, setReviewPromptVisible] = useState(false)
+  const reviewPromptDismissedRef = useRef(false)
 
   const loadBooking = useCallback(
     async (isRefresh = false) => {
@@ -164,17 +168,23 @@ export default function CompletedBookingScreen({
             ),
           )
 
-          setReviewableOccurrences(
-            nextOccurrences,
+          const firstUnreviewedOccurrence = nextOccurrences.find(
+            occurrence =>
+              Boolean(occurrence.worker_id) &&
+              !nextOccurrenceReviews[occurrence.id],
           )
-          setOccurrenceReviews(
-            nextOccurrenceReviews,
-          )
+
+          setReviewableOccurrences(nextOccurrences)
+          setOccurrenceReviews(nextOccurrenceReviews)
           setReview(null)
-          setReviewOccurrenceId(null)
-          setReviewWorkerId(null)
+          setReviewOccurrenceId(firstUnreviewedOccurrence?.id ?? null)
+          setReviewWorkerId(firstUnreviewedOccurrence?.worker_id ?? null)
           setReviewText('')
           setReviewRating(5)
+          setReviewPromptVisible(
+            Boolean(firstUnreviewedOccurrence) &&
+              !reviewPromptDismissedRef.current,
+          )
         } else {
           const nextReviewMeta =
             await resolveCompletedOccurrenceForReview(
@@ -186,17 +196,22 @@ export default function CompletedBookingScreen({
               nextReviewMeta.occurrenceId,
             )
 
+          const resolvedReviewWorkerId =
+            nextReviewMeta.workerId ?? nextBooking.worker_id ?? null
+
           setReviewableOccurrences([])
           setOccurrenceReviews({})
           setReview(nextReview)
-          setReviewOccurrenceId(
-            nextReviewMeta.occurrenceId,
-          )
-          setReviewWorkerId(
-            nextReviewMeta.workerId,
-          )
+          setReviewOccurrenceId(nextReviewMeta.occurrenceId)
+          // Instant bookings don't have a schedule-occurrence row; use the booking worker.
+          setReviewWorkerId(resolvedReviewWorkerId)
           setReviewText(nextReview?.comment ?? '')
           setReviewRating(nextReview?.rating ?? 5)
+          setReviewPromptVisible(
+            !nextReview &&
+              Boolean(resolvedReviewWorkerId) &&
+              !reviewPromptDismissedRef.current,
+          )
         }
 
         setReviewError(null)
@@ -215,6 +230,11 @@ export default function CompletedBookingScreen({
     },
     [bookingId],
   )
+
+  useEffect(() => {
+    reviewPromptDismissedRef.current = false
+    setReviewPromptVisible(false)
+  }, [bookingId])
 
   useEffect(() => {
     void loadBooking()
@@ -292,6 +312,8 @@ export default function CompletedBookingScreen({
       setReview(nextReview)
       setReviewText(nextReview.comment ?? '')
       setReviewRating(nextReview.rating)
+      setReviewPromptVisible(false)
+      reviewPromptDismissedRef.current = true
       Alert.alert(
         'Review submitted',
         'Thanks for sharing your experience.',
@@ -714,11 +736,165 @@ export default function CompletedBookingScreen({
           </Text>
         </View>
       </ScrollView>
+      <Modal
+        visible={reviewPromptVisible && !review}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          reviewPromptDismissedRef.current = true
+          setReviewPromptVisible(false)
+        }}
+      >
+        <View style={styles.reviewModalOverlay}>
+          <View style={styles.reviewModalCard}>
+            <Text style={styles.reviewModalEyebrow}>KVIKSTAFF · SERVICE FEEDBACK</Text>
+            <Text style={styles.reviewModalTitle}>How was your service?</Text>
+            <Text style={styles.reviewModalSubtitle}>
+              {booking.booking_type === 'recurring' && reviewOccurrenceId
+                ? `Rate completed occurrence ${(reviewableOccurrences.find(item => item.id === reviewOccurrenceId)?.occurrence_index ?? 0) + 1}.`
+                : 'Rate your completed booking and share your experience.'}
+            </Text>
+
+            <View style={styles.reviewSummaryRow}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <TouchableOpacity
+                  key={star}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${star} star${star === 1 ? '' : 's'}`}
+                  onPress={() => setReviewRating(star)}
+                  hitSlop={8}
+                >
+                  <Text
+                    style={[
+                      styles.starText,
+                      star <= reviewRating ? styles.starFilled : null,
+                    ]}
+                  >
+                    {star <= reviewRating ? '★' : '☆'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              value={reviewText}
+              onChangeText={setReviewText}
+              placeholder="How was your experience? (optional)"
+              placeholderTextColor="#7B8D98"
+              multiline
+              maxLength={2000}
+              style={styles.reviewInput}
+              textAlignVertical="top"
+            />
+
+            {reviewError ? (
+              <Text style={styles.reviewError}>{reviewError}</Text>
+            ) : null}
+
+            <View style={styles.reviewModalActions}>
+              <Pressable
+                onPress={() => {
+                  reviewPromptDismissedRef.current = true
+                  setReviewPromptVisible(false)
+                }}
+                style={styles.reviewModalLaterButton}
+              >
+                <Text style={styles.reviewModalLaterButtonText}>Later</Text>
+              </Pressable>
+              <Pressable
+                disabled={!canSubmitReview}
+                onPress={() => {
+                  void handleSubmitReview()
+                }}
+                style={[
+                  styles.reviewModalSubmitButton,
+                  !canSubmitReview && styles.reviewModalSubmitButtonDisabled,
+                ]}
+              >
+                <Text style={styles.reviewModalSubmitButtonText}>
+                  {reviewSubmitting ? 'Submitting...' : 'Submit review'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   )
 }
 
 const styles = StyleSheet.create({
+  reviewModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 22,
+    backgroundColor: 'rgba(4, 24, 42, 0.62)',
+  },
+  reviewModalCard: {
+    width: '100%',
+    maxWidth: 480,
+    padding: 22,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+  },
+  reviewModalEyebrow: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+    color: '#0784FB',
+  },
+  reviewModalTitle: {
+    marginTop: 8,
+    fontSize: 23,
+    lineHeight: 29,
+    fontWeight: '900',
+    color: '#0A3972',
+  },
+  reviewModalSubtitle: {
+    marginTop: 8,
+    marginBottom: 18,
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#607789',
+  },
+  reviewModalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  reviewModalLaterButton: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D9E6ED',
+    backgroundColor: '#FFFFFF',
+  },
+  reviewModalLaterButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#36546A',
+  },
+  reviewModalSubmitButton: {
+    flex: 1.2,
+    minHeight: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#0784FB',
+  },
+  reviewModalSubmitButtonDisabled: {
+    opacity: 0.5,
+  },
+  reviewModalSubmitButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   container: {
     padding: 18,
     paddingBottom: 40,

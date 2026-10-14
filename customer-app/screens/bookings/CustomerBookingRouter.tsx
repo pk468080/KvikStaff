@@ -4,6 +4,10 @@ import {
 } from 'react'
 
 import {
+  supabase,
+} from '../../lib/supabase'
+
+import {
   ActivityIndicator,
   Text,
   View,
@@ -52,16 +56,22 @@ export default function CustomerBookingRouter({
 
   useEffect(() => {
     let mounted = true
+    let requestVersion = 0
+    let hasResolvedInitialLoad = false
 
-    async function load() {
-      try {
+    async function load(isInitial = false) {
+      const currentRequestVersion = ++requestVersion
+
+      if (isInitial) {
         setLoading(true)
         setError(null)
         setBookingView(null)
+      }
 
+      try {
         const booking = await getCustomerBooking(bookingId)
 
-        if (!mounted) {
+        if (!mounted || currentRequestVersion !== requestVersion) {
           return
         }
 
@@ -73,7 +83,7 @@ export default function CustomerBookingRouter({
         if (booking.booking_type === 'recurring') {
           const occurrences = await getCustomerBookingOccurrences(bookingId)
 
-          if (!mounted) {
+          if (!mounted || currentRequestVersion !== requestVersion) {
             return
           }
 
@@ -86,27 +96,67 @@ export default function CustomerBookingRouter({
         }
 
         setBookingView('active')
+        setError(null)
       } catch (cause) {
-        if (!mounted) {
+        if (!mounted || currentRequestVersion !== requestVersion) {
           return
         }
 
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : 'Unable to load booking.',
-        )
+        if (isInitial || !hasResolvedInitialLoad) {
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'Unable to load booking.',
+          )
+        } else {
+          console.warn('Unable to refresh customer booking state:', cause)
+        }
       } finally {
-        if (mounted) {
+        if (mounted && currentRequestVersion === requestVersion) {
+          hasResolvedInitialLoad = true
           setLoading(false)
         }
       }
     }
 
-    void load()
+    void load(true)
+
+    const channel = supabase
+      .channel(`customer-booking-router-${bookingId}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `id=eq.${bookingId}`,
+        },
+        () => {
+          if (hasResolvedInitialLoad) {
+            void load(false)
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'booking_schedule_occurrences',
+          filter: `booking_id=eq.${bookingId}`,
+        },
+        () => {
+          if (hasResolvedInitialLoad) {
+            void load(false)
+          }
+        },
+      )
+      .subscribe()
 
     return () => {
       mounted = false
+      requestVersion += 1
+      void supabase.removeChannel(channel)
     }
   }, [bookingId])
 
