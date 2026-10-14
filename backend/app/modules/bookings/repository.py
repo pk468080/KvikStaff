@@ -321,40 +321,108 @@ class BookingsRepository:
 
 
 
-    async def create_hourly_booking(
-
+    async def _resolve_customer_address_id(
         self,
-
+        *,
         customer_id: UUID,
-
-        service_variant_id: UUID,
-
-        address_id: UUID,
-
-        booking_type: str,
-
-        scheduled_start: datetime,
-
-        scheduled_end: datetime,
-
-        notes: str | None,
-
-        idempotency_key: str,
-
-        request_hash: str,
-
-    ) -> dict[str, Any]:
-
-        async with self.db.begin():
-
-            await self._set_customer_auth_context(
-
-                customer_id
-
+        address_id: UUID | None,
+        location: dict[str, Any] | None,
+    ) -> tuple[UUID, bool]:
+        """Return (address ID, whether a new row was inserted) in this transaction."""
+        if address_id is not None:
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT id
+                    FROM public.addresses
+                    WHERE id = :address_id
+                      AND user_id = :customer_id
+                    LIMIT 1
+                    """
+                ),
+                {"address_id": address_id, "customer_id": customer_id},
             )
+            owned_id = result.scalar_one_or_none()
+            if owned_id is None:
+                raise ValueError("The booking address does not belong to this customer.")
+            return owned_id, False
 
+        if location is None:
+            raise ValueError("A booking location is required.")
 
+        address_line = str(location.get("address", "")).strip()
+        latitude = float(location["latitude"])
+        longitude = float(location["longitude"])
+        if not address_line:
+            raise ValueError("A booking address is required.")
+        if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+            raise ValueError("The booking location coordinates are invalid.")
 
+        existing = await self.db.execute(
+            text(
+                """
+                SELECT id
+                FROM public.addresses
+                WHERE user_id = :customer_id
+                  AND address_line = :address_line
+                  AND latitude = :latitude
+                  AND longitude = :longitude
+                ORDER BY created_at DESC
+                LIMIT 1
+                """
+            ),
+            {
+                "customer_id": customer_id,
+                "address_line": address_line,
+                "latitude": latitude,
+                "longitude": longitude,
+            },
+        )
+        existing_id = existing.scalar_one_or_none()
+        if existing_id is not None:
+            return existing_id, False
+
+        inserted = await self.db.execute(
+            text(
+                """
+                INSERT INTO public.addresses (
+                    user_id, label, address_line, latitude, longitude, location
+                )
+                VALUES (
+                    :customer_id,
+                    'Booking location',
+                    :address_line,
+                    :latitude,
+                    :longitude,
+                    ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography
+                )
+                RETURNING id
+                """
+            ),
+            {
+                "customer_id": customer_id,
+                "address_line": address_line,
+                "latitude": latitude,
+                "longitude": longitude,
+            },
+        )
+        return inserted.scalar_one(), True
+
+    async def create_hourly_booking(
+        self,
+        customer_id: UUID,
+        service_variant_id: UUID,
+        address_id: UUID | None,
+        booking_type: str,
+        scheduled_start: datetime,
+        scheduled_end: datetime,
+        notes: str | None,
+        idempotency_key: str,
+        request_hash: str,
+        location: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        async with self.db.begin():
+            await self._set_customer_auth_context(customer_id)
 
             acquired, existing_response = await claim_or_replay(
                 self.db,
@@ -363,73 +431,61 @@ class BookingsRepository:
                 idempotency_key=idempotency_key,
                 request_hash=request_hash,
             )
-
             if not acquired:
                 return existing_response
 
-            result = await self.db.execute(
-
-                text(
-
-                    """
-
-                    SELECT public.create_customer_hourly_booking(
-
-                        CAST(:service_variant_id AS uuid),
-
-                        CAST(:address_id AS uuid),
-
-                        CAST(
-
-                            :booking_type
-
-                            AS public.booking_fulfillment_type
-
-                        ),
-
-                        CAST(:scheduled_start AS timestamptz),
-
-                        CAST(:scheduled_end AS timestamptz),
-
-                        :notes
-
-                    ) AS result
-
-                    """
-
-                ),
-
-                {
-
-                    "service_variant_id": str(
-
-                        service_variant_id
-
-                    ),
-
-                    "address_id": str(
-
-                        address_id
-
-                    ),
-
-                    "booking_type": booking_type,
-
-                    "scheduled_start": scheduled_start,
-
-                    "scheduled_end": scheduled_end,
-
-                    "notes": notes,
-
-                },
-
+            resolved_address_id, address_was_inserted = await self._resolve_customer_address_id(
+                customer_id=customer_id,
+                address_id=address_id,
+                location=location,
             )
 
+            result = await self.db.execute(
+                text(
+                    """
+                    SELECT public.create_customer_hourly_booking(
+                        CAST(:service_variant_id AS uuid),
+                        CAST(:address_id AS uuid),
+                        CAST(:booking_type AS public.booking_fulfillment_type),
+                        CAST(:scheduled_start AS timestamptz),
+                        CAST(:scheduled_end AS timestamptz),
+                        :notes
+                    ) AS result
+                    """
+                ),
+                {
+                    "service_variant_id": str(service_variant_id),
+                    "address_id": str(resolved_address_id),
+                    "booking_type": booking_type,
+                    "scheduled_start": scheduled_start,
+                    "scheduled_end": scheduled_end,
+                    "notes": notes,
+                },
+            )
+            result_dict = self._to_dict(result.scalar_one())
 
-
-            value = result.scalar_one()
-
-            result_dict = self._to_dict(value)
+            # An instant request can return a valid fallback response without
+            # creating a booking. Do not keep the temporary address in that case.
+            if address_was_inserted and (
+                result_dict.get("fallback_to_scheduled") is True
+                or result_dict.get("instant_available") is False
+            ):
+                await self.db.execute(
+                    text(
+                        """
+                        DELETE FROM public.addresses AS a
+                        WHERE a.id = :address_id
+                          AND a.user_id = :customer_id
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM public.bookings b
+                              WHERE b.address_id = a.id
+                                AND b.customer_id = :customer_id
+                          )
+                        """
+                    ),
+                    {"address_id": resolved_address_id, "customer_id": customer_id},
+                )
 
             await complete_idempotency(
                 self.db,
@@ -441,53 +497,27 @@ class BookingsRepository:
             )
 
         return result_dict
-
-
-
 
 
     async def create_multi_occurrence_booking(
-
         self,
-
         customer_id: UUID,
-
         service_variant_id: UUID,
-
-        address_id: UUID,
-
+        address_id: UUID | None,
         schedule_start_date: date,
-
         schedule_end_date: date,
-
         daily_start_time: time,
-
         daily_end_time: time,
-
         selected_weekdays: list[int],
-
         off_dates: list[date],
-
         notes: str | None,
-
         booking_type: str,
-
         idempotency_key: str,
-
         request_hash: str,
-
+        location: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-
         async with self.db.begin():
-
-            await self._set_customer_auth_context(
-
-                customer_id
-
-            )
-
-
-
+            await self._set_customer_auth_context(customer_id)
 
             acquired, existing_response = await claim_or_replay(
                 self.db,
@@ -496,180 +526,60 @@ class BookingsRepository:
                 idempotency_key=idempotency_key,
                 request_hash=request_hash,
             )
-
             if not acquired:
                 return existing_response
 
+            resolved_address_id, _address_was_inserted = await self._resolve_customer_address_id(
+                customer_id=customer_id,
+                address_id=address_id,
+                location=location,
+            )
+
             if booking_type == "scheduled":
-
-                function_name = (
-
-                    "create_customer_scheduled_booking"
-
-                )
-
+                function_name = "create_customer_scheduled_booking"
             elif booking_type == "recurring":
-
-                function_name = (
-
-                    "create_customer_recurring_booking"
-
-                )
-
+                function_name = "create_customer_recurring_booking"
             else:
-
-                raise ValueError(
-
-                    "Unsupported multi-occurrence booking type."
-
-                )
-
-
+                raise ValueError("Unsupported multi-occurrence booking type.")
 
             query = text(
-
                 f"""
-
                 SELECT public.{function_name}(
-
                     CAST(:service_variant_id AS uuid),
-
                     CAST(:address_id AS uuid),
-
                     :schedule_start_date,
-
                     :schedule_end_date,
-
                     :daily_start_time,
-
                     :daily_end_time,
-
                     :selected_weekdays,
-
                     :off_dates,
-
                     :notes
-
                 ) AS result
-
                 """
-
             ).bindparams(
-
-                bindparam(
-
-                    "schedule_start_date",
-
-                    type_=Date(),
-
-                ),
-
-                bindparam(
-
-                    "schedule_end_date",
-
-                    type_=Date(),
-
-                ),
-
-                bindparam(
-
-                    "daily_start_time",
-
-                    type_=Time(),
-
-                ),
-
-                bindparam(
-
-                    "daily_end_time",
-
-                    type_=Time(),
-
-                ),
-
-                bindparam(
-
-                    "selected_weekdays",
-
-                    type_=ARRAY(SmallInteger()),
-
-                ),
-
-                bindparam(
-
-                    "off_dates",
-
-                    type_=ARRAY(Date()),
-
-                ),
-
+                bindparam("schedule_start_date", type_=Date()),
+                bindparam("schedule_end_date", type_=Date()),
+                bindparam("daily_start_time", type_=Time()),
+                bindparam("daily_end_time", type_=Time()),
+                bindparam("selected_weekdays", type_=ARRAY(SmallInteger())),
+                bindparam("off_dates", type_=ARRAY(Date())),
             )
-
-
 
             result = await self.db.execute(
-
                 query,
-
                 {
-
-                    "service_variant_id": str(
-
-                        service_variant_id
-
-                    ),
-
-                    "address_id": str(
-
-                        address_id
-
-                    ),
-
-                    "schedule_start_date": (
-
-                        schedule_start_date
-
-                    ),
-
-                    "schedule_end_date": (
-
-                        schedule_end_date
-
-                    ),
-
-                    "daily_start_time": (
-
-                        daily_start_time
-
-                    ),
-
-                    "daily_end_time": (
-
-                        daily_end_time
-
-                    ),
-
-                    "selected_weekdays": (
-
-                        selected_weekdays
-
-                    ),
-
+                    "service_variant_id": str(service_variant_id),
+                    "address_id": str(resolved_address_id),
+                    "schedule_start_date": schedule_start_date,
+                    "schedule_end_date": schedule_end_date,
+                    "daily_start_time": daily_start_time,
+                    "daily_end_time": daily_end_time,
+                    "selected_weekdays": selected_weekdays,
                     "off_dates": off_dates,
-
                     "notes": notes,
-
                 },
-
             )
-
-
-
-            value = result.scalar_one()
-
-            result_dict = self._to_dict(value)
-
+            result_dict = self._to_dict(result.scalar_one())
             await complete_idempotency(
                 self.db,
                 user_id=customer_id,
@@ -680,7 +590,6 @@ class BookingsRepository:
             )
 
         return result_dict
-
 
 
     async def get_customer_bookings(

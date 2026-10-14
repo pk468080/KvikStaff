@@ -103,6 +103,8 @@ async def get_instant_availability_slots(
         request.address_id,
         request.duration_hours,
         UUID(current_user.id),
+        latitude=request.latitude,
+        longitude=request.longitude,
     )
 
 

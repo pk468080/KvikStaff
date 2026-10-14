@@ -2,11 +2,11 @@ import {
   apiRequest,
 } from '../../lib/api'
 
-import type { BookingCreationResult } from '../../types/booking'
+import type { BookingCreationResult, BookingLocationInput } from '../../types/booking'
 
 export type CreateInstantBookingInput = {
   serviceVariantId: string
-  addressId: string
+  location: BookingLocationInput
   startTime: string
   endTime: string
   notes?: string | null
@@ -25,8 +25,11 @@ export async function createCustomerInstantBooking(
         body: JSON.stringify({
           service_variant_id:
             input.serviceVariantId,
-          address_id:
-            input.addressId,
+          location: {
+            latitude: input.location.latitude,
+            longitude: input.location.longitude,
+            address: input.location.address,
+          },
           scheduled_start:
             input.startTime,
           scheduled_end:

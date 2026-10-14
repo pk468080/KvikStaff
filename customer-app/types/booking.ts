@@ -3,14 +3,16 @@ export type BookingType =
   | 'scheduled'
   | 'recurring'
 
+export type BookingLocationInput = {
+  latitude: number
+  longitude: number
+  address: string
+}
+
 export type BookingDraft = {
   bookingType: BookingType
 
-  location: {
-    latitude: number
-    longitude: number
-    address: string
-  }
+  location: BookingLocationInput
 
   startDate: string | null
   endDate: string | null
@@ -50,7 +52,7 @@ export type BookingScheduleInput = {
 
 export type MultiOccurrenceBookingInput =
   BookingScheduleInput & {
-    addressId: string
+    location: BookingLocationInput
     notes?: string | null
   }
 

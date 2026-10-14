@@ -131,6 +131,7 @@ class BookingsService:
     customer_id=customer_id,
     service_variant_id=request.service_variant_id,
     address_id=request.address_id,
+    location=request.location.model_dump() if request.location else None,
     booking_type="instant",
     scheduled_start=request.scheduled_start,
     scheduled_end=request.scheduled_end,
@@ -196,6 +197,7 @@ class BookingsService:
                         request.service_variant_id
                     ),
                     address_id=request.address_id,
+                    location=request.location.model_dump() if request.location else None,
                     schedule_start_date=(
                         request.schedule_start_date
                     ),
@@ -266,6 +268,7 @@ request_hash=get_request_hash(request),
                         request.service_variant_id
                     ),
                     address_id=request.address_id,
+                    location=request.location.model_dump() if request.location else None,
                     schedule_start_date=(
                         request.schedule_start_date
                     ),

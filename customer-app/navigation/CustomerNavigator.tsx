@@ -30,9 +30,6 @@ import type {
 } from './CustomerProfileNavigator'
 
 import {
-  getOrCreateCustomerAddress,
-} from '../services/addresses/customerAddress.service'
-import {
   createCustomerScheduledBooking,
 } from '../services/booking/scheduledBooking.service'
 import {
@@ -324,10 +321,8 @@ export default function CustomerNavigator({
               )
             }
 
-            const addressId =
-              await getOrCreateCustomerAddress(
-                draft.location,
-              )
+            // The backend creates/reuses this address inside the same
+            // database transaction as the booking.
 
             if (
               draft.bookingType ===
@@ -345,7 +340,7 @@ const result =
     {
       serviceVariantId:
         service.serviceVariantId,
-      addressId,
+      location: draft.location,
       startTime:
         draft.startTime,
       endTime:
@@ -404,7 +399,7 @@ const result =
                   {
                     serviceVariantId:
                       service.serviceVariantId,
-                    addressId,
+                    location: draft.location,
                     startDate:
                       toDateString(
                         new Date(
@@ -542,7 +537,7 @@ const result =
                 {
                   serviceVariantId:
                     service.serviceVariantId,
-                  addressId,
+                  location: draft.location,
                   startDate:
                     toDateString(
                       new Date(

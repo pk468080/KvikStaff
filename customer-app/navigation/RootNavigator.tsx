@@ -24,10 +24,6 @@ import {
 } from '../services/auth/auth.service'
 
 import {
-  getOrCreateCustomerAddress,
-} from '../services/addresses/customerAddress.service'
-
-import {
   CustomerAuthState,
 } from '../services/auth/auth.service'
 
@@ -238,17 +234,8 @@ export default function RootNavigator() {
       address.trim() ||
       'Current location'
 
-    /*
-     * Save the customer's first/current service
-     * location in Supabase.
-     */
-    await getOrCreateCustomerAddress({
-      latitude,
-      longitude,
-      address: locationAddress,
-      label: 'Current',
-    })
-
+    // GPS discovery selects the active service location only.
+    // The address is persisted atomically when a booking is created.
     setCustomerLocation({
       latitude,
       longitude,
@@ -265,27 +252,8 @@ export default function RootNavigator() {
       address.trim() ||
       'Current location'
 
-    /*
-     * Every location selected from Home is also
-     * persisted so it can be reused later.
-     */
-    try {
-      await getOrCreateCustomerAddress({
-        latitude,
-        longitude,
-        address: locationAddress,
-        label: 'Saved location',
-      })
-    } catch (error) {
-      /*
-       * Do not block the customer from using the
-       * newly selected location if persistence fails.
-       */
-      console.error(
-        'Unable to save customer location:',
-        error,
-      )
-    }
+    // Manual, GPS, and previous-booking selections are in-memory choices.
+    // Only the booking transaction persists a location.
 
     setCustomerLocation({
       latitude,

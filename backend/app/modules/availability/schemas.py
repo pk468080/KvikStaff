@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class AvailabilityCoordinates(BaseModel):
@@ -59,12 +59,24 @@ class InstantAvailabilityCheckResponse(BaseModel):
 
 class InstantAvailabilitySlotsRequest(BaseModel):
     service_variant_id: UUID
-    address_id: UUID
+    # address_id is retained for clients that have not yet upgraded.
+    address_id: UUID | None = None
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
     duration_hours: float = Field(
         default=1,
         ge=1,
         le=24,
     )
+
+    @model_validator(mode="after")
+    def validate_location_source(self):
+        has_coordinates = self.latitude is not None and self.longitude is not None
+        if self.address_id is not None and (self.latitude is not None or self.longitude is not None):
+            raise ValueError("Provide address_id or coordinates, not both.")
+        if self.address_id is None and not has_coordinates:
+            raise ValueError("Provide address_id or both latitude and longitude.")
+        return self
 
 
 class AvailabilitySlot(BaseModel):

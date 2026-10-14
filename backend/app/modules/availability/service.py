@@ -134,6 +134,8 @@ class AvailabilityService:
         address_id: UUID,
         duration_hours: float,
         customer_id: UUID,
+        latitude: float | None = None,
+        longitude: float | None = None,
     ) -> InstantAvailabilitySlotsResponse:
         service_context = await self.repository.get_active_hourly_service_variant(
             service_variant_id
@@ -146,22 +148,33 @@ class AvailabilityService:
                 400,
             )
 
-        address = await self.repository.get_customer_address(
-            address_id,
-            customer_id,
-        )
-
-        if address is None:
+        if address_id is not None:
+            address = await self.repository.get_customer_address(
+                address_id,
+                customer_id,
+            )
+            if address is None:
+                raise AppError(
+                    "INVALID_CUSTOMER_ADDRESS",
+                    "A valid customer address is required.",
+                    400,
+                )
+            service_latitude = address.latitude
+            service_longitude = address.longitude
+        elif latitude is not None and longitude is not None:
+            service_latitude = latitude
+            service_longitude = longitude
+        else:
             raise AppError(
                 "INVALID_CUSTOMER_ADDRESS",
-                "A valid customer address is required.",
+                "A valid service location is required.",
                 400,
             )
 
         service_area_available = await self.repository.is_service_area_available(
             service_context.service_id,
-            address.latitude,
-            address.longitude,
+            service_latitude,
+            service_longitude,
         )
 
         if not service_area_available:
@@ -230,8 +243,8 @@ class AvailabilityService:
         while cursor <= last_start:
             count = await self.repository.count_instant_slot_workers(
                 service_context.service_id,
-                address.latitude,
-                address.longitude,
+                service_latitude,
+                service_longitude,
                 cursor,
                 cursor + duration,
             )

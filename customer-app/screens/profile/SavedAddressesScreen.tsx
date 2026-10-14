@@ -17,7 +17,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
 import {
   deleteCustomerAddress,
-  getCustomerSavedAddresses,
+  getCustomerBookingLocations,
   type CustomerSavedAddress,
 } from '../../services/addresses/customerAddress.service'
 
@@ -44,7 +44,7 @@ export default function SavedAddressesScreen() {
         setError(null)
 
         const next =
-          await getCustomerSavedAddresses()
+          await getCustomerBookingLocations()
 
         setAddresses(next)
       } catch (nextError) {
@@ -201,9 +201,8 @@ export default function SavedAddressesScreen() {
             <Text
               style={styles.emptyText}
             >
-              Select a service location
-              on Home and KvikStaff will
-              save it for future bookings.
+              Locations used for your previous bookings
+              will appear here and can be selected from Home.
             </Text>
 
             {error ? (

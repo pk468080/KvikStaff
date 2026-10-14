@@ -123,6 +123,17 @@ export async function getCustomerSavedAddresses(): Promise<
   )
 }
 
+export async function getCustomerBookingLocations(): Promise<
+  CustomerSavedAddress[]
+> {
+  const response = await apiRequest<CustomerAddressApiResponse[]>(
+    '/addresses/booking-locations',
+    { method: 'GET' },
+  )
+
+  return (response ?? []).map(mapAddress)
+}
+
 export async function getLatestCustomerAddress(): Promise<
   CustomerSavedAddress | null
 > {

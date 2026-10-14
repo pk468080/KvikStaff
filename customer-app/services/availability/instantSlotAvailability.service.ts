@@ -1,4 +1,5 @@
 import { apiRequest } from '../../lib/api'
+import type { BookingLocationInput } from '../../types/booking'
 
 export type InstantAvailabilitySlot = {
   start: string
@@ -20,7 +21,7 @@ type InstantAvailabilitySlotResponse = {
 
 export async function getInstantAvailabilitySlots(
   serviceVariantId: string,
-  addressId: string,
+  location: Pick<BookingLocationInput, 'latitude' | 'longitude'>,
   durationHours = 1,
 ): Promise<InstantAvailabilityResult> {
   if (!serviceVariantId.trim()) {
@@ -29,10 +30,15 @@ export async function getInstantAvailabilitySlots(
     )
   }
 
-  if (!addressId.trim()) {
-    throw new Error(
-      'Address ID is required.',
-    )
+  if (
+    !Number.isFinite(location.latitude) ||
+    location.latitude < -90 ||
+    location.latitude > 90 ||
+    !Number.isFinite(location.longitude) ||
+    location.longitude < -180 ||
+    location.longitude > 180
+  ) {
+    throw new Error('A valid service location is required.')
   }
 
   if (
@@ -53,7 +59,8 @@ export async function getInstantAvailabilitySlots(
         body: JSON.stringify({
           service_variant_id:
             serviceVariantId,
-          address_id: addressId,
+          latitude: location.latitude,
+          longitude: location.longitude,
           duration_hours: durationHours,
         }),
       },

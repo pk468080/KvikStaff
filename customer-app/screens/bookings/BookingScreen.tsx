@@ -30,10 +30,6 @@ import {
 } from '../../hooks/useAvailability'
 
 import {
-  getOrCreateCustomerAddress,
-} from '../../services/addresses/customerAddress.service'
-
-import {
   getInstantAvailabilitySlots,
   type InstantAvailabilitySlot,
 } from '../../services/availability/instantSlotAvailability.service'
@@ -463,15 +459,13 @@ export default function BookingScreen({
       )
 
       try {
-        const addressId =
-          await getOrCreateCustomerAddress(
-            location,
-          )
-
         const result =
           await getInstantAvailabilitySlots(
             service.serviceVariantId,
-            addressId,
+            {
+              latitude: location.latitude,
+              longitude: location.longitude,
+            },
             durationHours,
           )
 

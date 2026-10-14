@@ -35,6 +35,21 @@ class AddressesService:
             for row in rows
         ]
 
+    async def get_booking_addresses(
+        self,
+        customer_id: UUID,
+    ) -> list[CustomerAddressResponse]:
+        try:
+            rows = await self.repository.get_customer_booking_addresses(customer_id)
+        except Exception as exc:
+            raise AppError(
+                "ADDRESS_FETCH_FAILED",
+                "Unable to fetch previous booking locations.",
+                400,
+            ) from exc
+
+        return [self._to_response(row) for row in rows]
+
     async def get_address(
         self,
         address_id: UUID,

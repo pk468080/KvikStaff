@@ -26,8 +26,11 @@ export async function createCustomerScheduledBooking(
           service_variant_id:
             input.serviceVariantId,
 
-          address_id:
-            input.addressId,
+          location: {
+            latitude: input.location.latitude,
+            longitude: input.location.longitude,
+            address: input.location.address,
+          },
 
           schedule_start_date:
             input.startDate,

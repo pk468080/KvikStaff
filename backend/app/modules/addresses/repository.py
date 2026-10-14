@@ -58,6 +58,48 @@ class AddressesRepository:
             for row in rows
         ]
 
+    async def get_customer_booking_addresses(
+        self,
+        customer_id: UUID,
+    ) -> list[CustomerAddressRow]:
+        query = text(
+            """
+            SELECT
+                a.id,
+                a.label,
+                a.address_line,
+                a.latitude,
+                a.longitude,
+                a.created_at,
+                MAX(b.created_at) AS last_booked_at
+            FROM public.addresses a
+            JOIN public.bookings b
+              ON b.address_id = a.id
+             AND b.customer_id = a.user_id
+            WHERE a.user_id = :customer_id
+            GROUP BY
+                a.id,
+                a.label,
+                a.address_line,
+                a.latitude,
+                a.longitude,
+                a.created_at
+            ORDER BY MAX(b.created_at) DESC, a.created_at DESC
+            """
+        )
+        result = await self.db.execute(query, {"customer_id": customer_id})
+        return [
+            CustomerAddressRow(
+                id=row["id"],
+                label=row["label"],
+                address_line=row["address_line"],
+                latitude=float(row["latitude"]),
+                longitude=float(row["longitude"]),
+                created_at=row["created_at"],
+            )
+            for row in result.mappings()
+        ]
+
     async def get_customer_address(
         self,
         address_id: UUID,

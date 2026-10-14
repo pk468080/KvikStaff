@@ -28,6 +28,8 @@ class MockResult:
         if self.row is None:
             raise RuntimeError("Unable to complete")
         return self.row
+    def scalar_one_or_none(self):
+        return self.row
     def mappings(self):
         class MappingRow:
             def first(self_inner):
@@ -102,6 +104,7 @@ async def test_atomic_idempotency_first_request_acquires_key(repo, fake_db):
     fake_db.execute = AsyncMock(side_effect=[
         MockResult(None), # auth context
         MockResult({"id": 1}), # insert idempotency (claim_or_replay acquire)
+        MockResult(uuid.uuid4()), # customer-owned address lookup
         MockResult('{"id": "123e4567-e89b-12d3-a456-426614174000"}'), # scalar_one for booking
         MockResult({"id": 1}), # complete_idempotency update
     ])
@@ -119,7 +122,7 @@ async def test_atomic_idempotency_first_request_acquires_key(repo, fake_db):
     )
 
     assert result == {"id": "123e4567-e89b-12d3-a456-426614174000"}
-    assert fake_db.execute.call_count == 4
+    assert fake_db.execute.call_count == 5
 
 @pytest.mark.asyncio
 async def test_atomic_idempotency_duplicate_request_replays(repo, fake_db):

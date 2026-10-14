@@ -22,6 +22,10 @@ import { useFocusEffect } from '@react-navigation/native'
 import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
 import CustomerIcon from '../../components/ui/CustomerIcon'
 import { geocodeCustomerAddress } from '../../services/addresses/customerGeocoding.service'
+import {
+  getCustomerBookingLocations,
+  type CustomerSavedAddress,
+} from '../../services/addresses/customerAddress.service'
 
 import {
   getCustomerBookings,
@@ -87,6 +91,8 @@ export default function HomeScreen({
   const [locationError, setLocationError] = useState('')
   const [locationPickerVisible, setLocationPickerVisible] = useState(false)
   const [locationQuery, setLocationQuery] = useState('')
+  const [bookingLocations, setBookingLocations] = useState<CustomerSavedAddress[]>([])
+  const [bookingLocationsLoading, setBookingLocationsLoading] = useState(false)
   const [locationSearching, setLocationSearching] = useState(false)
   const [serviceQuery, setServiceQuery] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
@@ -552,7 +558,30 @@ const [
     }
   }
 
-    async function handleSearchLocation() {
+  async function handleSelectBookingLocation(
+    savedLocation: CustomerSavedAddress,
+  ) {
+    setLocationError('')
+    setAddress(savedLocation.addressLine)
+
+    try {
+      await onLocationChange(
+        savedLocation.latitude,
+        savedLocation.longitude,
+        savedLocation.addressLine,
+      )
+      setLocationQuery('')
+      setLocationPickerVisible(false)
+    } catch (error) {
+      setLocationError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to select this previous booking location.',
+      )
+    }
+  }
+
+  async function handleSearchLocation() {
     const query = locationQuery.trim()
 
     if (query.length < 3) {
@@ -593,6 +622,37 @@ const [
       setLocationSearching(false)
     }
   }
+
+  useEffect(() => {
+    if (!locationPickerVisible) {
+      return
+    }
+
+    let active = true
+    setBookingLocationsLoading(true)
+
+    void getCustomerBookingLocations()
+      .then(nextLocations => {
+        if (active) {
+          setBookingLocations(nextLocations)
+        }
+      })
+      .catch(error => {
+        console.warn('Unable to load previous booking locations:', error)
+        if (active) {
+          setBookingLocations([])
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setBookingLocationsLoading(false)
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [locationPickerVisible])
 
   useEffect(() => {
     if (
@@ -1567,6 +1627,79 @@ const [
                 Use current location
               </Text>
             </TouchableOpacity>
+
+            {bookingLocationsLoading ? (
+              <View style={{ paddingVertical: 12 }}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              </View>
+            ) : null}
+
+            {bookingLocations.length > 0 ? (
+              <View style={{ marginTop: 18, gap: 8 }}>
+                <Text
+                  style={{
+                    color: '#62788A',
+                    fontSize: 10,
+                    fontWeight: '800',
+                    letterSpacing: 1,
+                  }}
+                >
+                  PREVIOUS BOOKING LOCATIONS
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+                >
+                  {bookingLocations.map(savedLocation => (
+                    <TouchableOpacity
+                      key={savedLocation.id}
+                      style={{
+                        width: 205,
+                        padding: 12,
+                        borderRadius: 14,
+                        borderWidth: 1,
+                        borderColor: '#DCE6EF',
+                        backgroundColor: '#F8FBFD',
+                      }}
+                      activeOpacity={0.84}
+                      onPress={() => {
+                        void handleSelectBookingLocation(savedLocation)
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <CustomerIcon
+                          name="location"
+                          size={15}
+                          color={COLORS.primaryDark}
+                        />
+                        <Text
+                          style={{
+                            color: COLORS.primaryDark,
+                            fontSize: 10,
+                            fontWeight: '800',
+                          }}
+                        >
+                          BOOKED LOCATION
+                        </Text>
+                      </View>
+                      <Text
+                        numberOfLines={2}
+                        style={{
+                          marginTop: 7,
+                          color: '#17354A',
+                          fontSize: 12,
+                          lineHeight: 17,
+                          fontWeight: '700',
+                        }}
+                      >
+                        {savedLocation.addressLine}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
 
             <View style={styles.modalTip}>
               <View style={styles.modalTipIcon}>

@@ -2,7 +2,7 @@ from datetime import date, datetime, time
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 def _require_timezone(value: datetime) -> datetime:
@@ -118,9 +118,34 @@ class MultiOccurrenceBookingPriceRequest(BaseModel):
         return list(dict.fromkeys(value))
 
 
-class InstantBookingCreateRequest(BaseModel):
+class CustomerBookingLocation(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    address: str = Field(min_length=1, max_length=500)
+
+    @field_validator("address")
+    @classmethod
+    def normalize_address(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("A booking address is required.")
+        return value
+
+
+class BookingAddressRequest(BaseModel):
+    # address_id remains supported for older installed app versions.
+    address_id: UUID | None = None
+    location: CustomerBookingLocation | None = None
+
+    @model_validator(mode="after")
+    def validate_address_source(self):
+        if (self.address_id is None) == (self.location is None):
+            raise ValueError("Provide either address_id or location, but not both.")
+        return self
+
+
+class InstantBookingCreateRequest(BookingAddressRequest):
     service_variant_id: UUID
-    address_id: UUID
     scheduled_start: datetime
     scheduled_end: datetime
     notes: str | None = Field(
@@ -157,9 +182,8 @@ class InstantBookingCreateRequest(BaseModel):
     )
 
 
-class MultiOccurrenceBookingCreateRequest(BaseModel):
+class MultiOccurrenceBookingCreateRequest(BookingAddressRequest):
     service_variant_id: UUID
-    address_id: UUID
     schedule_start_date: date
     schedule_end_date: date
     daily_start_time: time

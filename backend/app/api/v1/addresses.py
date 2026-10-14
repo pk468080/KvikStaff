@@ -40,6 +40,17 @@ async def get_addresses(
 
 
 @router.get(
+    "/booking-locations",
+    response_model=list[CustomerAddressResponse],
+)
+async def get_booking_locations(
+    current_user: CurrentUser = Depends(get_customer),
+    service: AddressesService = Depends(get_addresses_service),
+) -> list[CustomerAddressResponse]:
+    return await service.get_booking_addresses(UUID(current_user.id))
+
+
+@router.get(
     "/{address_id}",
     response_model=CustomerAddressResponse,
 )
