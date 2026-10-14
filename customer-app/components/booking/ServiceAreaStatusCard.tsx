@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: UI.typography.small,
     fontWeight: '600',
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   address: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#111827',
+    color: UI.colors.text,
     lineHeight: 22,
   },
 

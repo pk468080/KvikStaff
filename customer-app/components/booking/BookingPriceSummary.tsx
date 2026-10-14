@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
 
   loadingText: {
     fontSize: UI.typography.body,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -422,25 +422,25 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: UI.typography.body,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     fontWeight: '500',
   },
 
   labelFinal: {
     fontSize: 15,
-    color: '#111827',
+    color: UI.colors.text,
     fontWeight: '700',
   },
 
   value: {
     fontSize: UI.typography.body,
-    color: '#111827',
+    color: UI.colors.text,
     fontWeight: '600',
   },
 
   valueFinal: {
     fontSize: UI.typography.subtitle,
-    color: '#111827',
+    color: UI.colors.text,
     fontWeight: '800',
   },
 

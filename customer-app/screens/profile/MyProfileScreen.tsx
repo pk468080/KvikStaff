@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
 
   eyebrow: {
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     fontSize: UI.typography.caption,
     fontWeight: '800',
     letterSpacing: 1,
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: UI.typography.title,
     fontWeight: '800',
   },
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
   },
 
   phone: {
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
     fontSize: 13,
     marginTop: 3,
   },
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   },
 
   actionTitle: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
-    backgroundColor: '#111827',
+    backgroundColor: UI.colors.text,
   },
 
   logoutPressed: {

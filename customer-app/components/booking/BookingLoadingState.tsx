@@ -1,10 +1,11 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
+import { LoadingState } from '../ui/LoadingState'
 import { UI } from '../../constants/ui';
 
 export default function BookingLoadingState() {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#4F46E5" />
+      <LoadingState />
       <Text style={styles.text}>Checking availability...</Text>
     </View>
   )
@@ -15,14 +16,14 @@ const styles = StyleSheet.create({
     paddingVertical: UI.spacing.xxxl,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: UI.colors.background,
     borderRadius: UI.radius.md,
     gap: UI.spacing.md,
   },
 
   text: {
     fontSize: UI.typography.body,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     fontWeight: '500',
   },
 })

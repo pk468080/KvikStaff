@@ -343,14 +343,14 @@ const styles = StyleSheet.create({
   dateButtonLabel: {
     fontSize: UI.typography.small,
     fontWeight: '600',
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     marginBottom: UI.spacing.xs,
   },
 
   dateButtonValue: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   calendarSection: {
@@ -390,8 +390,8 @@ const styles = StyleSheet.create({
   },
 
   calendarDayStartEnd: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: UI.colors.primaryBlue,
+    borderColor: UI.colors.primaryBlue,
   },
 
   calendarDayExcluded: {
@@ -402,11 +402,11 @@ const styles = StyleSheet.create({
   calendarDayText: {
     fontSize: UI.typography.small,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   calendarDayTextActive: {
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   calendarDayTextExcluded: {
@@ -433,18 +433,18 @@ const styles = StyleSheet.create({
   pickerHeaderTitle: {
     fontSize: UI.typography.bodyLarge,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   pickerHeaderButton: {
     fontSize: UI.typography.body,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     fontWeight: '500',
   },
 
   pickerHeaderButtonDone: {
     fontSize: UI.typography.body,
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
     fontWeight: '600',
   },
 })

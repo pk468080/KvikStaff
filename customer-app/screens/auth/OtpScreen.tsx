@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E2EDF2',
-    shadowColor: '#0A3972',
+    shadowColor: UI.colors.primary,
     shadowOpacity: 0.07,
     shadowRadius: 18,
     shadowOffset: {

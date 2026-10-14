@@ -1339,7 +1339,7 @@ const styles =
 
     loadingText: {
       marginTop: UI.spacing.md,
-      color: '#6B7280',
+      color: UI.colors.textMuted,
     },
 
     container: {
@@ -1415,7 +1415,7 @@ const styles =
     },
 
     summaryTitle: {
-      color: '#6B7280',
+      color: UI.colors.textMuted,
       fontSize: UI.typography.small,
       fontWeight: '700',
     },

@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
 
   containerSelected: {
     backgroundColor: '#F0F4FF',
-    borderColor: '#4F46E5',
+    borderColor: UI.colors.primaryBlue,
     borderWidth: 2,
   },
 
@@ -102,15 +102,15 @@ const styles = StyleSheet.create({
   time: {
     fontSize: UI.typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   timeSelected: {
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   timeDisabled: {
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
   },
 
   separator: {
@@ -119,20 +119,20 @@ const styles = StyleSheet.create({
   },
 
   separatorSelected: {
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   workers: {
     fontSize: UI.typography.small,
     fontWeight: '600',
-    color: '#6B7280',
+    color: UI.colors.textMuted,
   },
 
   workersSelected: {
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   workersDisabled: {
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
   },
 })

@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: UI.colors.text,
     marginBottom: UI.spacing.md,
   },
 

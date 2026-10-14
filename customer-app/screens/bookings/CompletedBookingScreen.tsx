@@ -238,6 +238,7 @@ export default function CompletedBookingScreen({
   }, [bookingId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadBooking()
   }, [loadBooking])
 
@@ -359,7 +360,8 @@ export default function CompletedBookingScreen({
           </Text>
           <Pressable
             onPress={() => {
-              void loadBooking()
+              // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadBooking()
             }}
             style={styles.retryButton}
           >
@@ -914,7 +916,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: UI.spacing.md,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
   },
   brandRow: {
     flexDirection: 'row',

@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
 
   cardSelected: {
     backgroundColor: '#F0F4FF',
-    borderColor: '#4F46E5',
+    borderColor: UI.colors.primaryBlue,
     borderWidth: 2,
   },
 
@@ -100,30 +100,30 @@ const styles = StyleSheet.create({
   label: {
     fontSize: UI.typography.bodyLarge,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
     marginBottom: UI.spacing.xs,
   },
 
   labelSelected: {
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   labelDisabled: {
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
   },
 
   description: {
     fontSize: 13,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     lineHeight: 18,
   },
 
   descriptionSelected: {
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
   },
 
   descriptionDisabled: {
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
   },
 
   radio: {
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
 
   radioSelected: {
-    borderColor: '#4F46E5',
-    backgroundColor: '#4F46E5',
+    borderColor: UI.colors.primaryBlue,
+    backgroundColor: UI.colors.primaryBlue,
   },
 })

@@ -81,6 +81,7 @@ export default function EditProfileScreen({
   )
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
   }, [load])
 
@@ -321,13 +322,13 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 26,
     fontWeight: '800',
   },
 
   description: {
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     fontSize: 13,
     lineHeight: 19,
     marginTop: 7,
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DDE3EB',
     backgroundColor: UI.colors.surface,
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 15,
   },
 

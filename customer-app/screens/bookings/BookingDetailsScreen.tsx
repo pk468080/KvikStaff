@@ -925,7 +925,7 @@ const styles =
       justifyContent:
         'center',
       backgroundColor:
-        '#0A3972',
+        UI.colors.primary,
     },
 
     stepBadgeText: {
@@ -966,7 +966,7 @@ const styles =
       height: '100%',
       borderRadius: 2,
       backgroundColor:
-        '#0784FB',
+        UI.colors.primaryBlue,
     },
 
     progressLabels: {
@@ -986,7 +986,7 @@ const styles =
     progressLabel: {
       fontSize: 10,
       fontWeight: '600',
-      color: '#9CA3AF',
+      color: UI.colors.textMuted,
     },
 
     serviceHero: {
@@ -999,7 +999,7 @@ const styles =
   padding: 15,
   borderRadius: 18,
   backgroundColor:
-    '#0A3972',
+    UI.colors.primary,
 },
 
     serviceImageWrap: {
@@ -1227,7 +1227,7 @@ errorContainer: {
       paddingHorizontal: 18,
       borderRadius: UI.radius.lg,
       backgroundColor:
-        '#0784FB',
+        UI.colors.primaryBlue,
       alignItems:
         'center',
       justifyContent:

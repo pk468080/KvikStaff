@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: 26,
     fontWeight: '800',
   },
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
 
   requestsText: {
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: UI.typography.body,
     fontWeight: '800',
   },
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DDE3EB',
     backgroundColor: UI.colors.surface,
-    color: '#111827',
+    color: UI.colors.text,
     fontSize: UI.typography.body,
   },
 
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
 
   counter: {
     alignSelf: 'flex-end',
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
     fontSize: 10,
     marginTop: 5,
   },

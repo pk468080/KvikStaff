@@ -383,21 +383,21 @@ const styles = StyleSheet.create({
   timeButtonLabel: {
     fontSize: UI.typography.small,
     fontWeight: '600',
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     marginBottom: UI.spacing.xs,
   },
 
   timeButtonValue: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   timeButtonHint: {
     marginTop: UI.spacing.xs,
     fontSize: 10,
     lineHeight: 14,
-    color: '#9CA3AF',
+    color: UI.colors.textMuted,
   },
 
   pickerModal: {
@@ -423,18 +423,18 @@ const styles = StyleSheet.create({
   pickerHeaderTitle: {
     fontSize: UI.typography.bodyLarge,
     fontWeight: '600',
-    color: '#111827',
+    color: UI.colors.text,
   },
 
   pickerHeaderButton: {
     fontSize: UI.typography.body,
-    color: '#6B7280',
+    color: UI.colors.textMuted,
     fontWeight: '500',
   },
 
   pickerHeaderButtonDone: {
     fontSize: UI.typography.body,
-    color: '#4F46E5',
+    color: UI.colors.primaryBlue,
     fontWeight: '600',
   },
 })
