@@ -201,8 +201,8 @@ class ReviewsRepository:
                     WHERE customer_id = :customer_id
                       AND booking_id = :booking_id
                       AND (
-                          (:occurrence_id IS NULL AND occurrence_id IS NULL)
-                          OR occurrence_id = :occurrence_id
+                          (CAST(:occurrence_id AS uuid) IS NULL AND occurrence_id IS NULL)
+                          OR occurrence_id = CAST(:occurrence_id AS uuid)
                       )
                     LIMIT 1
                     """
