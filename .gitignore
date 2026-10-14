@@ -19,3 +19,5 @@ node_modules/
 customer-app/android.backup/
 # Local backup archives
 worker-native-backup.tar.gz
+__pycache__/
+*.pyc
