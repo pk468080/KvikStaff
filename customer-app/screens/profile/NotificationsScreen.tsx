@@ -14,6 +14,7 @@ import {
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
+import { UI } from '../../constants/ui';
 
 import {
   getCustomerNotifications,
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
   emptyContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: UI.spacing.xxl,
   },
 
   card: {
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E8ECF2',
   },
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
 
   iconText: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
   },
 
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     color: '#111827',
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800',
   },
 
@@ -396,9 +397,9 @@ const styles = StyleSheet.create({
 
   message: {
     color: '#697281',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
   },
 
   date: {
@@ -410,9 +411,9 @@ const styles = StyleSheet.create({
   error: {
     color: '#B42318',
     backgroundColor: '#FFF3F2',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: UI.spacing.md,
+    borderRadius: UI.radius.md,
+    marginBottom: UI.spacing.md,
   },
 
   empty: {
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#EEF6FF',
-    marginBottom: 16,
+    marginBottom: UI.spacing.lg,
   },
 
   emptyIconText: {
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     maxWidth: 320,
   },
 

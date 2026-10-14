@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 
 import { formatMoney } from '../../lib/bookingUtils'
+import { UI } from '../../constants/ui';
 
 interface BookingPriceSummaryProps {
   baseAmount?: number
@@ -370,24 +371,24 @@ export default function BookingPriceSummary({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: UI.spacing.lg,
     marginVertical: 12,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
 
   loadingText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#6B7280',
     textAlign: 'center',
     fontWeight: '500',
   },
 
   errorText: {
-    fontSize: 14,
-    color: '#DC2626',
+    fontSize: UI.typography.body,
+    color: UI.colors.error,
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -397,7 +398,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 10,
-    gap: 12,
+    gap: UI.spacing.md,
   },
 
   rowTextBlock: {
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
 
   helperText: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     color: '#64748B',
     fontWeight: '500',
   },
@@ -416,11 +417,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: UI.spacing.md,
   },
 
   label: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#6B7280',
     fontWeight: '500',
   },
@@ -432,13 +433,13 @@ const styles = StyleSheet.create({
   },
 
   value: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#111827',
     fontWeight: '600',
   },
 
   valueFinal: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     color: '#111827',
     fontWeight: '800',
   },
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
 
   savingsBanner: {
     marginTop: 6,
-    padding: 12,
+    padding: UI.spacing.md,
     borderRadius: 10,
     backgroundColor: '#ECFDF5',
     borderWidth: 1,
@@ -457,14 +458,14 @@ const styles = StyleSheet.create({
   },
 
   savingsTitle: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '800',
     color: '#047857',
   },
 
   savingsText: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     color: '#065F46',
   },
 

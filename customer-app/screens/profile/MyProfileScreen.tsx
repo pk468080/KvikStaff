@@ -18,6 +18,7 @@ import {
 } from '../../services/notifications/customerNotifications.service'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
+import { UI } from '../../constants/ui';
 import {
   getLatestCustomerAddress,
 } from '../../services/addresses/customerAddress.service'
@@ -240,7 +241,7 @@ export default function MyProfileScreen({
               <CustomerIcon
                 name="location"
                 size={18}
-                color="#0A3972"
+                color={UI.colors.primary}
               />
             }
             title="Saved Addresses"
@@ -481,7 +482,7 @@ const styles = StyleSheet.create({
 
   avatarText: {
     color: '#007AFF',
-    fontSize: 24,
+    fontSize: UI.typography.title,
     fontWeight: '800',
   },
 
@@ -492,7 +493,7 @@ const styles = StyleSheet.create({
 
   eyebrow: {
     color: '#6B7280',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     letterSpacing: 1,
     marginBottom: 2,
@@ -500,13 +501,13 @@ const styles = StyleSheet.create({
 
   title: {
     color: '#111827',
-    fontSize: 24,
+    fontSize: UI.typography.title,
     fontWeight: '800',
   },
 
   company: {
     color: '#4B5563',
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -518,8 +519,8 @@ const styles = StyleSheet.create({
   },
 
   errorCard: {
-    marginBottom: 16,
-    padding: 12,
+    marginBottom: UI.spacing.lg,
+    padding: UI.spacing.md,
     borderRadius: 14,
     backgroundColor: '#FFF3F2',
     borderWidth: 1,
@@ -538,10 +539,10 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    marginBottom: 8,
+    marginBottom: UI.spacing.sm,
     marginLeft: 4,
     color: '#7A8290',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -549,7 +550,7 @@ const styles = StyleSheet.create({
   sectionCard: {
     overflow: 'hidden',
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E8ECF2',
   },
@@ -557,7 +558,7 @@ const styles = StyleSheet.create({
   action: {
     minHeight: 76,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: UI.spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
 
   actionIconText: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
   },
 
@@ -613,19 +614,19 @@ const styles = StyleSheet.create({
   actionSubtitle: {
     marginTop: 3,
     color: '#8B93A0',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 17,
   },
 
   chevron: {
     color: '#AAB1BC',
-    fontSize: 28,
+    fontSize: UI.typography.largeTitle,
     fontWeight: '300',
   },
 
   logoutButton: {
     height: 52,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -637,7 +638,7 @@ const styles = StyleSheet.create({
   },
 
   logoutText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -646,7 +647,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 14,
     color: '#A3AAB5',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
   },
 
   center: {

@@ -2,6 +2,7 @@ import { StyleSheet, Text, TouchableOpacity } from 'react-native'
 
 import { formatDateDisplay } from '../../lib/bookingUtils'
 import CustomerIcon from '../ui/CustomerIcon'
+import { UI } from '../../constants/ui';
 
 interface SelectedDateChipProps {
   date: Date
@@ -31,23 +32,23 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: UI.spacing.md,
+    paddingVertical: UI.spacing.sm,
+    borderRadius: UI.radius.xl,
     backgroundColor: '#E0E7FF',
     borderWidth: 1,
     borderColor: '#C7D2FE',
-    gap: 8,
+    gap: UI.spacing.sm,
   },
 
   text: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '600',
     color: '#4F46E5',
   },
 
   removeIcon: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     color: '#4F46E5',
     fontWeight: '700',
   },

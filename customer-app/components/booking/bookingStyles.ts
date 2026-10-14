@@ -1,20 +1,21 @@
 import { StyleSheet } from 'react-native'
+import { UI } from '../../constants/ui';
 
 export const styles = StyleSheet.create({
   pageContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: UI.spacing.xl,
     paddingTop: 14,
     paddingBottom: 40,
   },
 
   header: {
-    marginBottom: 16,
+    marginBottom: UI.spacing.lg,
   },
 
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: UI.spacing.md,
   },
 
   brandLogo: {
@@ -37,10 +38,10 @@ export const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
+    fontSize: UI.typography.title,
     lineHeight: 30,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   subtitle: {
@@ -53,10 +54,10 @@ export const styles = StyleSheet.create({
   serviceHero: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    marginBottom: 12,
+    padding: UI.spacing.lg,
+    marginBottom: UI.spacing.md,
     borderRadius: 18,
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   serviceHeroImageWrap: {
@@ -64,7 +65,7 @@ export const styles = StyleSheet.create({
     height: 62,
     borderRadius: 18,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     marginRight: 14,
   },
 
@@ -83,7 +84,7 @@ export const styles = StyleSheet.create({
   serviceHeroFallbackText: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   serviceHeroContent: {
@@ -95,14 +96,14 @@ export const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   serviceHeroPrice: {
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   serviceHeroPriceSuffix: {
@@ -115,8 +116,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     marginBottom: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
@@ -124,7 +125,7 @@ export const styles = StyleSheet.create({
   locationIcon: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#E5F2F5',
@@ -153,14 +154,14 @@ export const styles = StyleSheet.create({
 
   locationAddress: {
     marginTop: 2,
-    fontSize: 14,
+    fontSize: UI.typography.body,
     lineHeight: 19,
     fontWeight: '600',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   availabilityShell: {
-    marginBottom: 12,
+    marginBottom: UI.spacing.md,
   },
 
   availabilityDetails: {
@@ -180,19 +181,19 @@ export const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#16A34A',
+    backgroundColor: UI.colors.success,
     marginRight: 8,
   },
 
   availabilityDetailsText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '700',
     color: '#087F72',
   },
 
   sectionDescription: {
     marginTop: -3,
-    marginBottom: 12,
+    marginBottom: UI.spacing.md,
     fontSize: 13,
     lineHeight: 19,
     color: '#5E7C8B',
@@ -208,13 +209,13 @@ export const styles = StyleSheet.create({
     minHeight: 94,
     padding: 14,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
 
   methodCardSelected: {
-    borderColor: '#0A3972',
+    borderColor: UI.colors.primary,
     borderWidth: 2,
   },
 
@@ -233,7 +234,7 @@ export const styles = StyleSheet.create({
   },
 
   methodIconSelected: {
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   methodIconText: {
@@ -243,7 +244,7 @@ export const styles = StyleSheet.create({
   },
 
   methodIconTextSelected: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   methodContent: {
@@ -274,21 +275,21 @@ export const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   methodDescription: {
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     paddingRight: 4,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     color: '#5E7C8B',
   },
 
   availableBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
+    paddingHorizontal: UI.spacing.sm,
+    paddingVertical: UI.spacing.xs,
+    borderRadius: UI.radius.pill,
     backgroundColor: '#DDF7F0',
   },
 
@@ -299,9 +300,9 @@ export const styles = StyleSheet.create({
   },
 
   unavailableBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
+    paddingHorizontal: UI.spacing.sm,
+    paddingVertical: UI.spacing.xs,
+    borderRadius: UI.radius.pill,
     backgroundColor: '#F1F5F9',
   },
 
@@ -314,7 +315,7 @@ export const styles = StyleSheet.create({
   radioOuter: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     borderWidth: 2,
     borderColor: '#CBD5E1',
     alignItems: 'center',
@@ -323,24 +324,24 @@ export const styles = StyleSheet.create({
   },
 
   radioOuterSelected: {
-    borderColor: '#0A3972',
+    borderColor: UI.colors.primary,
   },
 
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   bottomTrustCard: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: UI.spacing.md,
     padding: 14,
     marginTop: 2,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
@@ -354,7 +355,7 @@ export const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#16A34A',
+    backgroundColor: UI.colors.success,
     marginRight: 6,
   },
 
@@ -372,10 +373,10 @@ export const styles = StyleSheet.create({
   flowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: UI.spacing.lg,
     paddingTop: 12,
     paddingBottom: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: '#E5F2F5',
   },
@@ -390,14 +391,14 @@ export const styles = StyleSheet.create({
   headerActionText: {
     fontSize: 32,
     lineHeight: 36,
-    color: '#0A3972',
+    color: UI.colors.primary,
     fontWeight: '400',
   },
 
   headerCloseText: {
-    fontSize: 28,
+    fontSize: UI.typography.largeTitle,
     lineHeight: 32,
-    color: '#0A3972',
+    color: UI.colors.primary,
     fontWeight: '400',
   },
 
@@ -407,10 +408,10 @@ export const styles = StyleSheet.create({
   },
 
   flowTitle: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     lineHeight: 21,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   flowStepLabel: {
@@ -427,13 +428,13 @@ export const styles = StyleSheet.create({
 
   progressFill: {
     height: '100%',
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
     borderRadius: 2,
   },
 
  flowContent: {
   flexGrow: 1,
-  paddingHorizontal: 20,
+  paddingHorizontal: UI.spacing.xl,
   paddingTop: 20,
   paddingBottom: 18,
 },
@@ -446,11 +447,11 @@ export const styles = StyleSheet.create({
   },
 
   flowStepTitle: {
-  marginTop: 4,
+  marginTop: UI.spacing.xs,
   fontSize: 22,
   lineHeight: 27,
   fontWeight: '800',
-  color: '#0A3972',
+  color: UI.colors.primary,
 },
 
   flowServiceName: {
@@ -467,7 +468,7 @@ export const styles = StyleSheet.create({
     marginTop: 18,
     padding: 13,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
@@ -490,7 +491,7 @@ export const styles = StyleSheet.create({
 
   infoBannerText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     color: '#37657A',
   },
@@ -498,8 +499,8 @@ export const styles = StyleSheet.create({
   emptySlotsCard: {
     marginTop: 18,
     padding: 18,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
     alignItems: 'center',
@@ -508,21 +509,21 @@ export const styles = StyleSheet.create({
   emptySlotsTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
     textAlign: 'center',
   },
 
   emptySlotsText: {
     marginTop: 6,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     color: '#5E7C8B',
     textAlign: 'center',
   },
 
   slotDisclaimer: {
-    marginTop: 12,
-    fontSize: 11,
+    marginTop: UI.spacing.md,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     color: '#94A3B8',
   },
@@ -536,7 +537,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
@@ -554,13 +555,13 @@ export const styles = StyleSheet.create({
   },
 
   slotTimeSelected: {
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   slotCheck: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -573,14 +574,14 @@ export const styles = StyleSheet.create({
   },
 
   slotCheckText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 14,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   stepDescription: {
-  marginTop: 12,
+  marginTop: UI.spacing.md,
   marginBottom: 14,
   fontSize: 12.5,
   lineHeight: 18,
@@ -591,11 +592,11 @@ export const styles = StyleSheet.create({
   flexDirection: 'row',
   alignItems: 'center',
   minHeight: 88,
-  marginTop: 4,
+  marginTop: UI.spacing.xs,
   paddingHorizontal: 14,
   paddingVertical: 13,
-  borderRadius: 16,
-  backgroundColor: '#FFFFFF',
+  borderRadius: UI.radius.lg,
+  backgroundColor: UI.colors.surface,
   borderWidth: 1,
   borderColor: '#E5F2F5',
 },
@@ -632,18 +633,18 @@ export const styles = StyleSheet.create({
   fontSize: 17,
   lineHeight: 22,
   fontWeight: '800',
-  color: '#0A3972',
+  color: UI.colors.primary,
 },
 
   selectionHint: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     color: '#5E7C8B',
   },
 
   chevron: {
     marginLeft: 8,
-    fontSize: 28,
+    fontSize: UI.typography.largeTitle,
     color: '#94A3B8',
   },
 
@@ -652,7 +653,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 14,
     padding: 14,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     backgroundColor: '#F1F7F9',
   },
 
@@ -662,7 +663,7 @@ export const styles = StyleSheet.create({
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     marginRight: 12,
   },
 
@@ -687,21 +688,21 @@ export const styles = StyleSheet.create({
     marginTop: 3,
     fontSize: 17,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   contextHint: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     color: '#5E7C8B',
   },
 
   subheading: {
-    marginTop: 20,
+    marginTop: UI.spacing.xl,
     marginBottom: 10,
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   durationGrid: {
@@ -715,7 +716,7 @@ export const styles = StyleSheet.create({
     minHeight: 58,
     paddingHorizontal: 14,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
     flexDirection: 'row',
@@ -730,13 +731,13 @@ export const styles = StyleSheet.create({
   },
 
   durationOptionText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '700',
     color: '#174C68',
   },
 
   durationOptionTextSelected: {
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   checkCircle: {
@@ -749,9 +750,9 @@ export const styles = StyleSheet.create({
   },
 
   checkCircleText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   endTimeCard: {
@@ -759,8 +760,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 14,
     padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
@@ -781,8 +782,8 @@ export const styles = StyleSheet.create({
   },
 
   warningText: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     color: '#B86A20',
   },
@@ -790,24 +791,24 @@ export const styles = StyleSheet.create({
   previewCard: {
     marginTop: 14,
     padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
 
   previewTitle: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800',
-    color: '#0A3972',
-    marginBottom: 8,
+    color: UI.colors.primary,
+    marginBottom: UI.spacing.sm,
   },
 
   summaryCard: {
     marginTop: 18,
     padding: 15,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
@@ -828,7 +829,7 @@ export const styles = StyleSheet.create({
   },
 
   summaryIconText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '900',
     color: '#174C68',
   },
@@ -846,10 +847,10 @@ export const styles = StyleSheet.create({
 
   summaryValue: {
     marginTop: 3,
-    fontSize: 14,
+    fontSize: UI.typography.body,
     lineHeight: 19,
     fontWeight: '700',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   summaryDivider: {
@@ -882,7 +883,7 @@ export const styles = StyleSheet.create({
   liveCheckIconText: {
     fontSize: 13,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   liveCheckContent: {
@@ -890,36 +891,36 @@ export const styles = StyleSheet.create({
   },
 
   liveCheckTitle: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   liveCheckText: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     color: '#4D6680',
   },
 
   waitingPriceCard: {
     marginTop: 14,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    padding: UI.spacing.lg,
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5F2F5',
   },
 
   waitingPriceTitle: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   waitingPriceText: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     color: '#5E7C8B',
   },
@@ -931,7 +932,7 @@ export const styles = StyleSheet.create({
   },
 
   pickerSheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     paddingBottom: 28,
@@ -941,26 +942,26 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: UI.spacing.lg,
     paddingVertical: 13,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
 
   pickerHeaderButton: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '600',
     color: '#64748B',
   },
 
   pickerHeaderTitle: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   pickerHeaderDone: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800',
     color: '#1D6CF2',
   },
@@ -970,10 +971,10 @@ export const styles = StyleSheet.create({
   },
 
  flowFooter: {
-  paddingHorizontal: 20,
+  paddingHorizontal: UI.spacing.xl,
   paddingTop: 10,
   paddingBottom: 8,
-  backgroundColor: '#FFFFFF',
+  backgroundColor: UI.colors.surface,
   borderTopWidth: 1,
   borderTopColor: '#E5F2F5',
 },
@@ -995,13 +996,13 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 13,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   footerPrice: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     fontWeight: '900',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
  primaryButton: {
@@ -1020,13 +1021,13 @@ export const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   primaryButtonArrow: {
     marginLeft: 10,
     fontSize: 19,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 })

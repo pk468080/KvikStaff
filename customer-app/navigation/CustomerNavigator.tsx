@@ -49,6 +49,7 @@ import type { BookingDraft } from '../types/booking'
 import type { HomeService } from '../types/service'
 
 import { useRef } from 'react'
+import { UI } from '../constants/ui';
 import {
   createIdempotencyKey,
 } from '../lib/api'
@@ -161,8 +162,8 @@ export default function CustomerNavigator({
       <Tab.Navigator
             screenOptions={{
               headerShown: false,
-              tabBarActiveTintColor: '#007AFF',
-              tabBarInactiveTintColor: '#8E939B',
+              tabBarActiveTintColor: UI.colors.tabBarActive,
+              tabBarInactiveTintColor: UI.colors.tabBarInactive,
               tabBarStyle: [
   styles.tabBar,
   {
@@ -175,7 +176,7 @@ export default function CustomerNavigator({
 ],
               tabBarLabelStyle: styles.tabBarLabel,
               tabBarItemStyle: styles.tabBarItem,
-              tabBarActiveBackgroundColor: '#EEF6FF',
+              tabBarActiveBackgroundColor: UI.colors.infoBackground,
               tabBarHideOnKeyboard: true,
             }}
           >
@@ -754,7 +755,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingTop: 6,
     paddingBottom: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderTopWidth: 0,
     borderWidth: 1,
     borderColor: '#E8EEF2',
@@ -771,7 +772,7 @@ const styles = StyleSheet.create({
 
     tabBarItem: {
     marginHorizontal: 2,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     paddingTop: 1,
     paddingBottom: 1,
   },

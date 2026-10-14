@@ -11,6 +11,7 @@ import {
 
 import { AppButton } from '../../components/ui/AppButton'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import { UI } from '../../constants/ui';
 
 type LoginScreenProps = {
   onContinue: (phone: string) => void | Promise<void>
@@ -199,7 +200,7 @@ requestError: {
 },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: UI.spacing.xl,
     paddingTop: 24,
     paddingBottom: 18,
     backgroundColor: '#F7FBFD',
@@ -226,15 +227,15 @@ requestError: {
   brandName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
     letterSpacing: 0.1,
   },
 
   brandTagline: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '600',
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
   },
 
   hero: {
@@ -242,7 +243,7 @@ requestError: {
     marginTop: 22,
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
     position: 'relative',
     flexDirection: 'row',
   },
@@ -252,7 +253,7 @@ requestError: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
     opacity: 0.18,
     right: 86,
     top: -28,
@@ -274,15 +275,15 @@ requestError: {
   },
 
   title: {
-    marginTop: 8,
-    fontSize: 28,
+    marginTop: UI.spacing.sm,
+    fontSize: UI.typography.largeTitle,
     lineHeight: 34,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   subtitle: {
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     maxWidth: 210,
     fontSize: 13,
     lineHeight: 19,
@@ -298,10 +299,10 @@ requestError: {
   },
 
   formCard: {
-    marginTop: 16,
+    marginTop: UI.spacing.lg,
     padding: 18,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E2EDF2',
     shadowColor: '#0A3972',
@@ -315,9 +316,9 @@ requestError: {
   },
 
   formTitle: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   formSubtitle: {
@@ -328,7 +329,7 @@ requestError: {
   },
 
   inputGroup: {
-    marginTop: 16,
+    marginTop: UI.spacing.lg,
   },
 
   label: {
@@ -349,14 +350,14 @@ requestError: {
   },
 
   inputShellValid: {
-    borderColor: '#0784FB',
+    borderColor: UI.colors.primaryBlue,
   },
 
   countryCode: {
     paddingLeft: 14,
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '700',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   inputDivider: {
@@ -372,7 +373,7 @@ requestError: {
     paddingRight: 12,
     paddingVertical: 0,
     fontSize: 17,
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   securityRow: {
@@ -396,7 +397,7 @@ requestError: {
   securityCheck: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
   },
 
   securityCopy: {
@@ -405,7 +406,7 @@ requestError: {
   },
 
   securityTitle: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '700',
     color: '#29465A',
   },
@@ -423,13 +424,13 @@ requestError: {
   },
 
   footerTitle: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '700',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   footerText: {
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     fontSize: 10,
     color: '#7A8D9B',
     textAlign: 'center',

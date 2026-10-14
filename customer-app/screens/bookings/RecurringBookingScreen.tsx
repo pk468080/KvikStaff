@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui';
 import {
   useCallback,
   useEffect,
@@ -1333,11 +1334,11 @@ const styles =
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 24,
+      padding: UI.spacing.xxl,
     },
 
     loadingText: {
-      marginTop: 12,
+      marginTop: UI.spacing.md,
       color: '#6B7280',
     },
 
@@ -1347,7 +1348,7 @@ const styles =
     },
 
     eyebrow: {
-      color: '#0784FB',
+      color: UI.colors.primaryBlue,
       fontSize: 10,
       fontWeight: '900',
       letterSpacing: 1.2,
@@ -1355,31 +1356,31 @@ const styles =
     },
 
     title: {
-      fontSize: 28,
+      fontSize: UI.typography.largeTitle,
       lineHeight: 34,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     subtitle: {
-      marginTop: 8,
+      marginTop: UI.spacing.sm,
       marginBottom: 18,
       color: '#607789',
-      fontSize: 14,
+      fontSize: UI.typography.body,
       lineHeight: 21,
     },
 
     errorBox: {
-      marginBottom: 16,
+      marginBottom: UI.spacing.lg,
       padding: 14,
-      borderRadius: 12,
+      borderRadius: UI.radius.md,
       backgroundColor: '#FFF7E5',
       borderWidth: 1,
       borderColor: '#F4C84B',
     },
 
     errorBoxTitle: {
-      fontSize: 14,
+      fontSize: UI.typography.body,
       fontWeight: '800',
       color: '#9A4D00',
     },
@@ -1392,18 +1393,18 @@ const styles =
     },
 
     errorText: {
-      marginTop: 12,
+      marginTop: UI.spacing.md,
       marginBottom: 18,
       color: '#B91C1C',
-      fontSize: 14,
+      fontSize: UI.typography.body,
       lineHeight: 20,
     },
 
     summaryCard: {
       padding: 18,
-      marginBottom: 16,
-      borderRadius: 16,
-      backgroundColor: '#FFFFFF',
+      marginBottom: UI.spacing.lg,
+      borderRadius: UI.radius.lg,
+      backgroundColor: UI.colors.surface,
       borderWidth: 1,
       borderColor: '#E5E7EB',
     },
@@ -1415,13 +1416,13 @@ const styles =
 
     summaryTitle: {
       color: '#6B7280',
-      fontSize: 12,
+      fontSize: UI.typography.small,
       fontWeight: '700',
     },
 
     summaryService: {
-      marginTop: 4,
-      color: '#0A3972',
+      marginTop: UI.spacing.xs,
+      color: UI.colors.primary,
       fontSize: 19,
       fontWeight: '800',
     },
@@ -1442,13 +1443,13 @@ const styles =
 
     summaryLabel: {
       color: '#718096',
-      fontSize: 11,
+      fontSize: UI.typography.caption,
       fontWeight: '700',
     },
 
     summaryValue: {
-      marginTop: 4,
-      color: '#0A3972',
+      marginTop: UI.spacing.xs,
+      color: UI.colors.primary,
       fontSize: 20,
       fontWeight: '800',
     },
@@ -1460,18 +1461,18 @@ const styles =
     },
 
     summaryMoney: {
-      color: '#0A3972',
+      color: UI.colors.primary,
       fontSize: 20,
       fontWeight: '900',
     },
 
     currentCard: {
       padding: 18,
-      marginBottom: 16,
-      borderRadius: 16,
+      marginBottom: UI.spacing.lg,
+      borderRadius: UI.radius.lg,
       backgroundColor: '#EEF5F8',
       borderWidth: 1,
-      borderColor: '#0784FB',
+      borderColor: UI.colors.primaryBlue,
     },
 
     currentEyebrow: {
@@ -1483,27 +1484,27 @@ const styles =
 
     currentTitle: {
       marginTop: 6,
-      color: '#0A3972',
+      color: UI.colors.primary,
       fontSize: 22,
       fontWeight: '900',
     },
 
     currentDate: {
-      marginTop: 8,
-      color: '#0A3972',
+      marginTop: UI.spacing.sm,
+      color: UI.colors.primary,
       fontSize: 15,
       fontWeight: '700',
     },
 
     currentEnd: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       color: '#607789',
-      fontSize: 12,
+      fontSize: UI.typography.small,
     },
 
     currentStatusRow: {
-      marginTop: 16,
-      marginBottom: 4,
+      marginTop: UI.spacing.lg,
+      marginBottom: UI.spacing.xs,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -1511,7 +1512,7 @@ const styles =
 
     currentStatusLabel: {
       color: '#607789',
-      fontSize: 12,
+      fontSize: UI.typography.small,
       fontWeight: '700',
     },
 
@@ -1519,8 +1520,8 @@ const styles =
       marginTop: 14,
       marginBottom: 14,
       padding: 14,
-      borderRadius: 12,
-      backgroundColor: '#FFFFFF',
+      borderRadius: UI.radius.md,
+      backgroundColor: UI.colors.surface,
       borderWidth: 1,
       borderColor: '#D7E1E7',
       alignItems: 'center',
@@ -1528,13 +1529,13 @@ const styles =
 
     timerLabel: {
       color: '#718096',
-      fontSize: 11,
+      fontSize: UI.typography.caption,
       fontWeight: '700',
     },
 
     timer: {
-      marginTop: 4,
-      color: '#0A3972',
+      marginTop: UI.spacing.xs,
+      color: UI.colors.primary,
       fontSize: 30,
       fontWeight: '900',
       letterSpacing: 1,
@@ -1542,11 +1543,11 @@ const styles =
 
     otpCard: {
       marginTop: 14,
-      padding: 16,
+      padding: UI.spacing.lg,
       borderRadius: 14,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: UI.colors.surface,
       borderWidth: 1,
-      borderColor: '#0784FB',
+      borderColor: UI.colors.primaryBlue,
       alignItems: 'center',
     },
 
@@ -1558,8 +1559,8 @@ const styles =
     },
 
     otp: {
-      marginTop: 8,
-      color: '#0A3972',
+      marginTop: UI.spacing.sm,
+      color: UI.colors.primary,
       fontSize: 34,
       fontWeight: '900',
       letterSpacing: 8,
@@ -1568,7 +1569,7 @@ const styles =
     otpHint: {
       marginTop: 6,
       color: '#718096',
-      fontSize: 11,
+      fontSize: UI.typography.caption,
       lineHeight: 17,
       textAlign: 'center',
     },
@@ -1576,13 +1577,13 @@ const styles =
     button: {
       marginTop: 14,
       paddingVertical: 15,
-      borderRadius: 12,
-      backgroundColor: '#0A3972',
+      borderRadius: UI.radius.md,
+      backgroundColor: UI.colors.primary,
       alignItems: 'center',
     },
 
     buttonText: {
-      color: '#FFFFFF',
+      color: UI.colors.surface,
       fontSize: 15,
       fontWeight: '800',
     },
@@ -1592,22 +1593,22 @@ const styles =
     },
 
     sectionTitle: {
-      color: '#0A3972',
+      color: UI.colors.primary,
       fontSize: 20,
       fontWeight: '800',
     },
 
     sectionSubtitle: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       marginBottom: 10,
       color: '#718096',
-      fontSize: 12,
+      fontSize: UI.typography.small,
       lineHeight: 18,
     },
 
     occurrenceList: {
       borderRadius: 14,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: UI.colors.surface,
       borderWidth: 1,
       borderColor: '#E5E7EB',
       overflow: 'hidden',
@@ -1629,27 +1630,27 @@ const styles =
     },
 
     occurrenceTitle: {
-      color: '#0A3972',
-      fontSize: 14,
+      color: UI.colors.primary,
+      fontSize: UI.typography.body,
       fontWeight: '800',
     },
 
     occurrenceDate: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       color: '#607789',
-      fontSize: 12,
+      fontSize: UI.typography.small,
     },
 
     occurrenceEnd: {
       marginTop: 2,
       color: '#8A99A6',
-      fontSize: 11,
+      fontSize: UI.typography.caption,
     },
 
     badge: {
       paddingHorizontal: 10,
       paddingVertical: 6,
-      borderRadius: 999,
+      borderRadius: UI.radius.pill,
       borderWidth: 1,
     },
 
@@ -1695,16 +1696,16 @@ const styles =
     },
 
     emptyCard: {
-      marginBottom: 16,
-      padding: 20,
-      borderRadius: 16,
+      marginBottom: UI.spacing.lg,
+      padding: UI.spacing.xl,
+      borderRadius: UI.radius.lg,
       backgroundColor: '#F7FAFC',
       borderWidth: 1,
       borderColor: '#E5E7EB',
     },
 
     emptyTitle: {
-      color: '#0A3972',
+      color: UI.colors.primary,
       fontSize: 17,
       fontWeight: '800',
     },
@@ -1717,10 +1718,10 @@ const styles =
     },
 
     cancelButton: {
-      marginTop: 4,
-      marginBottom: 8,
+      marginTop: UI.spacing.xs,
+      marginBottom: UI.spacing.sm,
       padding: 15,
-      borderRadius: 12,
+      borderRadius: UI.radius.md,
       borderWidth: 1,
       borderColor: '#334155',
       alignItems: 'center',
@@ -1729,6 +1730,6 @@ const styles =
     cancelButtonText: {
       color: '#334155',
       fontWeight: '800',
-      fontSize: 14,
+      fontSize: UI.typography.body,
     },
   })

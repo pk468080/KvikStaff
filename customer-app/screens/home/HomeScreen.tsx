@@ -43,6 +43,7 @@ import {
   getHomeServicesForLocation,
 } from '../../services/services/services.service'
 import type { HomeService } from '../../types/service'
+import { UI } from '../../constants/ui';
 import {
   formatUnreadNotificationCount,
   getUnreadCustomerNotificationCount,
@@ -1649,14 +1650,14 @@ const [
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+                  contentContainerStyle={{ gap: UI.spacing.sm, paddingVertical: 2 }}
                 >
                   {bookingLocations.map(savedLocation => (
                     <TouchableOpacity
                       key={savedLocation.id}
                       style={{
                         width: 205,
-                        padding: 12,
+                        padding: UI.spacing.md,
                         borderRadius: 14,
                         borderWidth: 1,
                         borderColor: '#DCE6EF',
@@ -1688,7 +1689,7 @@ const [
                         style={{
                           marginTop: 7,
                           color: '#17354A',
-                          fontSize: 12,
+                          fontSize: UI.typography.small,
                           lineHeight: 17,
                           fontWeight: '700',
                         }}
@@ -1989,7 +1990,7 @@ const COLORS = {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 16,
+    paddingHorizontal: UI.spacing.lg,
     paddingTop: 12,
     paddingBottom: 120,
     backgroundColor: COLORS.canvas,
@@ -2058,7 +2059,7 @@ const styles = StyleSheet.create({
     right: 0,
     minWidth: 18,
     height: 18,
-    paddingHorizontal: 4,
+    paddingHorizontal: UI.spacing.xs,
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2077,7 +2078,7 @@ const styles = StyleSheet.create({
     minHeight: 54,
     marginLeft: 12,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: UI.spacing.sm,
     borderRadius: 18,
     backgroundColor: COLORS.white,
     borderWidth: 1,
@@ -2089,14 +2090,14 @@ const styles = StyleSheet.create({
   locationIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   locationIconText: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     lineHeight: 20,
     color: COLORS.primaryDark,
   },
@@ -2115,7 +2116,7 @@ const styles = StyleSheet.create({
 
   location: {
     marginTop: 2,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     fontWeight: '800',
     color: COLORS.ink,
@@ -2204,7 +2205,7 @@ const styles = StyleSheet.create({
   },
 
   welcomeBadgeValue: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     lineHeight: 21,
     fontWeight: '900',
     color: COLORS.ink,
@@ -2284,7 +2285,7 @@ const styles = StyleSheet.create({
   },
 
   heroTitle: {
-    marginTop: 12,
+    marginTop: UI.spacing.md,
     fontSize: 27,
     lineHeight: 31,
     fontWeight: '900',
@@ -2295,7 +2296,7 @@ const styles = StyleSheet.create({
   heroSubtitle: {
     marginTop: 9,
     maxWidth: 190,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '600',
     color: '#526A7B',
@@ -2356,7 +2357,7 @@ const styles = StyleSheet.create({
   },
 
   warningIconText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '900',
     color: COLORS.warning,
   },
@@ -2367,7 +2368,7 @@ const styles = StyleSheet.create({
   },
 
   locationWarningText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '600',
     color: '#8A4A10',
@@ -2375,7 +2376,7 @@ const styles = StyleSheet.create({
 
   locationRetryText: {
     marginTop: 7,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '900',
     color: COLORS.primaryDark,
   },
@@ -2421,8 +2422,8 @@ const styles = StyleSheet.create({
   },
 
   sectionSubtitle: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '500',
     color: COLORS.inkSoft,
@@ -2438,7 +2439,7 @@ const styles = StyleSheet.create({
   },
 
   sectionCountValue: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     lineHeight: 16,
     fontWeight: '900',
     color: COLORS.primaryDark,
@@ -2534,7 +2535,7 @@ gridCardImageFallback: {
   },
 
   cardImageFallbackText: {
-    fontSize: 28,
+    fontSize: UI.typography.largeTitle,
     fontWeight: '900',
     letterSpacing: -0.8,
     color: COLORS.primaryDark,
@@ -2544,7 +2545,7 @@ gridCardImageFallback: {
     position: 'absolute',
     left: 8,
     bottom: 8,
-    paddingHorizontal: 8,
+    paddingHorizontal: UI.spacing.sm,
     paddingVertical: 6,
     borderRadius: 10,
     backgroundColor: 'rgba(10, 35, 56, 0.9)',
@@ -2594,7 +2595,7 @@ gridCardContent: {
 },
 
   serviceName: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     lineHeight: 18,
     fontWeight: '900',
     letterSpacing: -0.15,
@@ -2603,7 +2604,7 @@ gridCardContent: {
 
   description: {
     minHeight: 32,
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     fontSize: 10,
     lineHeight: 14,
     fontWeight: '500',
@@ -2612,7 +2613,7 @@ gridCardContent: {
 
   descriptionFallback: {
     minHeight: 32,
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     fontSize: 10,
     lineHeight: 14,
     fontWeight: '500',
@@ -2620,7 +2621,7 @@ gridCardContent: {
   },
 
   bookRow: {
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#EEF3F5',
@@ -2642,7 +2643,7 @@ gridCardContent: {
   },
 
   book: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '900',
     color: COLORS.primaryDark,
   },
@@ -2652,7 +2653,7 @@ gridCardContent: {
   },
 
   personalHeader: {
-    marginBottom: 12,
+    marginBottom: UI.spacing.md,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
@@ -2660,16 +2661,16 @@ gridCardContent: {
 
   contentNotice: {
     marginBottom: 14,
-    paddingHorizontal: 12,
+    paddingHorizontal: UI.spacing.md,
     paddingVertical: 9,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: '#FFF7ED',
     borderWidth: 1,
     borderColor: '#F7C68B',
   },
 
   contentNoticeText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     fontWeight: '600',
     color: '#8A4A10',
@@ -2708,7 +2709,7 @@ gridCardContent: {
   },
 
   rebookInitials: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     fontWeight: '900',
     color: COLORS.primaryDark,
   },
@@ -2768,7 +2769,7 @@ gridCardContent: {
   },
 
   promotionImageFallbackText: {
-    fontSize: 28,
+    fontSize: UI.typography.largeTitle,
     fontWeight: '900',
     color: COLORS.primaryDark,
   },
@@ -2786,14 +2787,14 @@ gridCardContent: {
   },
 
   promotionTitle: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     lineHeight: 22,
     fontWeight: '900',
     color: COLORS.white,
   },
 
   promotionSubtitle: {
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     fontSize: 10.5,
     lineHeight: 15,
     fontWeight: '600',
@@ -2802,7 +2803,7 @@ gridCardContent: {
 
   promotionCta: {
     alignSelf: 'flex-start',
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     paddingHorizontal: 9,
     paddingVertical: 6,
     borderRadius: 9,
@@ -2819,7 +2820,7 @@ gridCardContent: {
 
   promotionCtaArrow: {
     marginLeft: 5,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '800',
     color: COLORS.primaryDark,
   },
@@ -2844,7 +2845,7 @@ gridCardContent: {
   },
 
   featuredSection: {
-    marginBottom: 24,
+    marginBottom: UI.spacing.xxl,
   },
 
   featuredHeader: {
@@ -2904,7 +2905,7 @@ gridCardContent: {
     marginLeft: 7,
     paddingHorizontal: 6,
     paddingVertical: 0,
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '600',
     color: COLORS.ink,
   },
@@ -2949,7 +2950,7 @@ gridCardContent: {
   },
 
   filterChipText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     color: COLORS.inkSoft,
   },
@@ -2960,14 +2961,14 @@ gridCardContent: {
 
   clearFiltersButton: {
     marginTop: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: UI.spacing.lg,
     paddingVertical: 10,
     borderRadius: 11,
     backgroundColor: COLORS.ink,
   },
 
   clearFiltersButtonText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '900',
     color: COLORS.white,
   },
@@ -2989,7 +2990,7 @@ gridCardContent: {
   bottomBannerIcon: {
     width: 26,
     height: 26,
-    borderRadius: 8,
+    borderRadius: UI.radius.sm,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -3011,7 +3012,7 @@ gridCardContent: {
 
   bottomBannerTitle: {
     maxWidth: '88%',
-    marginTop: 12,
+    marginTop: UI.spacing.md,
     fontSize: 19,
     lineHeight: 24,
     fontWeight: '900',
@@ -3021,8 +3022,8 @@ gridCardContent: {
 
   bottomBannerText: {
     maxWidth: '92%',
-    marginTop: 8,
-    fontSize: 12,
+    marginTop: UI.spacing.sm,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '500',
     color: '#C2D4DC',
@@ -3079,7 +3080,7 @@ gridCardContent: {
 
   loadingTitle: {
     marginTop: 18,
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     lineHeight: 22,
     fontWeight: '900',
     textAlign: 'center',
@@ -3089,7 +3090,7 @@ gridCardContent: {
   loadingText: {
     marginTop: 6,
     maxWidth: 260,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '500',
     textAlign: 'center',
@@ -3098,7 +3099,7 @@ gridCardContent: {
 
   loadingErrorContainer: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: UI.spacing.xl,
     maxWidth: 320,
   },
 
@@ -3111,15 +3112,15 @@ gridCardContent: {
   },
 
   retryLocationButton: {
-    marginTop: 12,
+    marginTop: UI.spacing.md,
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: COLORS.ink,
   },
 
   retryLocationButtonText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '800',
     color: COLORS.white,
   },
@@ -3144,7 +3145,7 @@ gridCardContent: {
   },
 
   errorIconText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '900',
     color: COLORS.danger,
   },
@@ -3163,7 +3164,7 @@ gridCardContent: {
 
   errorText: {
     marginTop: 3,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '500',
     color: COLORS.danger,
@@ -3179,15 +3180,15 @@ gridCardContent: {
   },
 
   errorRetryText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     color: COLORS.white,
   },
 
   empty: {
     paddingVertical: 42,
-    paddingHorizontal: 20,
-    borderRadius: 20,
+    paddingHorizontal: UI.spacing.xl,
+    borderRadius: UI.radius.xl,
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -3197,7 +3198,7 @@ gridCardContent: {
   emptyIcon: {
     width: 44,
     height: 44,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     backgroundColor: '#F3F7F8',
     alignItems: 'center',
     justifyContent: 'center',
@@ -3212,7 +3213,7 @@ gridCardContent: {
 
   emptyTitle: {
     marginTop: 13,
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     lineHeight: 20,
     fontWeight: '900',
     color: COLORS.ink,
@@ -3222,7 +3223,7 @@ gridCardContent: {
   emptyText: {
     maxWidth: 290,
     marginTop: 6,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '500',
     color: COLORS.muted,
@@ -3286,8 +3287,8 @@ gridCardContent: {
   },
 
   modalCloseButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: UI.spacing.md,
+    paddingVertical: UI.spacing.sm,
     borderRadius: 11,
     backgroundColor: COLORS.white,
     borderWidth: 1,
@@ -3295,7 +3296,7 @@ gridCardContent: {
   },
 
   closeButton: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '800',
     color: COLORS.ink,
   },
@@ -3342,7 +3343,7 @@ gridCardContent: {
 
   modalError: {
     marginTop: 11,
-    paddingHorizontal: 12,
+    paddingHorizontal: UI.spacing.md,
     paddingVertical: 11,
     borderRadius: 14,
     backgroundColor: COLORS.dangerBg,
@@ -3355,14 +3356,14 @@ gridCardContent: {
   modalErrorIcon: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: '#FDDADA',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   modalErrorIconText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '900',
     color: COLORS.danger,
   },
@@ -3370,7 +3371,7 @@ gridCardContent: {
   locationError: {
     flex: 1,
     marginLeft: 8,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     fontWeight: '600',
     color: COLORS.danger,
@@ -3392,14 +3393,14 @@ gridCardContent: {
   },
 
   primaryButtonText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '900',
     color: COLORS.white,
   },
 
   primaryButtonArrow: {
     marginLeft: 9,
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     lineHeight: 18,
     fontWeight: '500',
     color: '#A9E1E2',
@@ -3428,7 +3429,7 @@ gridCardContent: {
   },
 
   currentLocationIconText: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     lineHeight: 18,
     color: COLORS.primaryDark,
   },
@@ -3443,7 +3444,7 @@ gridCardContent: {
   modalTip: {
     marginTop: 18,
     padding: 13,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     backgroundColor: '#EEF6F7',
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -3452,14 +3453,14 @@ gridCardContent: {
   modalTipIcon: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: COLORS.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   modalTipIconText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '900',
     color: COLORS.primaryDark,
   },

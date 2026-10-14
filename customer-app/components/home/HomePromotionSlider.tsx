@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
+import { UI } from '../../constants/ui';
 
 export default function HomePromotionSlider() {
 	return (
@@ -14,9 +15,9 @@ const styles = StyleSheet.create({
 		marginHorizontal: 20,
 		marginVertical: 12,
 		padding: 18,
-		borderRadius: 16,
+		borderRadius: UI.radius.lg,
 		backgroundColor: '#E0F2FE',
 	},
-	title: { fontSize: 18, fontWeight: '700', color: '#0C4A6E' },
+	title: { fontSize: UI.typography.subtitle, fontWeight: '700', color: '#0C4A6E' },
 	subtitle: { marginTop: 6, color: '#075985' },
 })

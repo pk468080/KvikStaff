@@ -21,6 +21,7 @@ import {
 import LiveWorkerMap from '../../components/booking/LiveWorkerMap'
 
 import BookingChatPanel from '../../components/booking/BookingChatPanel'
+import { UI } from '../../constants/ui';
 
 import {
   ScreenContainer,
@@ -2096,13 +2097,13 @@ const styles =
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 12,
+      gap: UI.spacing.md,
     },
 
     loadingLogo: {
       width: 150,
       height: 52,
-      marginBottom: 8,
+      marginBottom: UI.spacing.sm,
     },
 
     loadingText: {
@@ -2116,7 +2117,7 @@ const styles =
     brandRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: UI.spacing.lg,
     },
 
     logo: {
@@ -2126,7 +2127,7 @@ const styles =
 
     brandLabel: {
       marginLeft: 10,
-      color: '#0784FB',
+      color: UI.colors.primaryBlue,
       fontSize: 10,
       fontWeight: '900',
       letterSpacing: 1.1,
@@ -2135,7 +2136,7 @@ const styles =
     headingRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: UI.spacing.lg,
     },
 
     stepBadge: {
@@ -2144,25 +2145,25 @@ const styles =
       borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#0A3972',
+      backgroundColor: UI.colors.primary,
       marginRight: 12,
     },
 
     stepBadgeText: {
-      color: '#FFFFFF',
-      fontSize: 14,
+      color: UI.colors.surface,
+      fontSize: UI.typography.body,
       fontWeight: '900',
     },
 
     title: {
-      fontSize: 28,
+      fontSize: UI.typography.largeTitle,
       fontWeight: '700',
-      color: '#0A3972',
-      marginBottom: 16,
+      color: UI.colors.primary,
+      marginBottom: UI.spacing.lg,
     },
 
     subtitle: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       color: '#607789',
       fontSize: 13,
       lineHeight: 19,
@@ -2170,9 +2171,9 @@ const styles =
 
     stateCard: {
       padding: 18,
-      borderRadius: 16,
+      borderRadius: UI.radius.lg,
       backgroundColor: '#E8F7F7',
-      marginBottom: 16,
+      marginBottom: UI.spacing.lg,
     },
 
     searchingCard: {
@@ -2184,7 +2185,7 @@ const styles =
     },
 
     progressCard: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: UI.colors.surface,
     },
 
     stateTopRow: {
@@ -2192,7 +2193,7 @@ const styles =
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 8,
+      marginBottom: UI.spacing.sm,
     },
 
     stateIcon: {
@@ -2201,11 +2202,11 @@ const styles =
       borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#0A3972',
+      backgroundColor: UI.colors.primary,
     },
 
     stateIconText: {
-      color: '#FFFFFF',
+      color: UI.colors.surface,
       fontSize: 10,
       fontWeight: '900',
       letterSpacing: 0.7,
@@ -2220,20 +2221,20 @@ const styles =
     stateTitle: {
       fontSize: 20,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     stateMessage: {
-      marginTop: 8,
+      marginTop: UI.spacing.sm,
       lineHeight: 21,
       color: '#374151',
     },
 
     mapCard: {
-      marginBottom: 16,
-      borderRadius: 16,
+      marginBottom: UI.spacing.lg,
+      borderRadius: UI.radius.lg,
       overflow: 'hidden',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: UI.colors.surface,
     },
 
     mapHeader: {
@@ -2245,26 +2246,26 @@ const styles =
     mapTitle: {
       fontSize: 17,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     mapUnavailable: {
       height: 280,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 24,
+      paddingHorizontal: UI.spacing.xxl,
       backgroundColor: '#EEF5F8',
     },
 
     mapUnavailableTitle: {
       fontSize: 17,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
       textAlign: 'center',
     },
 
     mapUnavailableMessage: {
-      marginTop: 8,
+      marginTop: UI.spacing.sm,
       color: '#6B7280',
       lineHeight: 20,
       textAlign: 'center',
@@ -2272,15 +2273,15 @@ const styles =
 
     card: {
       padding: 18,
-      borderRadius: 16,
-      backgroundColor: '#FFFFFF',
-      marginBottom: 16,
+      borderRadius: UI.radius.lg,
+      backgroundColor: UI.colors.surface,
+      marginBottom: UI.spacing.lg,
     },
 
     sectionTitle: {
       fontSize: 17,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
       marginBottom: 10,
     },
 
@@ -2293,14 +2294,14 @@ const styles =
     timelineSubtitle: {
       marginTop: -4,
       color: '#6B7280',
-      fontSize: 12,
+      fontSize: UI.typography.small,
       lineHeight: 18,
     },
 
     timelineCount: {
       minWidth: 32,
       height: 32,
-      paddingHorizontal: 8,
+      paddingHorizontal: UI.spacing.sm,
       borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
@@ -2309,7 +2310,7 @@ const styles =
 
     timelineCountText: {
       color: '#008A88',
-      fontSize: 12,
+      fontSize: UI.typography.small,
       fontWeight: '900',
     },
 
@@ -2329,18 +2330,18 @@ const styles =
     timelineDot: {
       width: 12,
       height: 12,
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       borderRadius: 6,
       backgroundColor: '#B8CBD7',
       borderWidth: 2,
-      borderColor: '#FFFFFF',
+      borderColor: UI.colors.surface,
     },
 
     timelineDotCurrent: {
       width: 14,
       height: 14,
       borderRadius: 7,
-      backgroundColor: '#0784FB',
+      backgroundColor: UI.colors.primaryBlue,
       borderWidth: 3,
       borderColor: '#D8F5F5',
     },
@@ -2366,20 +2367,20 @@ const styles =
     timelineTitleRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      gap: UI.spacing.sm,
     },
 
     timelineTitle: {
       flex: 1,
-      color: '#0A3972',
+      color: UI.colors.primary,
       fontSize: 15,
       fontWeight: '800',
     },
 
     currentPill: {
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 8,
+      paddingHorizontal: UI.spacing.sm,
+      paddingVertical: UI.spacing.xs,
+      borderRadius: UI.radius.sm,
       backgroundColor: '#E8F7F7',
     },
 
@@ -2392,33 +2393,33 @@ const styles =
     },
 
     timelineTransition: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       color: '#6B7280',
-      fontSize: 12,
+      fontSize: UI.typography.small,
     },
 
     timelineDate: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       color: '#8A9AA6',
-      fontSize: 11,
+      fontSize: UI.typography.caption,
     },
 
     timelineEmpty: {
       padding: 14,
-      borderRadius: 12,
+      borderRadius: UI.radius.md,
       backgroundColor: '#EEF5F8',
     },
 
     timelineEmptyTitle: {
-      color: '#0A3972',
-      fontSize: 14,
+      color: UI.colors.primary,
+      fontSize: UI.typography.body,
       fontWeight: '800',
     },
 
     timelineEmptyMessage: {
       marginTop: 5,
       color: '#6B7280',
-      fontSize: 12,
+      fontSize: UI.typography.small,
       lineHeight: 18,
     },
 
@@ -2439,8 +2440,8 @@ const styles =
   row: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      gap: 16,
-      paddingVertical: 8,
+      gap: UI.spacing.lg,
+      paddingVertical: UI.spacing.sm,
     },
 
     label: {
@@ -2450,22 +2451,22 @@ const styles =
     value: {
       flex: 1,
       maxWidth: '65%',
-      color: '#0A3972',
+      color: UI.colors.primary,
       fontWeight: '600',
       textAlign: 'right',
     },
 
     worker: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       fontSize: 17,
       fontWeight: '700',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     assignedCancellationNotice: {
       marginTop: 14,
       padding: 14,
-      borderRadius: 12,
+      borderRadius: UI.radius.md,
       backgroundColor: '#FFF7ED',
       borderWidth: 1,
       borderColor: '#F7C68B',
@@ -2477,8 +2478,8 @@ const styles =
     },
 
     supportButton: {
-      marginTop: 12,
-      padding: 12,
+      marginTop: UI.spacing.md,
+      padding: UI.spacing.md,
       borderRadius: 10,
       backgroundColor: '#E8F7F7',
       alignItems: 'center',
@@ -2492,24 +2493,24 @@ const styles =
     workerId: {
       marginTop: 6,
       color: '#6B7280',
-      fontSize: 12,
+      fontSize: UI.typography.small,
     },
 
     trackingPanel: {
-      marginTop: 16,
-      padding: 16,
-      borderRadius: 12,
-      backgroundColor: '#FFFFFF',
+      marginTop: UI.spacing.lg,
+      padding: UI.spacing.lg,
+      borderRadius: UI.radius.md,
+      backgroundColor: UI.colors.surface,
     },
 
     trackingTitle: {
-      fontSize: 16,
+      fontSize: UI.typography.bodyLarge,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     freshness: {
-      marginTop: 8,
+      marginTop: UI.spacing.sm,
       fontWeight: '700',
     },
 
@@ -2522,28 +2523,28 @@ const styles =
     },
 
     location: {
-      marginTop: 12,
+      marginTop: UI.spacing.md,
       color: '#374151',
       lineHeight: 20,
     },
 
     locationAge: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       color: '#6B7280',
-      fontSize: 12,
+      fontSize: UI.typography.small,
     },
 
     staleMessage: {
-      marginTop: 12,
+      marginTop: UI.spacing.md,
       color: '#6B7280',
       lineHeight: 20,
     },
 
     timerCard: {
       padding: 18,
-      borderRadius: 16,
-      backgroundColor: '#FFFFFF',
-      marginBottom: 16,
+      borderRadius: UI.radius.lg,
+      backgroundColor: UI.colors.surface,
+      marginBottom: UI.spacing.lg,
       alignItems: 'center',
     },
 
@@ -2555,30 +2556,30 @@ const styles =
       marginTop: 6,
       fontSize: 36,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     button: {
-      marginTop: 4,
-      marginBottom: 12,
+      marginTop: UI.spacing.xs,
+      marginBottom: UI.spacing.md,
       padding: 14,
       borderRadius: 10,
-      backgroundColor: '#0784FB',
+      backgroundColor: UI.colors.primaryBlue,
       alignItems: 'center',
     },
 
     buttonText: {
-      color: '#FFFFFF',
+      color: UI.colors.surface,
       fontWeight: '700',
     },
 
     rescheduleButton: {
-      marginTop: 4,
-      marginBottom: 12,
+      marginTop: UI.spacing.xs,
+      marginBottom: UI.spacing.md,
       padding: 14,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: '#0784FB',
+      borderColor: UI.colors.primaryBlue,
       backgroundColor: '#E8F7F7',
       alignItems: 'center',
     },
@@ -2589,8 +2590,8 @@ const styles =
     },
 
     cancelButton: {
-      marginTop: 4,
-      marginBottom: 12,
+      marginTop: UI.spacing.xs,
+      marginBottom: UI.spacing.md,
       padding: 14,
       borderRadius: 10,
       borderWidth: 1,
@@ -2605,11 +2606,11 @@ const styles =
     },
 
     otpCard: {
-      marginTop: 4,
-      marginBottom: 16,
+      marginTop: UI.spacing.xs,
+      marginBottom: UI.spacing.lg,
       padding: 18,
-      borderRadius: 16,
-      backgroundColor: '#FFFFFF',
+      borderRadius: UI.radius.lg,
+      backgroundColor: UI.colors.surface,
       alignItems: 'center',
     },
 
@@ -2619,30 +2620,30 @@ const styles =
 
     otp: {
       marginTop: 6,
-      fontSize: 28,
+      fontSize: UI.typography.largeTitle,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
       letterSpacing: 4,
     },
 
     refreshHint: {
-      marginTop: 4,
-      marginBottom: 16,
+      marginTop: UI.spacing.xs,
+      marginBottom: UI.spacing.lg,
       color: '#6B7280',
       textAlign: 'center',
       lineHeight: 20,
     },
 
     completedMessage: {
-      marginTop: 4,
-      marginBottom: 16,
+      marginTop: UI.spacing.xs,
+      marginBottom: UI.spacing.lg,
       color: '#008A88',
       textAlign: 'center',
       lineHeight: 20,
     },
 
     error: {
-      marginBottom: 12,
+      marginBottom: UI.spacing.md,
       color: '#B91C1C',
     },
   })

@@ -1,6 +1,7 @@
 import { FlatList, StyleSheet, Text, View } from 'react-native'
 
 import { formatDateDisplay, formatTimeDisplay } from '../../lib/bookingUtils'
+import { UI } from '../../constants/ui';
 
 interface RecurringOccurrencePreviewProps {
   occurrences: Date[]
@@ -54,22 +55,22 @@ export default function RecurringOccurrencePreview({
 const styles = StyleSheet.create({
   container: {
     marginVertical: 12,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: '#F9FAFB',
     overflow: 'hidden',
   },
 
   emptyContainer: {
-    padding: 16,
+    padding: UI.spacing.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: UI.colors.disabledBackground,
     borderRadius: 10,
     minHeight: 50,
   },
 
   emptyText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#9CA3AF',
     fontWeight: '500',
   },
@@ -78,14 +79,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: UI.spacing.md,
+    paddingHorizontal: UI.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
 
   title: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '600',
     color: '#111827',
   },
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
 
   timeInfo: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: UI.spacing.lg,
     backgroundColor: '#F0F4FF',
   },
 
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
 
   occurrenceItem: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: UI.spacing.lg,
   },
 
   occurrenceItemLast: {
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
   },
 
   occurrenceDate: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#374151',
     fontWeight: '500',
   },

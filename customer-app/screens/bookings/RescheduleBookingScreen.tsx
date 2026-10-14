@@ -11,6 +11,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import { UI } from '../../constants/ui';
 import {
   rescheduleCustomerBooking,
 } from '../../services/booking/bookingReschedule.service'
@@ -439,7 +440,7 @@ const styles = StyleSheet.create({
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: UI.spacing.lg,
   },
 
   logo: {
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
 
   brandLabel: {
     marginLeft: 10,
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1.1,
@@ -467,13 +468,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
     marginRight: 12,
   },
 
   stepBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: UI.colors.surface,
+    fontSize: UI.typography.body,
     fontWeight: '900',
   },
 
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#0A3972',
+    color: UI.colors.primary,
     fontSize: 27,
     fontWeight: '800',
   },
@@ -497,8 +498,8 @@ const styles = StyleSheet.create({
   currentCard: {
     padding: 18,
     borderRadius: 18,
-    backgroundColor: '#0A3972',
-    marginBottom: 16,
+    backgroundColor: UI.colors.primary,
+    marginBottom: UI.spacing.lg,
   },
 
   cardEyebrow: {
@@ -510,7 +511,7 @@ const styles = StyleSheet.create({
 
   currentDate: {
     marginTop: 9,
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -518,26 +519,26 @@ const styles = StyleSheet.create({
   currentTime: {
     marginTop: 5,
     color: '#DCECF5',
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '700',
   },
 
   durationText: {
     marginTop: 9,
     color: '#BFD4E1',
-    fontSize: 12,
+    fontSize: UI.typography.small,
   },
 
   card: {
     padding: 18,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     marginBottom: 14,
   },
 
   sectionTitle: {
     marginBottom: 11,
-    color: '#0A3972',
+    color: UI.colors.primary,
     fontSize: 17,
     fontWeight: '800',
   },
@@ -545,8 +546,8 @@ const styles = StyleSheet.create({
   selector: {
     minHeight: 66,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: UI.spacing.md,
+    borderRadius: UI.radius.md,
     borderWidth: 1,
     borderColor: '#DCE7ED',
     backgroundColor: '#F8FBFC',
@@ -557,41 +558,41 @@ const styles = StyleSheet.create({
 
   selectorLabel: {
     color: '#718493',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '700',
   },
 
   selectorValue: {
     marginTop: 3,
-    color: '#0A3972',
-    fontSize: 16,
+    color: UI.colors.primary,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
   },
 
   selectorAction: {
     color: '#008A88',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '900',
   },
 
   previewCard: {
     padding: 18,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     backgroundColor: '#E8F7F7',
     marginBottom: 14,
   },
 
   previewDate: {
-    marginTop: 8,
-    color: '#0A3972',
+    marginTop: UI.spacing.sm,
+    color: UI.colors.primary,
     fontSize: 19,
     fontWeight: '800',
   },
 
   previewTime: {
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     color: '#008A88',
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
   },
 
@@ -603,7 +604,7 @@ const styles = StyleSheet.create({
 
   previewNote: {
     color: '#45616F',
-    fontSize: 12,
+    fontSize: UI.typography.small,
   },
 
   warningCard: {
@@ -617,14 +618,14 @@ const styles = StyleSheet.create({
 
   warningTitle: {
     color: '#8A5700',
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800',
   },
 
   warningText: {
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     color: '#876A36',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
   },
 
@@ -633,7 +634,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   primaryButtonDisabled: {
@@ -641,16 +642,16 @@ const styles = StyleSheet.create({
   },
 
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 15,
     fontWeight: '900',
   },
 
   footerNote: {
-    marginTop: 12,
+    marginTop: UI.spacing.md,
     marginBottom: 18,
     color: '#7A8D99',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 17,
     textAlign: 'center',
   },

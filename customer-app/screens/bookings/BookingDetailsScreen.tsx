@@ -33,6 +33,7 @@ import {
 } from '../../lib/bookingUtils'
 
 import type { HomeService } from '../../types/service'
+import { UI } from '../../constants/ui';
 
 const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
 
@@ -519,7 +520,7 @@ export default function BookingDetailsScreen({
               <CustomerIcon
                 name="location"
                 size={18}
-                color="#0A3972"
+                color={UI.colors.primary}
               />
             </View>
 
@@ -868,7 +869,7 @@ function DetailRow({
 const styles =
   StyleSheet.create({
     content: {
-  paddingHorizontal: 20,
+  paddingHorizontal: UI.spacing.xl,
   paddingBottom: 120,
 },
 
@@ -884,7 +885,7 @@ const styles =
         'row',
       alignItems:
         'center',
-      marginBottom: 12,
+      marginBottom: UI.spacing.md,
     },
 
     brandLogo: {
@@ -912,7 +913,7 @@ const styles =
         'row',
       alignItems:
         'center',
-      gap: 12,
+      gap: UI.spacing.md,
     },
 
     stepBadge: {
@@ -928,7 +929,7 @@ const styles =
     },
 
     stepBadgeText: {
-      color: '#FFFFFF',
+      color: UI.colors.surface,
       fontSize: 15,
       fontWeight: '800',
     },
@@ -950,11 +951,11 @@ const styles =
   fontSize: 22,
   lineHeight: 28,
   fontWeight: '800',
-  color: '#0A3972',
+  color: UI.colors.primary,
 },
     progressTrack: {
       height: 4,
-      marginTop: 16,
+      marginTop: UI.spacing.lg,
       borderRadius: 2,
       backgroundColor:
         '#E5E7EB',
@@ -979,7 +980,7 @@ const styles =
     progressActive: {
       fontSize: 10,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     progressLabel: {
@@ -1029,7 +1030,7 @@ const styles =
     serviceImageFallbackText: {
       fontSize: 22,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     serviceHeroContent: {
@@ -1045,17 +1046,17 @@ const styles =
 
     serviceHeroName: {
       marginTop: 2,
-      fontSize: 18,
+      fontSize: UI.typography.subtitle,
       lineHeight: 23,
       fontWeight: '800',
-      color: '#FFFFFF',
+      color: UI.colors.surface,
     },
 
     serviceHeroRate: {
-      marginTop: 4,
+      marginTop: UI.spacing.xs,
       fontSize: 13,
       fontWeight: '700',
-      color: '#FFFFFF',
+      color: UI.colors.surface,
     },
 
     row: {
@@ -1085,7 +1086,7 @@ const styles =
   fontSize: 13.5,
   lineHeight: 19,
   fontWeight: '700',
-  color: '#0A3972',
+  color: UI.colors.primary,
 },
 
     locationCard: {
@@ -1105,7 +1106,7 @@ const styles =
     locationIcon: {
       width: 38,
       height: 38,
-      borderRadius: 12,
+      borderRadius: UI.radius.md,
       alignItems:
         'center',
       justifyContent:
@@ -1135,9 +1136,9 @@ const styles =
 
     address: {
       marginTop: 3,
-      fontSize: 14,
+      fontSize: UI.typography.body,
       lineHeight: 20,
-      color: '#0A3972',
+      color: UI.colors.primary,
       fontWeight: '600',
     },
 
@@ -1164,15 +1165,15 @@ const styles =
 
     priceIntroTitle: {
       marginTop: 2,
-      fontSize: 14,
+      fontSize: UI.typography.body,
       fontWeight: '800',
-      color: '#0A3972',
+      color: UI.colors.primary,
     },
 
     priceIntroBadge: {
       paddingHorizontal: 9,
       paddingVertical: 6,
-      borderRadius: 999,
+      borderRadius: UI.radius.pill,
       backgroundColor:
         '#DDF7F0',
     },
@@ -1194,7 +1195,7 @@ errorContainer: {
 },
 
     errorTitle: {
-      fontSize: 14,
+      fontSize: UI.typography.body,
       fontWeight: '800',
       color: '#991B1B',
     },
@@ -1211,7 +1212,7 @@ errorContainer: {
     },
 
     footer: {
-      paddingHorizontal: 20,
+      paddingHorizontal: UI.spacing.xl,
       paddingTop: 12,
       paddingBottom: 14,
       backgroundColor:
@@ -1224,7 +1225,7 @@ errorContainer: {
     continueButton: {
       minHeight: 52,
       paddingHorizontal: 18,
-      borderRadius: 16,
+      borderRadius: UI.radius.lg,
       backgroundColor:
         '#0784FB',
       alignItems:
@@ -1241,6 +1242,6 @@ errorContainer: {
     continueButtonText: {
       fontSize: 15,
       fontWeight: '800',
-      color: '#FFFFFF',
+      color: UI.colors.surface,
     },
   })

@@ -180,15 +180,15 @@ const styles = StyleSheet.create({
   },
 
   errorTitle: {
-    color: '#0A3972',
-    fontSize: 24,
+    color: UI.colors.primary,
+    fontSize: UI.typography.title,
     fontWeight: '800',
     textAlign: 'center',
   },
 
   errorMessage: {
-    marginTop: 12,
-    color: '#61798A',
+    marginTop: UI.spacing.md,
+    color: UI.colors.textSecondary,
     fontSize: 15,
     lineHeight: 23,
     textAlign: 'center',
@@ -197,13 +197,13 @@ const styles = StyleSheet.create({
   retryButton: {
     minHeight: 50,
     minWidth: 160,
-    marginTop: 24,
-    paddingHorizontal: 24,
+    marginTop: UI.spacing.xxl,
+    paddingHorizontal: UI.spacing.xxl,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   retryButtonPressed: {
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
 
   retryButtonText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 15,
     fontWeight: '700',
   },

@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 
 import { logger } from '../lib/logger'
+import { UI } from '../constants/ui';
 
 type ErrorBoundaryState = {
   hasError: boolean
@@ -101,8 +102,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#FFFFFF',
+    padding: UI.spacing.xxl,
+    backgroundColor: UI.colors.surface,
   },
 
   content: {
@@ -112,15 +113,15 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
+    fontSize: UI.typography.title,
     fontWeight: '700',
     textAlign: 'center',
     color: '#111111',
   },
 
   message: {
-    marginTop: 12,
-    fontSize: 16,
+    marginTop: UI.spacing.md,
+    fontSize: UI.typography.bodyLarge,
     lineHeight: 24,
     textAlign: 'center',
     color: '#666666',
@@ -128,19 +129,19 @@ const styles = StyleSheet.create({
 
   devMessage: {
     width: '100%',
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
+    marginTop: UI.spacing.lg,
+    padding: UI.spacing.md,
+    borderRadius: UI.radius.sm,
     backgroundColor: '#F3F3F3',
     color: '#555555',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
   },
 
   button: {
-    marginTop: 24,
+    marginTop: UI.spacing.xxl,
     minWidth: 140,
-    paddingHorizontal: 24,
+    paddingHorizontal: UI.spacing.xxl,
     paddingVertical: 13,
     borderRadius: 10,
     alignItems: 'center',
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 15,
     fontWeight: '600',
   },

@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui';
 import {
   useEffect,
   useState,
@@ -400,10 +401,10 @@ function BookingChatPanelContent({
 
 const styles = StyleSheet.create({
   card: {
-    marginTop: 16,
+    marginTop: UI.spacing.lg,
     padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#D9E6EA',
   },
@@ -411,26 +412,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: UI.spacing.md,
   },
   title: {
-    color: '#0A3972',
-    fontSize: 16,
+    color: UI.colors.primary,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
   },
   subtitle: {
     marginTop: 3,
     color: '#607789',
-    fontSize: 12,
+    fontSize: UI.typography.small,
   },
   messages: {
     maxHeight: 220,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: '#F5FAFB',
   },
   messagesContent: {
     padding: 10,
-    gap: 8,
+    gap: UI.spacing.sm,
   },
   messageRow: {
     alignItems: 'flex-start',
@@ -441,8 +442,8 @@ const styles = StyleSheet.create({
   bubble: {
     maxWidth: '84%',
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingVertical: UI.spacing.sm,
+    borderRadius: UI.radius.md,
   },
   ownBubble: {
     backgroundColor: '#008A88',
@@ -453,12 +454,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 3,
   },
   messageBody: {
-    color: '#0A3972',
+    color: UI.colors.primary,
     fontSize: 13,
     lineHeight: 18,
   },
   ownMessageBody: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
   messageTime: {
     marginTop: 3,
@@ -470,40 +471,40 @@ const styles = StyleSheet.create({
     color: '#D7F5F4',
   },
   empty: {
-    paddingVertical: 16,
+    paddingVertical: UI.spacing.lg,
     color: '#607789',
     fontSize: 13,
     textAlign: 'center',
   },
   error: {
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     color: '#B42318',
-    fontSize: 12,
+    fontSize: UI.typography.small,
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     marginTop: 10,
-    gap: 8,
+    gap: UI.spacing.sm,
   },
   input: {
     flex: 1,
     minHeight: 42,
     maxHeight: 96,
-    paddingHorizontal: 12,
+    paddingHorizontal: UI.spacing.md,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     borderWidth: 1,
     borderColor: '#C7D9DF',
-    color: '#0A3972',
-    fontSize: 14,
+    color: UI.colors.primary,
+    fontSize: UI.typography.body,
     textAlignVertical: 'top',
   },
   sendButton: {
     minHeight: 42,
     justifyContent: 'center',
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     backgroundColor: '#008A88',
   },
   sendButtonDisabled: {
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
     opacity: 0.84,
   },
   sendButtonText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 13,
     fontWeight: '800',
   },

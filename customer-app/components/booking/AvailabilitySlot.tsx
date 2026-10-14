@@ -1,6 +1,7 @@
 import { StyleSheet, TouchableOpacity, Text, View } from 'react-native'
 
 import { formatTimeDisplay } from '../../lib/bookingUtils'
+import { UI } from '../../constants/ui';
 
 interface AvailabilitySlotProps {
   start: string
@@ -95,11 +96,11 @@ const styles = StyleSheet.create({
   timeSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: UI.spacing.sm,
   },
 
   time: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '600',
     color: '#111827',
   },
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   },
 
   separator: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#D1D5DB',
   },
 
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
   },
 
   workers: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '600',
     color: '#6B7280',
   },

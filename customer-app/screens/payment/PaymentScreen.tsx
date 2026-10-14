@@ -20,6 +20,7 @@ import {
 import RazorpayCheckout from 'react-native-razorpay'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import { UI } from '../../constants/ui';
 
 import {
   createRazorpayOrder,
@@ -285,7 +286,7 @@ order = await createRazorpayOrder(
             {loading ? (
               <ActivityIndicator
                 style={styles.amountLoader}
-                color="#0784FB"
+                color={UI.colors.primaryBlue}
               />
             ) : (
               <Text style={styles.amount}>
@@ -466,14 +467,14 @@ function SummaryRow({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F5FAFD',
+    backgroundColor: UI.colors.background,
   },
 
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: UI.spacing.xl,
     paddingTop: 14,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: '#DCEAF2',
   },
@@ -496,13 +497,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   headerSubtitle: {
     marginTop: 2,
-    fontSize: 12,
-    color: '#61798A',
+    fontSize: UI.typography.small,
+    color: UI.colors.textSecondary,
   },
 
   progressRow: {
@@ -526,21 +527,21 @@ const styles = StyleSheet.create({
   },
 
   progressDotActive: {
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   progressDotComplete: {
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   progressDotText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     color: '#6B8292',
   },
 
   progressDotTextActive: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   progressLabel: {
@@ -551,7 +552,7 @@ const styles = StyleSheet.create({
   },
 
   progressLabelActive: {
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
     fontWeight: '800',
   },
 
@@ -559,7 +560,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 2,
     marginHorizontal: 3,
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   progressLineMuted: {
@@ -575,7 +576,7 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     flexGrow: 1,
-    padding: 20,
+    padding: UI.spacing.xl,
     paddingBottom: 28,
   },
 
@@ -583,22 +584,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 18,
-    borderRadius: 20,
-    backgroundColor: '#0A3972',
+    borderRadius: UI.radius.xl,
+    backgroundColor: UI.colors.primary,
   },
 
   heroIcon: {
     width: 50,
     height: 50,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   heroIconText: {
-    color: '#FFFFFF',
-    fontSize: 24,
+    color: UI.colors.surface,
+    fontSize: UI.typography.title,
     fontWeight: '800',
   },
 
@@ -618,36 +619,36 @@ const styles = StyleSheet.create({
     marginTop: 3,
     fontSize: 20,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   heroSubtitle: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     color: '#D9EAF3',
   },
 
   amountCard: {
     marginTop: 14,
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    padding: UI.spacing.xl,
+    borderRadius: UI.radius.xl,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
-    borderColor: '#DCEAF2',
+    borderColor: UI.colors.border,
   },
 
   amountLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#61798A',
+    color: UI.colors.textSecondary,
   },
 
   amount: {
     marginTop: 7,
     fontSize: 32,
     fontWeight: '900',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   amountLoader: {
@@ -664,7 +665,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: UI.spacing.lg,
     paddingVertical: 6,
   },
 
@@ -698,12 +699,12 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   securityBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    color: UI.colors.surface,
+    fontSize: UI.typography.subtitle,
     fontWeight: '900',
   },
 
@@ -715,12 +716,12 @@ const styles = StyleSheet.create({
   securityTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   securityText: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     color: '#4F6B7B',
   },
@@ -728,7 +729,7 @@ const styles = StyleSheet.create({
   errorCard: {
     marginTop: 14,
     padding: 14,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     backgroundColor: '#FFF4F2',
     borderWidth: 1,
     borderColor: '#F2C8C1',
@@ -741,17 +742,17 @@ const styles = StyleSheet.create({
   },
 
   errorText: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     color: '#7E4038',
   },
 
   footer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: UI.spacing.xl,
     paddingTop: 10,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderTopWidth: 1,
     borderTopColor: '#DCEAF2',
   },
@@ -761,7 +762,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   disabledButton: {
@@ -775,13 +776,13 @@ const styles = StyleSheet.create({
   },
 
   payButtonText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontWeight: '800',
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
   },
 
   footerNote: {
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     textAlign: 'center',
     fontSize: 10,
     lineHeight: 14,

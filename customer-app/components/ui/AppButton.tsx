@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui';
 import {
   Pressable,
   StyleSheet,
@@ -32,14 +33,14 @@ export function AppButton({
 const styles = StyleSheet.create({
   button: {
     minHeight: 52,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-backgroundColor: '#0784FB',  },
+    paddingHorizontal: UI.spacing.xl,
+backgroundColor: UI.colors.primaryBlue,  },
   text: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: UI.colors.surface,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '600',
   },
   disabled: {

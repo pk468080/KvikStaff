@@ -13,6 +13,7 @@ import CustomerIcon from '../../components/ui/CustomerIcon'
 
 
 import { geocodeCustomerAddress } from '../../services/addresses/customerGeocoding.service'
+import { UI } from '../../constants/ui';
 
 type LocationFetchingScreenProps = {
   onLocationFetched: (
@@ -170,7 +171,7 @@ export default function LocationFetchingScreen({
             <CustomerIcon
               name="location"
               size={28}
-              color="#0A3972"
+              color={UI.colors.primary}
             />
           </View>
 
@@ -272,7 +273,7 @@ function formatAddress(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    padding: UI.spacing.xxl,
     paddingTop: 44,
     paddingBottom: 28,
     justifyContent: 'space-between',
@@ -286,21 +287,21 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: UI.colors.disabledBackground,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 22,
   },
 
   title: {
-    fontSize: 28,
+    fontSize: UI.typography.largeTitle,
     fontWeight: '700',
     color: '#111827',
     textAlign: 'center',
   },
 
   subtitle: {
-    marginTop: 12,
+    marginTop: UI.spacing.md,
     fontSize: 15,
     lineHeight: 22,
     color: '#6B7280',
@@ -308,14 +309,14 @@ const styles = StyleSheet.create({
   },
 
   loader: {
-    marginTop: 20,
+    marginTop: UI.spacing.xl,
   },
 
   error: {
-    marginTop: 16,
+    marginTop: UI.spacing.lg,
     fontSize: 13,
     lineHeight: 19,
-    color: '#DC2626',
+    color: UI.colors.error,
     textAlign: 'center',
   },
 
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   },
 
   inputLabel: {
-    marginBottom: 8,
+    marginBottom: UI.spacing.sm,
     color: '#374151',
     fontSize: 13,
     fontWeight: '700',
@@ -335,21 +336,21 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     borderColor: '#D1D5DB',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.md,
+    backgroundColor: UI.colors.surface,
     paddingHorizontal: 14,
     fontSize: 15,
     color: '#111827',
   },
 
   buttonSpacing: {
-    marginTop: 12,
+    marginTop: UI.spacing.md,
   },
 
   orText: {
     marginVertical: 10,
     color: '#9AA1AD',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '700',
     textAlign: 'center',
   },

@@ -14,6 +14,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker'
 
 import { formatTimeDisplay } from '../../lib/bookingUtils'
+import { UI } from '../../constants/ui';
 
 interface TimeRangePickerProps {
   startTime: Date
@@ -363,7 +364,7 @@ export default function TimeRangePicker({
 const styles = StyleSheet.create({
   timeRangeContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: UI.spacing.md,
   },
 
   timeButton: {
@@ -380,10 +381,10 @@ const styles = StyleSheet.create({
   },
 
   timeButtonLabel: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '600',
     color: '#6B7280',
-    marginBottom: 4,
+    marginBottom: UI.spacing.xs,
   },
 
   timeButtonValue: {
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
   },
 
   timeButtonHint: {
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
     fontSize: 10,
     lineHeight: 14,
     color: '#9CA3AF',
@@ -411,28 +412,28 @@ const styles = StyleSheet.create({
     justifyContent:
       'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: UI.spacing.lg,
+    paddingVertical: UI.spacing.md,
+    backgroundColor: UI.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor:
       '#E5E7EB',
   },
 
   pickerHeaderTitle: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '600',
     color: '#111827',
   },
 
   pickerHeaderButton: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#6B7280',
     fontWeight: '500',
   },
 
   pickerHeaderButtonDone: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#4F46E5',
     fontWeight: '600',
   },
