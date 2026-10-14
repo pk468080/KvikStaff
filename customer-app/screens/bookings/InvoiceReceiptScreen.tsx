@@ -19,6 +19,7 @@ import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import { UI } from '../../constants/ui';
 import {
   getCustomerInvoice,
   type CustomerInvoice,
@@ -317,19 +318,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: UI.spacing.xxl,
   },
   mutedText: {
-    marginTop: 12,
+    marginTop: UI.spacing.md,
     color: '#6B7280',
   },
   errorTitle: {
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     fontWeight: '900',
     color: '#17354A',
   },
   errorText: {
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     textAlign: 'center',
     color: '#B42318',
   },
@@ -347,12 +348,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
   },
   heroCard: {
-    padding: 20,
+    padding: UI.spacing.xl,
     borderRadius: 22,
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
   eyebrow: {
     fontSize: 10,
@@ -364,35 +365,35 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 27,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
   heroService: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: UI.spacing.md,
+    fontSize: UI.typography.body,
     color: '#C9DDE7',
   },
   heroAmount: {
     marginTop: 22,
     fontSize: 25,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
   heroStatus: {
     marginTop: 6,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     color: '#7EE7E0',
   },
   card: {
     marginTop: 14,
-    padding: 16,
+    padding: UI.spacing.lg,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: '#DFEAF0',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
   },
   sectionTitle: {
     marginBottom: 7,
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '900',
     color: '#17354A',
   },
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: '#B9CBD4',
@@ -431,7 +432,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 15,
     fontWeight: '900',
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
   },
   shareButton: {
     marginTop: 14,
@@ -439,19 +440,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
   disabledButton: {
     opacity: 0.55,
   },
   shareButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: UI.colors.surface,
+    fontSize: UI.typography.body,
     fontWeight: '800',
   },
   disclaimer: {
-    marginTop: 16,
-    fontSize: 11,
+    marginTop: UI.spacing.lg,
+    fontSize: UI.typography.caption,
     lineHeight: 17,
     textAlign: 'center',
     color: '#6B7F8D',

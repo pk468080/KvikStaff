@@ -1,4 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { UI } from '../../constants/ui';
 
 interface WeekdaySelectorProps {
   selectedWeekdays: string[]
@@ -58,11 +59,11 @@ export default function WeekdaySelector({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: UI.spacing.md,
   },
 
   label: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '600',
     color: '#111827',
   },
@@ -70,13 +71,13 @@ const styles = StyleSheet.create({
   weekdayGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: UI.spacing.sm,
   },
 
   weekdayButton: {
     width: '48%',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: UI.spacing.md,
+    paddingHorizontal: UI.spacing.md,
     borderRadius: 10,
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
@@ -94,13 +95,13 @@ const styles = StyleSheet.create({
   },
 
   weekdayText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '600',
     color: '#111827',
   },
 
   weekdayTextSelected: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   weekdayTextDisabled: {
@@ -108,9 +109,9 @@ const styles = StyleSheet.create({
   },
 
   selectedCount: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     color: '#6B7280',
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
   },
 })

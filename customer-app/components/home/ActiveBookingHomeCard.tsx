@@ -4,6 +4,7 @@ import {
   View,
 } from 'react-native'
 import CustomerIcon from '../ui/CustomerIcon'
+import { UI } from '../../constants/ui';
 
 import type {
   BookingStatus,
@@ -416,10 +417,10 @@ function TimelineLine({
 const styles = {
   card: {
     marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    marginBottom: UI.spacing.lg,
+    padding: UI.spacing.lg,
+    borderRadius: UI.radius.xl,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#DCEDEF',
     shadowColor: '#000000',
@@ -449,7 +450,7 @@ const styles = {
     height: 8,
     borderRadius: 4,
     marginRight: 7,
-    backgroundColor: '#16A34A',
+    backgroundColor: UI.colors.success,
   },
 
   liveText: {
@@ -462,7 +463,7 @@ const styles = {
   countBadge: {
     paddingHorizontal: 9,
     paddingVertical: 5,
-    borderRadius: 999,
+    borderRadius: UI.radius.pill,
     backgroundColor: '#EAF7F7',
   },
 
@@ -491,7 +492,7 @@ const styles = {
   serviceIconText: {
     fontSize: 17,
     fontWeight: '900' as const,
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   serviceCopy: {
@@ -500,9 +501,9 @@ const styles = {
   },
 
   serviceName: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800' as const,
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   statusTitle: {
@@ -514,7 +515,7 @@ const styles = {
 
   statusDescription: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     color: '#5E7C8B',
   },
@@ -546,27 +547,27 @@ const styles = {
     justifyContent: 'center' as const,
     borderWidth: 2,
     borderColor: '#D5E1E5',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
   },
 
   stepCircleActive: {
-    borderColor: '#0784FB',
+    borderColor: UI.colors.primaryBlue,
     backgroundColor: '#EAF7F7',
   },
 
   stepCircleCompleted: {
-    borderColor: '#0784FB',
-    backgroundColor: '#0784FB',
+    borderColor: UI.colors.primaryBlue,
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   stepCircleText: {
     fontSize: 10,
     fontWeight: '900' as const,
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   stepCircleTextActive: {
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
   },
 
   stepLabel: {
@@ -591,7 +592,7 @@ const styles = {
   },
 
   timelineLineActive: {
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   bottomRow: {
@@ -607,7 +608,7 @@ const styles = {
 
   scheduleText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '700' as const,
     color: '#5E7C8B',
   },
@@ -616,15 +617,15 @@ const styles = {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     paddingHorizontal: 11,
-    paddingVertical: 8,
+    paddingVertical: UI.spacing.sm,
     borderRadius: 10,
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   trackButtonText: {
     fontSize: 10,
     fontWeight: '800' as const,
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     marginRight: 5,
   },
 }

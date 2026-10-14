@@ -1,4 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { UI } from '../../constants/ui';
 
 export default function BookingLoadingState() {
   return (
@@ -11,16 +12,16 @@ export default function BookingLoadingState() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 32,
+    paddingVertical: UI.spacing.xxxl,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    gap: 12,
+    borderRadius: UI.radius.md,
+    gap: UI.spacing.md,
   },
 
   text: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#6B7280',
     fontWeight: '500',
   },

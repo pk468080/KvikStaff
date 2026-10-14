@@ -53,6 +53,7 @@ import {
 } from '../../lib/bookingUtils'
 
 import type { HomeService } from '../../types/service'
+import { UI } from '../../constants/ui';
 
 import type {
   BookingDraft,
@@ -1509,7 +1510,7 @@ export default function BookingScreen({
             <CustomerIcon
               name="location"
               size={18}
-              color="#0A3972"
+              color={UI.colors.primary}
             />
           </View>
 

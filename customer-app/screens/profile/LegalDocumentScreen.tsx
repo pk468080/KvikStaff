@@ -6,6 +6,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import { UI } from '../../constants/ui';
 
 type DocumentType =
   | 'terms'
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
 
   meta: {
     color: '#9AA1AD',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     marginTop: 5,
     marginBottom: 22,
   },
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontSize: 15,
     fontWeight: '800',
-    marginTop: 16,
+    marginTop: UI.spacing.lg,
     marginBottom: 7,
   },
 

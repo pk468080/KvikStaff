@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
+import { UI } from '../../constants/ui';
 
 interface BookingSectionProps {
   title: string
@@ -16,17 +17,17 @@ export default function BookingSection({ title, children }: BookingSectionProps)
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: UI.spacing.xxl,
   },
 
   title: {
     fontSize: 15,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 12,
+    marginBottom: UI.spacing.md,
   },
 
   content: {
-    gap: 12,
+    gap: UI.spacing.md,
   },
 })

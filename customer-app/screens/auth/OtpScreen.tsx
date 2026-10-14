@@ -12,6 +12,7 @@ import {
 import { AppButton } from '../../components/ui/AppButton'
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import { verifyOtp } from '../../services/auth/auth.service'
+import { UI } from '../../constants/ui';
 
 type OtpScreenProps = {
   phone: string
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: UI.spacing.xl,
     paddingTop: 22,
     paddingBottom: 18,
     justifyContent: 'space-between',
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderRadius: 26,
     overflow: 'hidden',
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -252,14 +253,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
     marginBottom: 14,
   },
 
   stepBadgeText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     letterSpacing: 0.8,
   },
 
@@ -267,13 +268,13 @@ const styles = StyleSheet.create({
     fontSize: 29,
     lineHeight: 34,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     maxWidth: 205,
   },
 
   subtitle: {
     marginTop: 10,
-    fontSize: 14,
+    fontSize: UI.typography.body,
     lineHeight: 21,
     color: '#D9EAF3',
     maxWidth: 215,
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 15,
     paddingHorizontal: 11,
-    paddingVertical: 8,
+    paddingVertical: UI.spacing.sm,
     borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.11)',
   },
@@ -299,9 +300,9 @@ const styles = StyleSheet.create({
   },
 
   phone: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   heroImage: {
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
   formCard: {
     padding: 18,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E2EDF2',
     shadowColor: '#0A3972',
@@ -330,13 +331,13 @@ const styles = StyleSheet.create({
   formHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: UI.spacing.lg,
   },
 
   securityIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#E5F7F7',
@@ -354,14 +355,14 @@ const styles = StyleSheet.create({
   },
 
   formTitle: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '800',
     color: '#17354A',
   },
 
   formSubtitle: {
     marginTop: 3,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     color: '#718491',
   },
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: '800',
     letterSpacing: 7,
-    color: '#0A3972',
+    color: UI.colors.primary,
     textAlign: 'center',
   },
 
@@ -398,14 +399,14 @@ const styles = StyleSheet.create({
   },
 
   infoDotText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     color: '#4B7285',
   },
 
   codeHintText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     color: '#6D8290',
   },
 
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
 
   footerText: {
     marginTop: 10,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     color: '#8A9AA4',
     textAlign: 'center',

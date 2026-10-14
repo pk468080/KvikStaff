@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { UI } from '../../constants/ui';
 import {
   Modal,
   Platform,
@@ -324,7 +325,7 @@ export default function DateRangePicker({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: UI.spacing.md,
   },
 
   dateButton: {
@@ -340,10 +341,10 @@ const styles = StyleSheet.create({
   },
 
   dateButtonLabel: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '600',
     color: '#6B7280',
-    marginBottom: 4,
+    marginBottom: UI.spacing.xs,
   },
 
   dateButtonValue: {
@@ -353,8 +354,8 @@ const styles = StyleSheet.create({
   },
 
   calendarSection: {
-    marginTop: 8,
-    gap: 12,
+    marginTop: UI.spacing.sm,
+    gap: UI.spacing.md,
   },
 
   calendarTitle: {
@@ -367,8 +368,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    backgroundColor: '#F3F4F6',
-    padding: 12,
+    backgroundColor: UI.colors.disabledBackground,
+    padding: UI.spacing.md,
     borderRadius: 10,
   },
 
@@ -377,8 +378,8 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.sm,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
@@ -394,12 +395,12 @@ const styles = StyleSheet.create({
   },
 
   calendarDayExcluded: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: UI.colors.errorBackground,
     borderColor: '#FECACA',
   },
 
   calendarDayText: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '600',
     color: '#111827',
   },
@@ -409,7 +410,7 @@ const styles = StyleSheet.create({
   },
 
   calendarDayTextExcluded: {
-    color: '#DC2626',
+    color: UI.colors.error,
   },
 
   pickerModal: {
@@ -422,27 +423,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: UI.spacing.lg,
+    paddingVertical: UI.spacing.md,
+    backgroundColor: UI.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
 
   pickerHeaderTitle: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '600',
     color: '#111827',
   },
 
   pickerHeaderButton: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#6B7280',
     fontWeight: '500',
   },
 
   pickerHeaderButtonDone: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     color: '#4F46E5',
     fontWeight: '600',
   },

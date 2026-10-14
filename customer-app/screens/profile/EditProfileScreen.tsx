@@ -17,6 +17,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import { UI } from '../../constants/ui';
 import {
   createCustomerProfile,
   getCurrentCustomerProfile,
@@ -350,7 +351,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#DDE3EB',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     color: '#111827',
     fontSize: 15,
   },
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
 
   helper: {
     color: '#9299A5',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     marginTop: 6,
   },
@@ -381,14 +382,14 @@ const styles = StyleSheet.create({
   error: {
     color: '#B42318',
     backgroundColor: '#FFF3F2',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: UI.spacing.md,
+    borderRadius: UI.radius.md,
+    marginBottom: UI.spacing.lg,
   },
 
   saveButton: {
     minHeight: 54,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     backgroundColor: '#007AFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -404,7 +405,7 @@ const styles = StyleSheet.create({
   },
 
   saveText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 15,
     fontWeight: '800',
   },

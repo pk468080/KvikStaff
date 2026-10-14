@@ -16,6 +16,7 @@ import {
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
+import { UI } from '../../constants/ui';
 import {
   createCustomerSupportTicket,
   type CustomerSupportCategory,
@@ -350,8 +351,8 @@ const styles = StyleSheet.create({
   requestsButton: {
     minHeight: 54,
     paddingHorizontal: 15,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: UI.radius.lg,
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E3E8EF',
     flexDirection: 'row',
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
 
   requestsText: {
     color: '#111827',
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800',
   },
 
@@ -379,7 +380,7 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 13,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: UI.spacing.sm,
   },
 
   categoryGrid: {
@@ -392,11 +393,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E0E5EC',
     marginRight: 8,
-    marginBottom: 8,
+    marginBottom: UI.spacing.sm,
   },
 
   categorySelected: {
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
 
   categoryText: {
     color: '#697281',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '700',
   },
 
@@ -424,9 +425,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#DDE3EB',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     color: '#111827',
-    fontSize: 14,
+    fontSize: UI.typography.body,
   },
 
   textarea: {
@@ -445,14 +446,14 @@ const styles = StyleSheet.create({
   error: {
     color: '#B42318',
     backgroundColor: '#FFF3F2',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: UI.radius.md,
+    padding: UI.spacing.md,
+    marginBottom: UI.spacing.lg,
   },
 
   submit: {
     minHeight: 54,
-    borderRadius: 16,
+    borderRadius: UI.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#007AFF',
@@ -467,7 +468,7 @@ const styles = StyleSheet.create({
   },
 
   submitText: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     fontSize: 15,
     fontWeight: '800',
   },

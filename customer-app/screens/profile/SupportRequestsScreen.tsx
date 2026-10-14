@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
+import { UI } from '../../constants/ui';
 import {
   getCustomerSupportTickets,
   type CustomerSupportTicket,
@@ -276,13 +277,13 @@ const styles = StyleSheet.create({
   emptyContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: UI.spacing.xxl,
   },
 
   card: {
     padding: 15,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E8ECF2',
     marginBottom: 10,
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
 
   category: {
     color: '#7B8492',
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
@@ -322,7 +323,7 @@ const styles = StyleSheet.create({
 
   description: {
     color: '#697281',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     marginTop: 5,
   },
@@ -336,9 +337,9 @@ const styles = StyleSheet.create({
   error: {
     color: '#B42318',
     backgroundColor: '#FFF3F2',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: UI.spacing.md,
+    borderRadius: UI.radius.md,
+    marginBottom: UI.spacing.md,
   },
 
   empty: {
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#EEF6FF',
-    marginBottom: 16,
+    marginBottom: UI.spacing.lg,
   },
 
   emptyIconText: {
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     maxWidth: 320,
   },
 

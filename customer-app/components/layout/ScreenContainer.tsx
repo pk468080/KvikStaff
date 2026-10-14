@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui';
 import {
   StyleSheet,
   type ViewProps,
@@ -26,6 +27,6 @@ export function ScreenContainer({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
   },
 })

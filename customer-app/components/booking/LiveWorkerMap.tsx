@@ -1,3 +1,4 @@
+import { UI } from '../../constants/ui';
 import {
   useCallback,
   useEffect,
@@ -377,7 +378,7 @@ const styles =
       width: '100%',
       height: 360,
       overflow: 'hidden',
-      borderRadius: 16,
+      borderRadius: UI.radius.lg,
       backgroundColor:
         '#EEF5F8',
     },
@@ -397,9 +398,9 @@ const styles =
         'row',
       alignItems:
         'center',
-      paddingHorizontal: 12,
+      paddingHorizontal: UI.spacing.md,
       paddingVertical: 10,
-      borderRadius: 12,
+      borderRadius: UI.radius.md,
       backgroundColor:
         'rgba(255,255,255,0.95)',
       gap: 14,
@@ -432,7 +433,7 @@ const styles =
     overlayText: {
       color:
         '#0A3972',
-      fontSize: 11,
+      fontSize: UI.typography.caption,
       fontWeight:
         '700',
     },
@@ -442,7 +443,7 @@ const styles =
         'auto',
       paddingHorizontal: 9,
       paddingVertical: 6,
-      borderRadius: 8,
+      borderRadius: UI.radius.sm,
       backgroundColor:
         '#E8F7F7',
     },
@@ -450,7 +451,7 @@ const styles =
     distanceText: {
       color:
         '#008A88',
-      fontSize: 11,
+      fontSize: UI.typography.caption,
       fontWeight:
         '800',
     },

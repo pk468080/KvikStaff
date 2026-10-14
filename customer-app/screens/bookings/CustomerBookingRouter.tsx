@@ -25,6 +25,7 @@ import {
 import ActiveBookingScreen from './ActiveBookingScreen'
 import CompletedBookingScreen from './CompletedBookingScreen'
 import RecurringBookingScreen from './RecurringBookingScreen'
+import { UI } from '../../constants/ui';
 
 type CustomerBookingRouterProps = {
   bookingId: string
@@ -173,7 +174,7 @@ export default function CustomerBookingRouter({
           <ActivityIndicator />
           <Text
             style={{
-              marginTop: 12,
+              marginTop: UI.spacing.md,
               color: '#6B7280',
             }}
           >
@@ -192,7 +193,7 @@ export default function CustomerBookingRouter({
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 24,
+            padding: UI.spacing.xxl,
           }}
         >
           <Text

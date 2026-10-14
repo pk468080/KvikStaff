@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
+import { UI } from '../../constants/ui';
 
 interface ServiceAreaStatusCardProps {
   address: string
@@ -37,9 +38,9 @@ export default function ServiceAreaStatusCard({
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
-    marginBottom: 20,
-    borderRadius: 12,
+    padding: UI.spacing.lg,
+    marginBottom: UI.spacing.xl,
+    borderRadius: UI.radius.md,
     backgroundColor: '#F0F9FF',
     borderWidth: 1,
     borderColor: '#BAE6FD',
@@ -51,11 +52,11 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    gap: 8,
+    gap: UI.spacing.sm,
   },
 
   label: {
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '600',
     color: '#6B7280',
     textTransform: 'uppercase',

@@ -1,4 +1,5 @@
 import { StyleSheet, TouchableOpacity, Text, View } from 'react-native'
+import { UI } from '../../constants/ui';
 
 export type BookingMethodType = 'instant' | 'scheduled' | 'recurring'
 
@@ -73,13 +74,13 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
+    padding: UI.spacing.lg,
+    marginBottom: UI.spacing.md,
+    borderRadius: UI.radius.md,
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    gap: 12,
+    gap: UI.spacing.md,
   },
 
   cardSelected: {
@@ -97,10 +98,10 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 4,
+    marginBottom: UI.spacing.xs,
   },
 
   labelSelected: {
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 2,
     borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
   },
 
   radioSelected: {

@@ -12,6 +12,7 @@ import {
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
+import { UI } from '../../constants/ui';
 import {
   getCustomerBookings,
   type BookingStatus,
@@ -193,7 +194,7 @@ function EmptyState({
           <CustomerIcon
             name="plus"
             size={22}
-            color="#0A3972"
+            color={UI.colors.primary}
           />
         )}
       </View>
@@ -556,7 +557,7 @@ export default function MyBookingsScreen({
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: UI.spacing.xl,
     paddingTop: 22,
     paddingBottom: 40,
     backgroundColor: '#F7FBFD',
@@ -576,7 +577,7 @@ const styles = StyleSheet.create({
   },
 
   loadingText: {
-    marginTop: 12,
+    marginTop: UI.spacing.md,
     fontSize: 13,
     color: '#6D8290',
   },
@@ -609,7 +610,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginTop: 20,
+    marginTop: UI.spacing.xl,
     marginBottom: 18,
   },
 
@@ -622,7 +623,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.4,
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
     marginBottom: 5,
   },
 
@@ -630,7 +631,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     lineHeight: 35,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   subtitle: {
@@ -646,14 +647,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 18,
     alignItems: 'center',
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   countNumber: {
     fontSize: 22,
     lineHeight: 25,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   countLabel: {
@@ -667,7 +668,7 @@ const styles = StyleSheet.create({
   errorBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 12,
+    paddingHorizontal: UI.spacing.md,
     paddingVertical: 10,
     marginBottom: 13,
     borderRadius: 13,
@@ -681,9 +682,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     textAlign: 'center',
     lineHeight: 19,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     backgroundColor: '#D92D20',
   },
 
@@ -710,12 +711,12 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     borderWidth: 1,
     borderColor: '#D7E4EA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
   },
 
   filterChipSelected: {
-    borderColor: '#0784FB',
-    backgroundColor: '#0784FB',
+    borderColor: UI.colors.primaryBlue,
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   filterChipText: {
@@ -725,7 +726,7 @@ const styles = StyleSheet.create({
   },
 
   filterChipTextSelected: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   filterCount: {
@@ -733,7 +734,7 @@ const styles = StyleSheet.create({
     height: 24,
     marginLeft: 8,
     paddingHorizontal: 6,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#EDF3F6',
@@ -750,19 +751,19 @@ const styles = StyleSheet.create({
   },
 
   filterCountTextSelected: {
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   filterDescription: {
     marginTop: 10,
     marginBottom: 14,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     color: '#7A8D99',
   },
 
   list: {
-    gap: 12,
+    gap: UI.spacing.md,
   },
 
   bookingCard: {
@@ -770,7 +771,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     borderColor: '#DFEAF0',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     shadowColor: '#0A3972',
     shadowOpacity: 0.06,
     shadowRadius: 16,
@@ -809,13 +810,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   serviceImageFallbackText: {
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   serviceCopy: {
@@ -825,7 +826,7 @@ const styles = StyleSheet.create({
   },
 
   serviceName: {
-    fontSize: 16,
+    fontSize: UI.typography.bodyLarge,
     lineHeight: 20,
     fontWeight: '800',
     color: '#17354A',
@@ -833,7 +834,7 @@ const styles = StyleSheet.create({
 
   bookingType: {
     marginTop: 5,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '600',
     color: '#8497A2',
   },
@@ -842,7 +843,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 9,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
   },
 
   statusPillText: {
@@ -860,7 +861,7 @@ const styles = StyleSheet.create({
 
   infoGrid: {
     flexDirection: 'row',
-    gap: 16,
+    gap: UI.spacing.lg,
   },
 
   infoItem: {
@@ -876,8 +877,8 @@ const styles = StyleSheet.create({
   },
 
   infoValue: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: UI.spacing.xs,
+    fontSize: UI.typography.small,
     lineHeight: 17,
     fontWeight: '700',
     color: '#29465A',
@@ -900,9 +901,9 @@ const styles = StyleSheet.create({
 
   amount: {
     marginTop: 3,
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     fontWeight: '800',
-    color: '#0A3972',
+    color: UI.colors.primary,
   },
 
   actionButton: {
@@ -915,7 +916,7 @@ const styles = StyleSheet.create({
   },
 
   actionButtonText: {
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     fontWeight: '800',
     color: '#008C8C',
   },
@@ -929,12 +930,12 @@ const styles = StyleSheet.create({
 
   emptyCard: {
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: UI.spacing.xxl,
     paddingVertical: 34,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: '#DFEAF0',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
   },
 
   emptyIcon: {
@@ -947,9 +948,9 @@ const styles = StyleSheet.create({
   },
 
   emptyIconText: {
-    fontSize: 24,
+    fontSize: UI.typography.title,
     fontWeight: '700',
-    color: '#0784FB',
+    color: UI.colors.primaryBlue,
   },
 
   emptyTitle: {
@@ -961,7 +962,7 @@ const styles = StyleSheet.create({
 
   emptyMessage: {
     marginTop: 6,
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
     textAlign: 'center',
     color: '#7A8D99',
@@ -973,23 +974,23 @@ const styles = StyleSheet.create({
     marginTop: 18,
     padding: 14,
     borderRadius: 18,
-    backgroundColor: '#0A3972',
+    backgroundColor: UI.colors.primary,
   },
 
   footerIcon: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: UI.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 11,
-    backgroundColor: '#0784FB',
+    backgroundColor: UI.colors.primaryBlue,
   },
 
   footerIconText: {
     fontSize: 10,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
     letterSpacing: 0.5,
   },
 
@@ -1000,12 +1001,12 @@ const styles = StyleSheet.create({
   footerTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: UI.colors.surface,
   },
 
   footerText: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: UI.typography.caption,
     lineHeight: 16,
     color: '#C6DCE7',
   },

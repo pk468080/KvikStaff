@@ -15,6 +15,7 @@ import {
 
 import { ScreenContainer } from '../../components/layout/ScreenContainer'
 import CustomerIcon from '../../components/ui/CustomerIcon'
+import { UI } from '../../constants/ui';
 import {
   deleteCustomerAddress,
   getCustomerBookingLocations,
@@ -188,7 +189,7 @@ export default function SavedAddressesScreen() {
               <CustomerIcon
                 name="location"
                 size={24}
-                color="#0A3972"
+                color={UI.colors.primary}
               />
             </View>
 
@@ -226,7 +227,7 @@ export default function SavedAddressesScreen() {
               <CustomerIcon
                 name="location"
                 size={18}
-                color="#0A3972"
+                color={UI.colors.primary}
               />
             </View>
 
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
   emptyContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: UI.spacing.xxl,
   },
 
   title: {
@@ -317,15 +318,15 @@ const styles = StyleSheet.create({
   error: {
     color: '#B42318',
     backgroundColor: '#FFF3F2',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: UI.radius.md,
+    padding: UI.spacing.md,
     marginBottom: 14,
   },
 
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI.colors.surface,
     borderWidth: 1,
     borderColor: '#E8ECF2',
     borderRadius: 18,
@@ -344,7 +345,7 @@ const styles = StyleSheet.create({
 
   iconText: {
     color: '#007AFF',
-    fontSize: 18,
+    fontSize: UI.typography.subtitle,
     fontWeight: '800',
   },
 
@@ -356,20 +357,20 @@ const styles = StyleSheet.create({
 
   label: {
     color: '#111827',
-    fontSize: 14,
+    fontSize: UI.typography.body,
     fontWeight: '800',
   },
 
   address: {
     color: '#707987',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     lineHeight: 18,
-    marginTop: 4,
+    marginTop: UI.spacing.xs,
   },
 
   remove: {
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: UI.spacing.sm,
+    paddingHorizontal: UI.spacing.sm,
   },
 
   removePressed: {
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
 
   removeText: {
     color: '#D92D20',
-    fontSize: 12,
+    fontSize: UI.typography.small,
     fontWeight: '800',
   },
 
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#EEF6FF',
-    marginBottom: 16,
+    marginBottom: UI.spacing.lg,
   },
 
   emptyIconText: {
@@ -414,7 +415,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: UI.spacing.sm,
     maxWidth: 320,
   },
 
