@@ -45,6 +45,7 @@ type NotificationsScreenProps = {
   ) => void
   onBookingOfferPress?: (
     bookingId: string,
+    offerId?: string | null,
   ) => void
 }
 
@@ -586,6 +587,7 @@ export default function NotificationsScreen({
                         ) {
                           onBookingOfferPress?.(
                             notification.bookingId,
+                            notification.bookingWorkerOfferId,
                           )
                           return
                         }

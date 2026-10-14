@@ -20,6 +20,7 @@ export type WorkerStackParamList = {
 
   BookingOffer: {
     bookingId: string
+    offerId?: string
   }
 
   ActiveBooking: {

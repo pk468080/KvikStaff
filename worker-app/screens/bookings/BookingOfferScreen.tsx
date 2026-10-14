@@ -39,7 +39,7 @@ import {
 } from '../../context/WorkerRuntimeContext'
 
 import {
-  getWorkerBooking,
+  getWorkerBookingForOffer,
 } from '../../services/bookings/workerBookings.service'
 
 import {
@@ -49,6 +49,7 @@ import {
 
 import {
   getWorkerBookingOffers,
+  getWorkerBookingOffer,
   getWorkerBookingOfferByBookingId,
   getWorkerBookingOfferRemainingSeconds,
   isWorkerBookingOfferPending,
@@ -71,8 +72,9 @@ import type {
 
 type BookingOfferScreenProps = {
   bookingId: string
+  offerId?: string
   onBack?: () => void
-  onAccepted?: (bookingId: string) => void
+  onAccepted?: (bookingId: string, occurrenceId?: string | null) => void
 }
 
 function formatRemainingTime(
@@ -266,6 +268,7 @@ function SectionHeader({
 
 export default function BookingOfferScreen({
   bookingId,
+  offerId,
   onBack,
   onAccepted,
 }: BookingOfferScreenProps) {
@@ -343,10 +346,11 @@ export default function BookingOfferScreen({
         setDetailsError(null)
 
         try {
-          const matchingOffer =
-            await getWorkerBookingOfferByBookingId(bookingId)
+          const matchingOffer = offerId
+            ? await getWorkerBookingOffer(offerId)
+            : await getWorkerBookingOfferByBookingId(bookingId)
 
-          if (!matchingOffer) {
+          if (!matchingOffer || matchingOffer.bookingId !== bookingId) {
             throw new Error(
               'Booking offer not found for this worker account.',
             )
@@ -371,8 +375,8 @@ export default function BookingOfferScreen({
            */
           try {
             const nextBooking =
-              await getWorkerBooking(
-                bookingId,
+              await getWorkerBookingForOffer(
+                matchingOffer.id,
               )
 
             setBooking(
@@ -431,6 +435,7 @@ export default function BookingOfferScreen({
       },
       [
         bookingId,
+        offerId,
       ],
     )
 
@@ -569,6 +574,7 @@ export default function BookingOfferScreen({
             onAccepted?.(
               result.bookingId ||
                 bookingId,
+              offer.occurrenceId ?? null,
             )
           }
         } catch (cause) {

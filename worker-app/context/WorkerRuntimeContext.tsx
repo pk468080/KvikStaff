@@ -29,6 +29,7 @@ export type WorkerRuntimeContextValue = {
   notificationRevision: number
 
   latestOfferBookingId: string | null
+  latestOfferId: string | null
   latestAssignedBookingId: string | null
 
   realtimeConnected: boolean
@@ -95,6 +96,11 @@ export function WorkerRuntimeProvider({
   const [
     latestOfferBookingId,
     setLatestOfferBookingId,
+  ] = useState<string | null>(null)
+
+  const [
+    latestOfferId,
+    setLatestOfferId,
   ] = useState<string | null>(null)
 
   const [
@@ -196,6 +202,8 @@ export function WorkerRuntimeProvider({
       setLatestOfferBookingId(
         null,
       )
+
+      setLatestOfferId(null)
 
       setLatestAssignedBookingId(
         null,
@@ -320,6 +328,11 @@ export function WorkerRuntimeProvider({
           return
         }
 
+        const offerId =
+          typeof record.id === 'string'
+            ? record.id
+            : null
+
         if (
           status ===
           'pending'
@@ -328,16 +341,18 @@ export function WorkerRuntimeProvider({
             bookingId,
           )
 
+          if (offerId) {
+            setLatestOfferId(offerId)
+          }
+
           return
         }
 
-        setLatestOfferBookingId(
-          current =>
-            current ===
-            bookingId
-              ? null
-              : current,
-        )
+        if (offerId) {
+          setLatestOfferId(current => current === offerId ? null : current)
+        }
+        // Keep bookingId until another pending offer replaces it or the worker
+        // signs out: one parent booking can represent multiple occurrences.
       },
     )
 
@@ -482,6 +497,7 @@ export function WorkerRuntimeProvider({
         notificationRevision,
 
         latestOfferBookingId,
+        latestOfferId,
         latestAssignedBookingId,
 
         realtimeConnected,
@@ -496,6 +512,7 @@ export function WorkerRuntimeProvider({
         notificationRevision,
 
         latestOfferBookingId,
+        latestOfferId,
         latestAssignedBookingId,
 
         realtimeConnected,

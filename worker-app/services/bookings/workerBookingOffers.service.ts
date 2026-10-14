@@ -15,6 +15,7 @@ export type WorkerBookingOffer = {
   id: string
 
   bookingId: string
+  occurrenceId?: string | null
   workerId: string
 
   status: WorkerBookingOfferStatus
@@ -31,6 +32,7 @@ export type WorkerBookingOffer = {
 type WorkerBookingOfferRow = {
   id: string
   booking_id: string
+  occurrence_id: string | null
   worker_id: string
   status: WorkerBookingOfferStatus
   offered_at: string
@@ -57,6 +59,7 @@ type WorkerOfferRpcResult = {
 const OFFER_SELECT = `
   id,
   booking_id,
+  occurrence_id,
   worker_id,
   status,
   offered_at,
@@ -75,6 +78,9 @@ function mapWorkerBookingOffer(
 
     bookingId:
       row.booking_id,
+
+    occurrenceId:
+      row.occurrence_id ?? null,
 
     workerId:
       row.worker_id,
@@ -246,7 +252,9 @@ export async function getWorkerBookingOfferByBookingId(
     )
     .eq('worker_id', workerId)
     .eq('booking_id', bookingId)
-    .order('created_at', { ascending: false })
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .order('expires_at', { ascending: true })
     .limit(1)
     .maybeSingle()
 

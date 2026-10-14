@@ -349,6 +349,7 @@ export type Database = {
       booking_worker_offers: {
         Row: {
           booking_id: string
+          occurrence_id: string | null
           created_at: string
           expires_at: string
           id: string
@@ -360,6 +361,7 @@ export type Database = {
         }
         Insert: {
           booking_id: string
+          occurrence_id?: string | null
           created_at?: string
           expires_at: string
           id?: string
@@ -371,6 +373,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string
+          occurrence_id?: string | null
           created_at?: string
           expires_at?: string
           id?: string
@@ -938,6 +941,7 @@ export type Database = {
       notifications: {
         Row: {
           booking_id: string | null
+          booking_worker_offer_id: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -948,6 +952,7 @@ export type Database = {
         }
         Insert: {
           booking_id?: string | null
+          booking_worker_offer_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -958,6 +963,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string | null
+          booking_worker_offer_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean

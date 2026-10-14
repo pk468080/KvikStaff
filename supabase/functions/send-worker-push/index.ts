@@ -200,6 +200,10 @@ export default {
                   record.booking_id ??
                   null,
 
+                offer_id:
+                  record.booking_worker_offer_id ??
+                  null,
+
                 notification_type:
                   record.notification_type ??
                   "general",

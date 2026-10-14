@@ -295,6 +295,34 @@ export async function getWorkerBooking(
     : null
 }
 
+export async function getWorkerBookingForOffer(
+  offerId: string,
+): Promise<WorkerBooking | null> {
+  if (!offerId.trim()) {
+    throw new Error('Offer id is required.')
+  }
+
+  const { data, error } = await supabase.rpc(
+    'worker_get_booking_offer_details',
+    { p_offer_id: offerId },
+  )
+
+  if (error) {
+    throw error
+  }
+
+  if (!data || typeof data !== 'object') {
+    return null
+  }
+
+  const payload = data as unknown as { booking?: unknown }
+  if (!payload.booking || typeof payload.booking !== 'object') {
+    return null
+  }
+
+  return mapWorkerBooking(payload.booking as unknown as WorkerBookingRow)
+}
+
 export async function requireWorkerBooking(
   bookingId: string,
 ): Promise<WorkerBooking> {

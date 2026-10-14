@@ -17,6 +17,7 @@ export type WorkerNotification = {
 
   userId: string
   bookingId: string | null
+  bookingWorkerOfferId: string | null
 
   title: string
   message: string

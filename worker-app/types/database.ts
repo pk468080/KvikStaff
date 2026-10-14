@@ -338,6 +338,7 @@ export type Database = {
       booking_worker_offers: TableDefinition<{
         id: string
         booking_id: string
+        occurrence_id: string | null
         worker_id: string
         status: BookingWorkerOfferStatus
         offered_at: string
@@ -361,6 +362,7 @@ export type Database = {
         id: string
         user_id: string
         booking_id: string | null
+        booking_worker_offer_id: string | null
         title: string
         message: string
         notification_type: string | null
@@ -456,6 +458,12 @@ export type Database = {
       created_at: string
       updated_at: string
     }
+  }
+    worker_get_booking_offer_details: {
+    Args: {
+      p_offer_id: string
+    }
+    Returns: Json
   }
     worker_get_booking_context: {
     Args: {

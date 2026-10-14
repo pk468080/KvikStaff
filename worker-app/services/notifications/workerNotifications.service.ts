@@ -16,6 +16,7 @@ type WorkerNotificationRow = {
   id: string
   user_id: string
   booking_id: string | null
+  booking_worker_offer_id: string | null
   title: string
   message: string
   notification_type: string | null
@@ -37,6 +38,7 @@ const NOTIFICATION_SELECT = `
   id,
   user_id,
   booking_id,
+  booking_worker_offer_id,
   title,
   message,
   notification_type,
@@ -68,6 +70,9 @@ function mapNotification(
 
     bookingId:
       row.booking_id,
+
+    bookingWorkerOfferId:
+      row.booking_worker_offer_id ?? null,
 
     title:
       row.title,

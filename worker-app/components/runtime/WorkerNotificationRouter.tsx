@@ -38,12 +38,14 @@ type WorkerNotificationRouterProps = {
 
   onBookingOfferPress: (
     bookingId: string,
+    offerId?: string | null,
   ) => void
 }
 
 type NotificationData = {
   notification_id?: unknown
   booking_id?: unknown
+  offer_id?: unknown
   notification_type?: unknown
 }
 
@@ -107,6 +109,11 @@ export default function WorkerNotificationRouter({
         const bookingId =
           getString(
             data.booking_id,
+          )
+
+        const offerId =
+          getString(
+            data.offer_id,
           )
 
         const notificationType =
@@ -178,6 +185,7 @@ export default function WorkerNotificationRouter({
           ) {
             onBookingOfferPress(
               bookingId,
+              offerId,
             )
 
             return

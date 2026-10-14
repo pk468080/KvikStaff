@@ -36,6 +36,10 @@ import {
 } from '../context/WorkerRuntimeContext'
 
 import {
+  getWorkerBookingOffer,
+} from '../services/bookings/workerBookingOffers.service'
+
+import {
   getWorkerBooking,
 } from '../services/bookings/workerBookings.service'
 
@@ -184,22 +188,34 @@ function WorkerTabs() {
 
   const {
     latestOfferBookingId,
+    latestOfferId,
   } = useWorkerRuntime()
 
   useEffect(() => {
-    if (!latestOfferBookingId) {
+    if (!latestOfferBookingId || !latestOfferId) {
       return
     }
 
-    navigation.navigate(
-      'BookingOffer',
-      {
-        bookingId:
-          latestOfferBookingId,
-      },
-    )
+    let active = true
+    void (async () => {
+      try {
+        const offer = await getWorkerBookingOffer(latestOfferId)
+        if (!active || !offer || offer.status !== 'pending') {
+          return
+        }
+        navigation.navigate('BookingOffer', {
+          bookingId: offer.bookingId,
+          offerId: offer.id,
+        })
+      } catch (cause) {
+        console.warn('Unable to open the latest worker offer:', cause)
+      }
+    })()
+
+    return () => { active = false }
   }, [
     latestOfferBookingId,
+    latestOfferId,
     navigation,
   ])
 
@@ -212,11 +228,12 @@ function WorkerTabs() {
           bookingId,
         )
       }}
-      onBookingOfferPress={bookingId => {
+      onBookingOfferPress={(bookingId, offerId) => {
         navigation.navigate(
           'BookingOffer',
           {
             bookingId,
+            offerId: offerId ?? undefined,
           },
         )
       }}
@@ -440,10 +457,16 @@ export default function WorkerNavigator() {
             bookingId={
               route.params.bookingId
             }
+            offerId={route.params.offerId}
             onBack={() => {
               navigation.goBack()
             }}
-            onAccepted={bookingId => {
+            onAccepted={(bookingId, occurrenceId) => {
+              if (occurrenceId) {
+                navigation.navigate('BookingOccurrence', { occurrenceId })
+                return
+              }
+
               void navigateToWorkerBooking(
                 navigation,
                 bookingId,
@@ -557,11 +580,12 @@ export default function WorkerNavigator() {
                 bookingId,
               )
             }}
-            onBookingOfferPress={bookingId => {
+            onBookingOfferPress={(bookingId, offerId) => {
               navigation.navigate(
                 'BookingOffer',
                 {
                   bookingId,
+                  offerId: offerId ?? undefined,
                 },
               )
             }}
