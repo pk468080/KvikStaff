@@ -106,7 +106,7 @@ jobs:
         run: |
           docker exec -i supabase_db_kvikstaffci \
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-            < supabase/migrations/20261015120000_restrict_worker_profile_directory_access.sql
+            < supabase/migrations/20261015111844_restrict_worker_profile_directory_access.sql
 
       - name: Verify worker profile privacy restrictions
         run: |
