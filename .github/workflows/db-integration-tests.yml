@@ -102,6 +102,19 @@ jobs:
             -v ON_ERROR_STOP=1 --single-transaction \
             < supabase/tests/fixtures/kvikstaff_schema_baseline.sql
 
+      - name: Apply profile privacy migration to isolated database
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/migrations/20261015120000_restrict_worker_profile_directory_access.sql
+
+      - name: Verify worker profile privacy restrictions
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/test_worker_profile_privacy.sql
+
+
       - name: Verify baseline tables are empty
         run: |
           docker exec supabase_db_kvikstaffci \
