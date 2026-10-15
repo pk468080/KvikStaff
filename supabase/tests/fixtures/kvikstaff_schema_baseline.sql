@@ -15129,6 +15129,10 @@ BEGIN
             'booking_id',
             NEW.booking_id,
 
+            'booking_worker_offer_id',
+
+            NEW.booking_worker_offer_id,
+
             'title',
             NEW.title,
 
@@ -24140,10 +24144,12 @@ GRANT ALL ON FUNCTION "public"."reconcile_worker_assignment_presence"("p_worker_
 
 
 
+REVOKE ALL ON FUNCTION "public"."reconcile_worker_assignment_presence_from_booking"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."reconcile_worker_assignment_presence_from_booking"() TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."reconcile_worker_assignment_presence_from_occurrence"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."reconcile_worker_assignment_presence_from_occurrence"() TO "service_role";
 
 
