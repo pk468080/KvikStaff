@@ -26,11 +26,9 @@ function isExpoToken(token: unknown): token is string {
 
 function chunk<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
-
   for (let i = 0; i < items.length; i += size) {
     result.push(items.slice(i, i + size));
   }
-
   return result;
 }
 
@@ -50,10 +48,7 @@ export default {
     { auth: "secret" },
     async (req, ctx) => {
       if (req.method !== "POST") {
-        return json(
-          { error: "Method not allowed" },
-          405,
-        );
+        return json({ error: "Method not allowed" }, 405);
       }
 
       let payload: any;
@@ -61,10 +56,7 @@ export default {
       try {
         payload = await req.json();
       } catch {
-        return json(
-          { error: "Invalid JSON body" },
-          400,
-        );
+        return json({ error: "Invalid JSON body" }, 400);
       }
 
       if (
@@ -72,71 +64,38 @@ export default {
         payload?.table !== "notifications" ||
         payload?.schema !== "public"
       ) {
-        return json({
-          ignored: true,
-        });
+        return json({ ignored: true });
       }
 
       const record = payload?.record;
+      const notificationId = String(record?.id ?? "").trim();
+      const userId = String(record?.user_id ?? "").trim();
+      const title = String(record?.title ?? "").trim();
+      const body = String(record?.message ?? "").trim();
 
-      const notificationId =
-        String(record?.id ?? "").trim();
-
-      const userId =
-        String(record?.user_id ?? "").trim();
-
-      const title =
-        String(record?.title ?? "").trim();
-
-      const body =
-        String(record?.message ?? "").trim();
-
-      if (
-        !notificationId ||
-        !userId ||
-        !title ||
-        !body
-      ) {
+      if (!notificationId || !userId || !title || !body) {
         return json(
-          {
-            error:
-              "Notification record is incomplete",
-          },
+          { error: "Notification record is incomplete" },
           400,
         );
       }
 
-      const {
-        data: pushTokens,
-        error: pushTokenError,
-      } = await ctx.supabaseAdmin
-        .from("push_tokens")
-        .select("id, token")
-        .eq("user_id", userId)
-        .eq("is_active", true);
+      const { data: pushTokens, error: pushTokenError } =
+        await ctx.supabaseAdmin
+          .from("push_tokens")
+          .select("id, token")
+          .eq("user_id", userId)
+          .eq("is_active", true);
 
       if (pushTokenError) {
-        console.error(
-          "Failed to load push_tokens:",
-          pushTokenError,
-        );
-
-        return json(
-          {
-            error:
-              "Unable to load push token",
-          },
-          500,
-        );
+        console.error("Failed to load push_tokens:", pushTokenError);
+        return json({ error: "Unable to load push token" }, 500);
       }
 
       const tokenRows: PushTokenRow[] = [];
 
       for (const row of pushTokens ?? []) {
-        if (
-          isExpoToken(row?.token) &&
-          row?.id
-        ) {
+        if (isExpoToken(row?.token) && row?.id) {
           tokenRows.push({
             id: row.id,
             token: row.token.trim(),
@@ -144,20 +103,13 @@ export default {
         }
       }
 
-      const deduped =
-        new Map<string, PushTokenRow>();
+      const deduped = new Map<string, PushTokenRow>();
 
       for (const row of tokenRows) {
-        deduped.set(
-          row.token,
-          row,
-        );
+        deduped.set(row.token, row);
       }
 
-      const tokens =
-        Array.from(
-          deduped.values(),
-        );
+      const tokens = Array.from(deduped.values());
 
       if (tokens.length === 0) {
         return json({
@@ -165,88 +117,51 @@ export default {
           batches: 0,
           retired_tokens: 0,
           recorded_deliveries: 0,
-          reason:
-            "No active Expo push tokens",
+          reason: "No active Expo push tokens",
         });
       }
 
-      const retiredTokens =
-        new Set<string>();
-
+      const retiredTokens = new Set<string>();
       let sent = 0;
       let recordedDeliveries = 0;
+      const batchResults: unknown[] = [];
 
-      const batchResults: unknown[] =
-        [];
+      for (const tokenBatch of chunk(tokens, MAX_EXPO_BATCH_SIZE)) {
+        const messages = tokenBatch.map(({ token: to }) => ({
+          to,
+          sound: "default",
+          title,
+          body,
+          data: {
+            notification_id: notificationId,
+            booking_id: record.booking_id ?? null,
+            offer_id: record.booking_worker_offer_id ?? null,
+            notification_type:
+              record.notification_type ?? "general",
+          },
+          channelId: "booking-assignment",
+        }));
 
-      for (
-        const tokenBatch of chunk(
-          tokens,
-          MAX_EXPO_BATCH_SIZE,
-        )
-      ) {
-        const messages =
-          tokenBatch.map(
-            ({ token: to }) => ({
-              to,
-              sound: "default",
-              title,
-              body,
-              data: {
-                notification_id:
-                  notificationId,
-
-                booking_id:
-                  record.booking_id ??
-                  null,
-
-                offer_id:
-                  record.booking_worker_offer_id ??
-                  null,
-
-                notification_type:
-                  record.notification_type ??
-                  "general",
-              },
-              channelId:
-                "booking-assignment",
-            }),
-          );
-
-        const expoResponse =
-          await fetch(
-            "https://exp.host/--/api/v2/push/send",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                Accept:
-                  "application/json",
-              },
-
-              body:
-                JSON.stringify(
-                  messages,
-                ),
+        const expoResponse = await fetch(
+          "https://exp.host/--/api/v2/push/send",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
             },
-          );
+            body: JSON.stringify(messages),
+          },
+        );
 
-        const expoBodyText =
-          await expoResponse.text();
+        const expoBodyText = await expoResponse.text();
 
-        let expoBody: any =
-          expoBodyText;
+        let expoBody: any = expoBodyText;
 
         try {
-          expoBody =
-            JSON.parse(
-              expoBodyText,
-            );
+          expoBody = JSON.parse(expoBodyText);
         } catch {
-          // Keep non-JSON response text.
+          // Keep non-JSON response text for diagnostics.
         }
 
         if (!expoResponse.ok) {
@@ -258,30 +173,19 @@ export default {
 
           return json(
             {
-              error:
-                "Push delivery failed",
-
-              status:
-                expoResponse.status,
-
-              sent_before_failure:
-                sent,
+              error: "Push delivery failed",
+              status: expoResponse.status,
+              sent_before_failure: sent,
             },
             502,
           );
         }
 
-        const tickets =
-          Array.isArray(
-            expoBody?.data,
-          )
-            ? expoBody.data
-            : [];
+        const tickets = Array.isArray(expoBody?.data)
+          ? expoBody.data
+          : [];
 
-        if (
-          tickets.length !==
-          tokenBatch.length
-        ) {
+        if (tickets.length !== tokenBatch.length) {
           console.error(
             "Expo ticket count mismatch:",
             tickets.length,
@@ -290,76 +194,36 @@ export default {
 
           return json(
             {
-              error:
-                "Invalid Expo push response",
-
-              sent_before_failure:
-                sent,
+              error: "Invalid Expo push response",
+              sent_before_failure: sent,
             },
             502,
           );
         }
 
-        const now =
-          new Date().toISOString();
+        const now = new Date().toISOString();
+        const deliveryRows: Array<Record<string, unknown>> = [];
 
-        const deliveryRows:
-          Array<Record<string, unknown>> =
-          [];
-
-        for (
-          let i = 0;
-          i < tokenBatch.length;
-          i += 1
-        ) {
-          const tokenRow =
-            tokenBatch[i];
-
-          const ticket =
-            tickets[i];
-
-          const tokenHash =
-            await sha256Hex(
-              tokenRow.token,
-            );
+        for (let i = 0; i < tokenBatch.length; i += 1) {
+          const tokenRow = tokenBatch[i];
+          const ticket = tickets[i];
 
           if (
-            ticket?.status ===
-              "ok" &&
-            typeof ticket?.id ===
-              "string" &&
+            ticket?.status === "ok" &&
+            typeof ticket?.id === "string" &&
             ticket.id.trim()
           ) {
             deliveryRows.push({
-              notification_id:
-                notificationId,
-
-              user_id:
-                userId,
-
-              push_token_id:
-                tokenRow.id,
-
-              token_hash:
-                tokenHash,
-
-              expo_ticket_id:
-                ticket.id.trim(),
-
-              ticket_status:
-                "ok",
-
-              ticket_error:
-                null,
-
-              receipt_status:
-                "pending",
-
-              receipt_error:
-                null,
-
-              sent_at:
-                now,
+              notification_id: notificationId,
+              user_id: userId,
+              push_token_id: tokenRow.id,
+              token_hash: await sha256Hex(tokenRow.token),
+              expo_ticket_id: ticket.id.trim(),
+              ticket_status: "ok",
+              ticket_error: null,
+              receipt_status: "pending",
+              receipt_error: null,
+              sent_at: now,
             });
 
             continue;
@@ -371,67 +235,36 @@ export default {
             "Expo returned an invalid push ticket.";
 
           deliveryRows.push({
-            notification_id:
-              notificationId,
-
-            user_id:
-              userId,
-
-            push_token_id:
-              tokenRow.id,
-
-            token_hash:
-              tokenHash,
-
-            expo_ticket_id:
-              null,
-
-            ticket_status:
-              "error",
-
-            ticket_error:
-              String(
-                ticketError,
-              ),
-
-            receipt_status:
-              "not_applicable",
-
-            receipt_error:
-              null,
-
-            sent_at:
-              now,
+            notification_id: notificationId,
+            user_id: userId,
+            push_token_id: tokenRow.id,
+            token_hash: await sha256Hex(tokenRow.token),
+            expo_ticket_id: null,
+            ticket_status: "error",
+            ticket_error: String(ticketError),
+            receipt_status: "not_applicable",
+            receipt_error: null,
+            sent_at: now,
           });
 
           if (
-            ticket?.status ===
-              "error" &&
-            ticket?.details?.error ===
-              "DeviceNotRegistered"
+            ticket?.status === "error" &&
+            ticket?.details?.error === "DeviceNotRegistered"
           ) {
-            retiredTokens.add(
-              tokenRow.token,
-            );
+            retiredTokens.add(tokenRow.token);
           }
         }
 
-        const {
-          error: deliveryError,
-        } = await ctx.supabaseAdmin
-          .from(
-            "worker_push_deliveries",
-          )
-          .upsert(
-            deliveryRows,
-            {
-              onConflict:
-                "notification_id,push_token_id",
-
-              ignoreDuplicates:
-                true,
-            },
-          );
+        const { error: deliveryError } =
+          await ctx.supabaseAdmin
+            .from("worker_push_deliveries")
+            .upsert(
+              deliveryRows,
+              {
+                onConflict: "notification_id,push_token_id",
+                ignoreDuplicates: true,
+              },
+            );
 
         if (deliveryError) {
           console.error(
@@ -441,53 +274,28 @@ export default {
 
           return json(
             {
-              error:
-                "Push delivery audit persistence failed",
-
-              sent_before_failure:
-                sent,
+              error: "Push delivery audit persistence failed",
+              sent_before_failure: sent,
             },
             500,
           );
         }
 
-        sent +=
-          messages.length;
-
-        recordedDeliveries +=
-          deliveryRows.length;
-
-        batchResults.push(
-          expoBody,
-        );
+        sent += messages.length;
+        recordedDeliveries += deliveryRows.length;
+        batchResults.push(expoBody);
       }
 
-      if (
-        retiredTokens.size >
-        0
-      ) {
-        const {
-          error:
-            retireError,
-        } = await ctx.supabaseAdmin
-          .from("push_tokens")
-          .update({
-            is_active:
-              false,
-
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq(
-            "user_id",
-            userId,
-          )
-          .in(
-            "token",
-            Array.from(
-              retiredTokens,
-            ),
-          );
+      if (retiredTokens.size > 0) {
+        const { error: retireError } =
+          await ctx.supabaseAdmin
+            .from("push_tokens")
+            .update({
+              is_active: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", userId)
+            .in("token", Array.from(retiredTokens));
 
         if (retireError) {
           console.error(
@@ -499,24 +307,10 @@ export default {
 
       return json({
         sent,
-
-        batches:
-          Math.ceil(
-            tokens.length /
-              MAX_EXPO_BATCH_SIZE,
-          ),
-
-        retired_tokens:
-          retiredTokens.size,
-
-        recorded_deliveries:
-          recordedDeliveries,
-
-        expo:
-          batchResults.length ===
-          1
-            ? batchResults[0]
-            : batchResults,
+        batches: Math.ceil(tokens.length / MAX_EXPO_BATCH_SIZE),
+        retired_tokens: retiredTokens.size,
+        recorded_deliveries: recordedDeliveries,
+        expo: batchResults.length === 1 ? batchResults[0] : batchResults,
       });
     },
   ),

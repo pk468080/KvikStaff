@@ -759,7 +759,7 @@ if (
         : "Unexpected server error.";
 
     console.error(
-      "[KvikStaff] verify-razorpay-payment error:",
+      "[TempStaff] verify-razorpay-payment error:",
       message,
       error,
     );

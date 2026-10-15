@@ -392,7 +392,7 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     console.error(
-      "[KvikStaff] create-worker error:",
+      "[TempStaff] create-worker error:",
       error
     );
 

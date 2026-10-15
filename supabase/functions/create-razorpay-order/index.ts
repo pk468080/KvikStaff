@@ -735,7 +735,7 @@ Deno.serve(async (req: Request) => {
             currency,
             receipt,
             notes: {
-              KvikStaff_booking_id:
+              tempstaff_booking_id:
                 bookingId,
               fulfillment_type:
                 booking.fulfillment_type,
@@ -853,7 +853,7 @@ Deno.serve(async (req: Request) => {
     }
 
     console.error(
-      "[KvikStaff] create-razorpay-order error:",
+      "[TempStaff] create-razorpay-order error:",
       error
     );
 
