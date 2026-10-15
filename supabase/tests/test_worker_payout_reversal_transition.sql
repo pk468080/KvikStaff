@@ -39,6 +39,30 @@ BEGIN
       'Payout provider update function permissions are incorrect';
   END IF;
 
+
+    -- Use a trusted service-role context for synthetic CI fixtures only.
+  -- The surrounding transaction rolls back the test data and settings.
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_worker_id::text,
+      'role', 'service_role'
+    )::text,
+    true
+  );
+
+  PERFORM set_config(
+    'request.jwt.claim.sub',
+    v_worker_id::text,
+    true
+  );
+
+  PERFORM set_config(
+    'request.jwt.claim.role',
+    'service_role',
+    true
+  );
+
   INSERT INTO public.profiles (id, role, is_active)
   VALUES (v_worker_id, 'worker'::public.user_role, true);
 
