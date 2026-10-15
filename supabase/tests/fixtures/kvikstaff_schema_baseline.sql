@@ -22776,7 +22776,7 @@ CREATE POLICY "profiles_insert_own" ON "public"."profiles" FOR INSERT TO "authen
 
 
 
-CREATE POLICY "profiles_select_authenticated" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((( SELECT "public"."is_admin"() AS "is_admin") OR ("id" = ( SELECT "auth"."uid"() AS "uid")) OR (("role" = 'worker'::"public"."user_role") AND ("is_active" = true))));
+CREATE POLICY "profiles_select_own_or_admin" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((("id" = ( SELECT "auth"."uid"() AS "uid")) OR ( SELECT "public"."is_admin"() AS "is_admin")));
 
 
 
@@ -23238,7 +23238,7 @@ CREATE POLICY "worker_presence_select_own_or_admin" ON "public"."worker_presence
 ALTER TABLE "public"."worker_profiles" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "worker_profiles_select_authenticated" ON "public"."worker_profiles" FOR SELECT TO "authenticated" USING ((( SELECT "public"."is_admin"() AS "is_admin") OR ("id" = ( SELECT "auth"."uid"() AS "uid")) OR (("is_verified" = true) AND ("worker_status" = ANY (ARRAY['available'::"public"."worker_status", 'busy'::"public"."worker_status"])))));
+CREATE POLICY "worker_profiles_select_own_or_admin" ON "public"."worker_profiles" FOR SELECT TO "authenticated" USING ((("id" = ( SELECT "auth"."uid"() AS "uid")) OR ( SELECT "public"."is_admin"() AS "is_admin")));
 
 
 
@@ -24918,7 +24918,7 @@ GRANT SELECT ON TABLE "public"."worker_presence" TO "authenticated";
 
 
 
-GRANT ALL ON TABLE "public"."worker_profiles" TO "anon";
+REVOKE ALL ON TABLE "public"."worker_profiles" FROM "anon";
 GRANT ALL ON TABLE "public"."worker_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."worker_profiles" TO "service_role";
 
