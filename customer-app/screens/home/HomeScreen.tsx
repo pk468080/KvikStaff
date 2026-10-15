@@ -233,116 +233,86 @@ const [
     setServices(nextServices)
     return nextServices
   }
-
-async function loadActiveBookings() {
+  async function loadActiveBookings() {
   try {
-    setActiveBookingsLoading(true);
+    setActiveBookingsLoading(
+      true,
+    )
 
-    const bookings = await getCustomerBookings();
+    const bookings =
+      await getCustomerBookings()
 
     const active = bookings.filter(
       booking =>
-        booking.status === 'searching_worker' ||
-        booking.status === 'assigned' ||
-        booking.status === 'on_the_way' ||
-        booking.status === 'arrived' ||
-        booking.status === 'in_progress',
-    );
+        booking.status ===
+          'searching_worker' ||
+        booking.status ===
+          'assigned' ||
+        booking.status ===
+          'on_the_way' ||
+        booking.status ===
+          'arrived' ||
+        booking.status ===
+          'in_progress',
+    )
 
     active.sort((a, b) => {
       const aTime = a.scheduled_start
-        ? Date.parse(a.scheduled_start)
-        : Number.MAX_SAFE_INTEGER;
+        ? Date.parse(
+            a.scheduled_start,
+          )
+        : Number.MAX_SAFE_INTEGER
 
       const bTime = b.scheduled_start
-        ? Date.parse(b.scheduled_start)
-        : Number.MAX_SAFE_INTEGER;
+        ? Date.parse(
+            b.scheduled_start,
+          )
+        : Number.MAX_SAFE_INTEGER
 
-      return aTime - bTime;
-    });
+      return aTime - bTime
+    })
 
-    setActiveBookings(active);
+    setActiveBookings(active)
   } catch (error) {
-    // Keep the last successful booking data on refresh failure.
-    console.warn(
-      'Active booking home card refresh failed:',
-      error,
-    );
-  } finally {
-    setActiveBookingsLoading(false);
-  }
-}
-
-
-  
-async function loadHomeContent(
-  availableServices: HomeService[],
-) {
-  setContentLoading(true)
-  setContentError('')
-
-  try {
-    const availableIds = new Set(
-      availableServices.map(service => service.id),
-    )
-
-    const [
-      favouritesResult,
-      rebookResult,
-      promotionsResult,
-    ] = await Promise.allSettled([
-      getCustomerFavouriteServiceIds(),
-      getCustomerRebookHistory(),
-      getHomePromotions(availableIds),
-    ])
-
-    let hasFailure = false
-
-    if (favouritesResult.status === 'fulfilled') {
-      setFavouriteServiceIds(favouritesResult.value)
-    } else {
-      hasFailure = true
-      console.warn(
-        'Home favourites could not be loaded.',
-      )
-    }
-
-    if (rebookResult.status === 'fulfilled') {
-      setRebookHistory(rebookResult.value)
-    } else {
-      hasFailure = true
-      console.warn(
-        'Home rebook history could not be loaded.',
-      )
-    }
-
-    if (promotionsResult.status === 'fulfilled') {
-      setPromotions(promotionsResult.value)
-    } else {
-      hasFailure = true
-      console.warn(
-        'Home promotions could not be loaded.',
-      )
-    }
-
-    if (hasFailure) {
-      setContentError(
-        'Some personalized content is temporarily unavailable. You can still browse services.',
-      )
-    }
-  } catch (err) {
     console.error(
-      'Home personalized content error:',
-      err,
-    )
-
-    setContentError(
-      'Some personalized content is temporarily unavailable. You can still browse services.',
+      'Active booking home card error:',
+      error,
     )
   } finally {
-    setContentLoading(false)
+    setActiveBookingsLoading(
+      false,
+    )
   }
 }
+
+  async function loadHomeContent(availableServices: HomeService[]) {
+    setContentLoading(true)
+    setContentError('')
+
+    try {
+      const availableIds = new Set(
+        availableServices.map(service => service.id),
+      )
+
+      const [nextFavouriteIds, nextRebookHistory, nextPromotions] =
+        await Promise.all([
+          getCustomerFavouriteServiceIds(),
+          getCustomerRebookHistory(),
+          getHomePromotions(availableIds),
+        ])
+
+      setFavouriteServiceIds(nextFavouriteIds)
+      setRebookHistory(nextRebookHistory)
+      setPromotions(nextPromotions)
+    } catch (err) {
+      console.error('Home personalized content error:', err)
+      setContentError(
+        'Some personalized home content could not be loaded.',
+      )
+    } finally {
+      setContentLoading(false)
+    }
+  }
 
   async function toggleFavourite(serviceId: string) {
     const wasFavourite = favouriteServiceIds.has(serviceId)
@@ -463,163 +433,131 @@ async function loadHomeContent(
     }
   }
 
-  
-function getFriendlyLocationError(error: unknown): string {
-  const message =
-    error instanceof Error
-      ? error.message.toLowerCase()
-      : String(error).toLowerCase();
-
-  if (
-    message.includes('locationunavailable') ||
-    message.includes('cannot obtain current location') ||
-    message.includes('kclerrordomain') ||
-    message.includes('timeout') ||
-    message.includes('timed out')
-  ) {
-    return 'Unable to detect your location right now. Search for your service area manually or try GPS again.';
-  }
-
-  if (message.includes('permission') || message.includes('denied')) {
-    return 'Location permission is unavailable. Enable it in Settings or search manually.';
-  }
-
-  if (message.includes('disabled') && message.includes('location')) {
-    return 'Turn on Location Services or search for your service area manually.';
-  }
-
-  return 'Unable to detect your location. Please search manually or try again.';
-}
-
-async function resolveCurrentCoordinates(): Promise<{
-  latitude: number;
-  longitude: number;
-}> {
-  let permission = await Location.getForegroundPermissionsAsync();
-
-  if (permission.status !== 'granted') {
-    permission = await Location.requestForegroundPermissionsAsync();
-
-    if (permission.status !== 'granted') {
-      throw new Error('Location permission is off.');
-    }
-  }
-
-  const servicesEnabled = await Location.hasServicesEnabledAsync();
-
-  if (!servicesEnabled) {
-    throw new Error('Device location services are disabled.');
-  }
-
-  // Use a recent cached position first when available.
-  try {
-    const lastKnown = await Location.getLastKnownPositionAsync({
-      maxAge: 120_000,
-      requiredAccuracy: 2_000,
-    });
+  function getFriendlyLocationError(
+    error: unknown,
+  ): string {
+    const message =
+      error instanceof Error
+        ? error.message.toLowerCase()
+        : String(error).toLowerCase()
 
     if (
-      lastKnown &&
-      Number.isFinite(lastKnown.coords.latitude) &&
-      Number.isFinite(lastKnown.coords.longitude)
+      message.includes('locationunavailable') ||
+      message.includes('cannot obtain current location') ||
+      message.includes('kclerrordomain')
     ) {
-      return {
-        latitude: lastKnown.coords.latitude,
-        longitude: lastKnown.coords.longitude,
-      };
+      return 'We could not detect your current location right now. You can search for your service area instead.'
     }
-  } catch (error) {
-    console.warn('Cached location unavailable:', error);
+
+    if (
+      message.includes('permission') ||
+      message.includes('denied')
+    ) {
+      return 'Location access is unavailable. Search for your service area or enable location access in Settings.'
+    }
+
+    return 'Unable to detect your location right now. Search for your service area or try again.'
   }
 
-  // Request a fresh fix only when no suitable cached position exists.
-  const position = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Low,
-    mayShowUserSettingsDialog: true,
-  });
-
-  const { latitude, longitude } = position.coords;
-
-  if (
-    !Number.isFinite(latitude) ||
-    latitude < -90 ||
-    latitude > 90 ||
-    !Number.isFinite(longitude) ||
-    longitude < -180 ||
-    longitude > 180
+  async function fetchCurrentLocation(
+    automatic = false,
   ) {
-    throw new Error('Invalid location coordinates received.');
-  }
+    if (
+      locationLoading ||
+      locationSearching
+    ) {
+      return
+    }
 
-  return { latitude, longitude };
-}
+    setLocationError('')
 
-async function fetchCurrentLocation(automatic = false) {
-  if (locationLoading || locationSearching) {
-    return;
-  }
-
-  setLocationError('');
-
-  if (automatic) {
-    setLocationLoading(true);
-  } else {
-    setLocationSearching(true);
-  }
-
-  try {
-    const { latitude, longitude } =
-      await resolveCurrentCoordinates();
-
-    let selectedAddress = 'Current location';
+    if (automatic) {
+      setLocationLoading(true)
+    } else {
+      setLocationSearching(true)
+    }
 
     try {
-      const formatted = await reverseGeocode(latitude, longitude);
+      const permission =
+        await Location.requestForegroundPermissionsAsync()
 
-      if (formatted) {
-        selectedAddress = formatted;
+      if (permission.status !== 'granted') {
+  setLocationError(
+    'Location permission is off. Search for your service area manually, or enable location access in Settings.',
+  )
+
+  if (automatic) {
+    setLocationPickerVisible(true)
+  }
+
+  return
+
       }
-    } catch (error) {
-      console.warn('Reverse geocoding failed:', error);
-    }
 
-    setAddress(selectedAddress);
+      const currentLocation =
+        await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        })
 
-    await onLocationChange(
-      latitude,
-      longitude,
-      selectedAddress,
-    );
+      const {
+        latitude,
+        longitude,
+      } = currentLocation.coords
 
-    setLocationQuery('');
-    setLocationError('');
+      let selectedAddress = 'Current location'
 
-    if (!automatic) {
-      setLocationPickerVisible(false);
-    }
-  } catch (error) {
-    console.error(
-      automatic
-        ? 'Automatic location error:'
-        : 'Manual GPS location error:',
-      error,
-    );
+      try {
+        const formatted = await reverseGeocode(
+          latitude,
+          longitude,
+        )
 
-    setLocationError(getFriendlyLocationError(error));
+        if (formatted) {
+          selectedAddress = formatted
+        }
+      } catch (reverseError) {
+        console.error(
+          'Current location reverse geocoding error:',
+          reverseError,
+        )
+      }
 
-    // GPS failure must not prevent browsing the home screen.
-    if (automatic) {
-      setLocationPickerVisible(true);
-    }
-  } finally {
-    if (automatic) {
-      setLocationLoading(false);
-    } else {
-      setLocationSearching(false);
+      setAddress(selectedAddress)
+
+          await onLocationChange(
+        latitude,
+        longitude,
+        selectedAddress,
+      )
+
+      setLocationQuery('')
+      setLocationError('')
+
+      if (!automatic) {
+        setLocationPickerVisible(false)
+      }
+    } catch (err) {
+      console.error(
+        automatic
+          ? 'Automatic location error:'
+          : 'Current location error:',
+        err,
+      )
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Unable to fetch your current location. Please try again.'
+
+      setLocationError(message)
+    } finally {
+      if (automatic) {
+        setLocationLoading(false)
+      } else {
+        setLocationSearching(false)
+      }
     }
   }
-}
-
 
   async function handleSelectBookingLocation(
     savedLocation: CustomerSavedAddress,
