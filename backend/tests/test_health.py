@@ -48,11 +48,11 @@ async def test_readiness_logs_database_failure_without_returning_details(
         async def __aexit__(self, *_args: object) -> None:
             return None
 
-    monkeypatch.setattr(
-        health.engine,
-        "connect",
-        lambda: FailedConnection(),
-    )
+    class FailedEngine:
+        def connect(self):
+            return FailedConnection()
+
+    monkeypatch.setattr(health, "engine", FailedEngine())
 
     response = Response()
 
