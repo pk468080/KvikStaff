@@ -113,6 +113,19 @@ jobs:
           docker exec -i supabase_db_kvikstaffci \
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/test_worker_profile_privacy.sql
+     
+            
+      - name: Apply worker payout reversal migration to isolated database
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/migrations/20261015114000_fix_worker_payout_reversal_transition.sql
+
+      - name: Verify worker payout reversal transition
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/test_worker_payout_reversal_transition.sql       
 
 
       - name: Verify baseline tables are empty
