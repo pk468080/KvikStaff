@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
-function json(body, status = 200) {
+function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -108,7 +108,7 @@ Deno.serve(async (req)=>{
         }, 400);
       }
       const flow = await processAccountDeletionApproval(requestId, {
-        prepare: async (id)=>{
+        prepare: async (id: string) => {
           const { data, error } = await userClient.rpc("prepare_customer_account_deletion", {
             p_request_id: id
           });
@@ -117,7 +117,8 @@ Deno.serve(async (req)=>{
             error
           };
         },
-        findAuthUser: async (id)=>{
+
+        findAuthUser: async (id: string) => {
           const { data, error } = await adminClient.auth.admin.getUserById(id);
           if (error) {
             const authError = error;
@@ -139,13 +140,13 @@ Deno.serve(async (req)=>{
             notFound: true
           };
         },
-        deleteAuthUser: async (id)=>{
+        deleteAuthUser: async (id: string) => {
           const { error } = await adminClient.auth.admin.deleteUser(id);
           return {
             error
           };
         },
-        banAuthUser: async (id)=>{
+        banAuthUser: async (id: string) => {
           const { error } = await adminClient.auth.admin.updateUserById(id, {
             ban_duration: "876000h"
           });
@@ -153,7 +154,11 @@ Deno.serve(async (req)=>{
             error
           };
         },
-        complete: async (id, targetAuthUserId, targetProfileId)=>{
+        complete: async (
+  id: string,
+  targetAuthUserId: string,
+  targetProfileId: string,
+) => {
           const { data, error } = await userClient.rpc("complete_customer_account_deletion", {
             p_request_id: id,
             p_auth_user_id: targetAuthUserId,

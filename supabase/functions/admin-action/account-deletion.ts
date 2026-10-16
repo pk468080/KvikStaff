@@ -5,10 +5,52 @@
  * Supabase Auth deletion is a separate Admin API call, so completion is recorded only
  * after the Auth identity is verified absent. Each dependency is injected for tests.
  */ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function isRecord(value) {
+
+ type RpcError = {
+  code?: string;
+  message?: string;
+  status?: number;
+};
+
+type OperationResult = {
+  data?: unknown;
+  error?: RpcError | null;
+};
+
+type AuthLookupResult = {
+  found: boolean;
+  notFound?: boolean;
+  error?: RpcError;
+};
+
+type AccountDeletionDependencies = {
+  prepare: (requestId: string) => Promise<OperationResult>;
+  findAuthUser: (userId: string) => Promise<AuthLookupResult>;
+  deleteAuthUser: (userId: string) => Promise<{ error?: RpcError | null }>;
+  banAuthUser: (userId: string) => Promise<{ error?: RpcError | null }>;
+  complete: (
+    requestId: string,
+    authUserId: string,
+    profileId: string,
+  ) => Promise<OperationResult>;
+};
+
+type FailureResult = {
+  kind: "failure";
+  status: number;
+  error: string;
+};
+
+type AccountDeletionResult =
+  | FailureResult
+  | { kind: "not-applicable" }
+  | { kind: "success"; data: unknown };
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
-function prepareFailure(error) {
+function prepareFailure(error: RpcError): FailureResult {
   if (error.code === '55000' || /active bookings|manual review|cannot be erased/i.test(error.message ?? '')) {
     return {
       kind: 'failure',
@@ -36,7 +78,7 @@ function prepareFailure(error) {
     error: error.message || 'Unable to prepare account deletion.'
   };
 }
-function authLookupFailure(error) {
+function authLookupFailure(error?: RpcError): FailureResult {
   if (error?.status === 401 || error?.status === 403) {
     return {
       kind: 'failure',
@@ -50,7 +92,10 @@ function authLookupFailure(error) {
     error: 'Unable to verify the account identity with Supabase Auth. The request remains available to retry.'
   };
 }
-export async function processAccountDeletionApproval(requestId, deps) {
+export async function processAccountDeletionApproval(
+  requestId: string,
+  deps: AccountDeletionDependencies,
+): Promise<AccountDeletionResult> {
   if (!UUID_PATTERN.test(requestId)) {
     return {
       kind: 'failure',
