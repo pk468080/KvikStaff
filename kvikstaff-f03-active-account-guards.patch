@@ -1,0 +1,970 @@
+diff --git a/supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql b/supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql
+@@ -0,0 +1,395 @@
++BEGIN;
++
++-- SECURITY DEFINER functions must not continue to serve or mutate data for
++-- disabled workers/customers merely because their access token is still valid.
++-- Keep these checks private: callers reach them only through trusted database
++-- functions that run as their owner.
++CREATE OR REPLACE FUNCTION private.assert_active_worker()
++RETURNS uuid
++LANGUAGE plpgsql
++STABLE
++SECURITY DEFINER
++SET search_path = ''
++AS $function$
++DECLARE
++  v_user_id uuid := auth.uid();
++BEGIN
++  IF v_user_id IS NULL THEN
++    RAISE EXCEPTION 'Authentication required' USING ERRCODE = '28000';
++  END IF;
++
++  IF NOT EXISTS (
++    SELECT 1 FROM public.profiles p
++    WHERE p.id = v_user_id
++      AND p.role = 'worker'::public.user_role
++      AND p.is_active = true
++  ) THEN
++    RAISE EXCEPTION 'Active worker account required' USING ERRCODE = '42501';
++  END IF;
++
++  RETURN v_user_id;
++END;
++$function$;
++
++CREATE OR REPLACE FUNCTION private.assert_active_customer()
++RETURNS uuid
++LANGUAGE plpgsql
++STABLE
++SECURITY DEFINER
++SET search_path = ''
++AS $function$
++DECLARE
++  v_user_id uuid := auth.uid();
++BEGIN
++  IF v_user_id IS NULL THEN
++    RAISE EXCEPTION 'Authentication required' USING ERRCODE = '28000';
++  END IF;
++
++  IF NOT EXISTS (
++    SELECT 1 FROM public.profiles p
++    WHERE p.id = v_user_id
++      AND p.role = 'customer'::public.user_role
++      AND p.is_active = true
++  ) THEN
++    RAISE EXCEPTION 'Active customer account required' USING ERRCODE = '42501';
++  END IF;
++
++  RETURN v_user_id;
++END;
++$function$;
++
++CREATE OR REPLACE FUNCTION private.assert_active_profile()
++RETURNS uuid
++LANGUAGE plpgsql
++STABLE
++SECURITY DEFINER
++SET search_path = ''
++AS $function$
++DECLARE
++  v_user_id uuid := auth.uid();
++BEGIN
++  IF v_user_id IS NULL THEN
++    RAISE EXCEPTION 'Authentication required' USING ERRCODE = '28000';
++  END IF;
++
++  IF NOT EXISTS (
++    SELECT 1 FROM public.profiles p
++    WHERE p.id = v_user_id AND p.is_active = true
++  ) THEN
++    RAISE EXCEPTION 'Active account required' USING ERRCODE = '42501';
++  END IF;
++
++  RETURN v_user_id;
++END;
++$function$;
++
++REVOKE ALL ON FUNCTION private.assert_active_worker() FROM PUBLIC, anon, authenticated, service_role;
++REVOKE ALL ON FUNCTION private.assert_active_customer() FROM PUBLIC, anon, authenticated, service_role;
++REVOKE ALL ON FUNCTION private.assert_active_profile() FROM PUBLIC, anon, authenticated, service_role;
++
++-- Insert the active-worker check as the first statement in selected PL/pgSQL
++-- RPCs. Re-running this migration is safe because already-guarded functions
++-- are skipped. Replace the function body while preserving its signature,
++-- return type, owner, grants, and other function attributes.
++DO $f03_rewrite_worker_plpgsql$
++DECLARE
++  v_target record;
++  v_definition text;
++  v_new_source text;
++  v_marker text;
++BEGIN
++  FOR v_target IN
++    SELECT p.oid, p.prosrc, p.oid::regprocedure::text AS signature
++    FROM pg_proc p
++    JOIN pg_namespace n ON n.oid = p.pronamespace
++    JOIN pg_language l ON l.oid = p.prolang
++    WHERE n.nspname = 'public' AND l.lanname = 'plpgsql'
++      AND p.proname = ANY (ARRAY[
++        'worker_disable_payout_account',
++        'worker_get_booking_context',
++        'worker_get_performance_summary',
++        'worker_get_verification_summary',
++        'worker_get_booking_offer_details',
++        'worker_report_booking_incident',
++        'worker_set_default_payout_account',
++        'worker_withdraw_booking_change_request'
++      ])
++    ORDER BY p.proname
++  LOOP
++    IF v_target.prosrc ILIKE '%private.assert_active_worker%' THEN
++      CONTINUE;
++    END IF;
++
++    v_new_source := regexp_replace(
++      v_target.prosrc,
++      E'\\n[[:blank:]]*begin[[:blank:]]*\\n',
++      chr(10) || 'begin' || chr(10) || '  PERFORM private.assert_active_worker();' || chr(10),
++      1, 1, 'i'
++    );
++
++    IF v_new_source = v_target.prosrc THEN
++      RAISE EXCEPTION 'F03: could not insert active-worker guard in %', v_target.signature;
++    END IF;
++
++    SELECT pg_get_functiondef(v_target.oid) INTO v_definition;
++    v_marker := '$function$' || v_target.prosrc || '$function$';
++    IF position(v_marker IN v_definition) = 0 THEN
++      RAISE EXCEPTION 'F03: could not safely rebuild definition for %', v_target.signature;
++    END IF;
++
++    EXECUTE replace(
++      v_definition,
++      v_marker,
++      '$function$' || v_new_source || '$function$'
++    );
++  END LOOP;
++END;
++$f03_rewrite_worker_plpgsql$;
++
++-- SQL-language worker summaries/lists are identity-scoped today. Calling the
++-- private helper in place of auth.uid() additionally enforces active-worker
++-- status. The aggregate summaries always evaluate this check; the list
++-- functions return only rows for that authenticated worker.
++DO $f03_rewrite_worker_sql$
++DECLARE
++  v_target record;
++  v_definition text;
++  v_new_source text;
++  v_marker text;
++BEGIN
++  FOR v_target IN
++    SELECT p.oid, p.prosrc, p.oid::regprocedure::text AS signature
++    FROM pg_proc p
++    JOIN pg_namespace n ON n.oid = p.pronamespace
++    JOIN pg_language l ON l.oid = p.prolang
++    WHERE n.nspname = 'public' AND l.lanname = 'sql'
++      AND p.proname = ANY (ARRAY[
++        'worker_get_available_earnings',
++        'worker_get_incident_summary',
++        'worker_list_booking_change_requests',
++        'worker_list_booking_incidents',
++        'worker_list_payout_accounts',
++        'worker_list_payouts',
++        'worker_list_reviews'
++      ])
++    ORDER BY p.proname
++  LOOP
++    IF v_target.prosrc ILIKE '%private.assert_active_worker%' THEN
++      CONTINUE;
++    END IF;
++
++    v_new_source := replace(v_target.prosrc, 'auth.uid()', 'private.assert_active_worker()');
++    IF v_new_source = v_target.prosrc THEN
++      RAISE EXCEPTION 'F03: could not insert active-worker guard in SQL function %', v_target.signature;
++    END IF;
++
++    SELECT pg_get_functiondef(v_target.oid) INTO v_definition;
++    v_marker := '$function$' || v_target.prosrc || '$function$';
++    IF position(v_marker IN v_definition) = 0 THEN
++      RAISE EXCEPTION 'F03: could not safely rebuild definition for %', v_target.signature;
++    END IF;
++
++    EXECUTE replace(
++      v_definition,
++      v_marker,
++      '$function$' || v_new_source || '$function$'
++    );
++  END LOOP;
++END;
++$f03_rewrite_worker_sql$;
++
++-- Customer pricing/availability helpers should not remain usable after a
++-- customer account is disabled. Mutations still enforce their own ownership
++-- and transition rules in their function bodies.
++DO $f03_rewrite_customer_plpgsql$
++DECLARE
++  v_target record;
++  v_definition text;
++  v_new_source text;
++  v_marker text;
++BEGIN
++  FOR v_target IN
++    SELECT p.oid, p.prosrc, p.oid::regprocedure::text AS signature
++    FROM pg_proc p
++    JOIN pg_namespace n ON n.oid = p.pronamespace
++    JOIN pg_language l ON l.oid = p.prolang
++    WHERE n.nspname = 'public' AND l.lanname = 'plpgsql'
++      AND p.proname = ANY (ARRAY[
++        'calculate_customer_booking_schedule',
++        'calculate_service_booking_price',
++        'cancel_service_availability_request',
++        'check_customer_instant_worker_availability',
++        'check_service_availability',
++        'get_customer_instant_availability_slots',
++        'get_customer_near_term_scheduled_slots',
++        'get_customer_scheduled_availability_slots',
++        'get_customer_scheduled_slots'
++      ])
++    ORDER BY p.proname
++  LOOP
++    IF v_target.prosrc ILIKE '%private.assert_active_customer%' THEN
++      CONTINUE;
++    END IF;
++
++    v_new_source := regexp_replace(
++      v_target.prosrc,
++      E'\\n[[:blank:]]*begin[[:blank:]]*\\n',
++      chr(10) || 'begin' || chr(10) || '  PERFORM private.assert_active_customer();' || chr(10),
++      1, 1, 'i'
++    );
++
++    IF v_new_source = v_target.prosrc THEN
++      RAISE EXCEPTION 'F03: could not insert active-customer guard in %', v_target.signature;
++    END IF;
++
++    SELECT pg_get_functiondef(v_target.oid) INTO v_definition;
++    v_marker := '$function$' || v_target.prosrc || '$function$';
++    IF position(v_marker IN v_definition) = 0 THEN
++      RAISE EXCEPTION 'F03: could not safely rebuild definition for %', v_target.signature;
++    END IF;
++
++    EXECUTE replace(
++      v_definition,
++      v_marker,
++      '$function$' || v_new_source || '$function$'
++    );
++  END LOOP;
++END;
++$f03_rewrite_customer_plpgsql$;
++
++-- Notification mutation and communication-access checks are identity-scoped;
++-- also require the caller's profile to be active.
++DO $f03_rewrite_profile_helpers$
++DECLARE
++  v_target record;
++  v_definition text;
++  v_new_source text;
++  v_marker text;
++BEGIN
++  SELECT p.oid, p.prosrc, p.oid::regprocedure::text AS signature
++  INTO v_target
++  FROM pg_proc p
++  WHERE p.oid = 'public.mark_notification_read(uuid)'::regprocedure;
++
++  IF v_target.prosrc NOT ILIKE '%private.assert_active_profile%' THEN
++    v_new_source := regexp_replace(
++      v_target.prosrc,
++      E'\\n[[:blank:]]*begin[[:blank:]]*\\n',
++      chr(10) || 'begin' || chr(10) || '  PERFORM private.assert_active_profile();' || chr(10),
++      1, 1, 'i'
++    );
++    IF v_new_source = v_target.prosrc THEN
++      RAISE EXCEPTION 'F03: could not insert active-profile guard in %', v_target.signature;
++    END IF;
++
++    SELECT pg_get_functiondef(v_target.oid) INTO v_definition;
++    v_marker := '$function$' || v_target.prosrc || '$function$';
++    IF position(v_marker IN v_definition) = 0 THEN
++      RAISE EXCEPTION 'F03: could not safely rebuild definition for %', v_target.signature;
++    END IF;
++    EXECUTE replace(v_definition, v_marker, '$function$' || v_new_source || '$function$');
++  END IF;
++
++  SELECT p.oid, p.prosrc, p.oid::regprocedure::text AS signature
++  INTO v_target
++  FROM pg_proc p
++  WHERE p.oid = 'public.can_access_booking_communication(uuid,uuid)'::regprocedure;
++
++  IF v_target.prosrc NOT ILIKE '%private.assert_active_profile%' THEN
++    v_new_source := replace(
++      v_target.prosrc,
++      'where b.id = p_booking_id',
++      'where b.id = p_booking_id and (select private.assert_active_profile()) is not null'
++    );
++    IF v_new_source = v_target.prosrc THEN
++      RAISE EXCEPTION 'F03: could not insert active-profile guard in %', v_target.signature;
++    END IF;
++
++    SELECT pg_get_functiondef(v_target.oid) INTO v_definition;
++    v_marker := '$function$' || v_target.prosrc || '$function$';
++    IF position(v_marker IN v_definition) = 0 THEN
++      RAISE EXCEPTION 'F03: could not safely rebuild definition for %', v_target.signature;
++    END IF;
++    EXECUTE replace(v_definition, v_marker, '$function$' || v_new_source || '$function$');
++  END IF;
++END;
++$f03_rewrite_profile_helpers$;
++
++-- Payment reconciliation/invoice issuance have legitimate admin call paths.
++-- Non-admin callers must additionally be active customers, while the existing
++-- owner and payment/state validation in each function remains in force.
++DO $f03_rewrite_admin_or_customer$
++DECLARE
++  v_target record;
++  v_definition text;
++  v_new_source text;
++  v_marker text;
++  v_needle text;
++  v_replacement text;
++BEGIN
++  SELECT p.oid, p.prosrc, p.oid::regprocedure::text AS signature
++  INTO v_target
++  FROM pg_proc p
++  WHERE p.oid = 'public.reconcile_paid_booking(uuid)'::regprocedure;
++
++  IF v_target.prosrc NOT ILIKE '%private.assert_active_customer%' THEN
++    v_needle := $needle$if auth.uid() is null then
++    raise exception 'Authentication required';
++  end if;$needle$;
++    v_replacement := $replacement$if auth.uid() is null then
++    raise exception 'Authentication required';
++  end if;
++
++  if not public.is_admin() then
++    perform private.assert_active_customer();
++  end if;$replacement$;
++    v_new_source := replace(v_target.prosrc, v_needle, v_replacement);
++    IF v_new_source = v_target.prosrc THEN
++      RAISE EXCEPTION 'F03: could not insert active-customer guard in %', v_target.signature;
++    END IF;
++
++    SELECT pg_get_functiondef(v_target.oid) INTO v_definition;
++    v_marker := '$function$' || v_target.prosrc || '$function$';
++    IF position(v_marker IN v_definition) = 0 THEN
++      RAISE EXCEPTION 'F03: could not safely rebuild definition for %', v_target.signature;
++    END IF;
++    EXECUTE replace(v_definition, v_marker, '$function$' || v_new_source || '$function$');
++  END IF;
++
++  SELECT p.oid, p.prosrc, p.oid::regprocedure::text AS signature
++  INTO v_target
++  FROM pg_proc p
++  WHERE p.oid = 'public.issue_booking_invoice(uuid)'::regprocedure;
++
++  IF v_target.prosrc NOT ILIKE '%private.assert_active_customer%' THEN
++    v_needle := $needle$IF auth.uid() IS NULL THEN
++    RAISE EXCEPTION 'Authentication required';
++  END IF;$needle$;
++    v_replacement := $replacement$IF auth.uid() IS NULL THEN
++    RAISE EXCEPTION 'Authentication required';
++  END IF;
++
++  IF NOT v_is_admin THEN
++    PERFORM private.assert_active_customer();
++  END IF;$replacement$;
++    v_new_source := replace(v_target.prosrc, v_needle, v_replacement);
++    IF v_new_source = v_target.prosrc THEN
++      RAISE EXCEPTION 'F03: could not insert active-customer guard in %', v_target.signature;
++    END IF;
++
++    SELECT pg_get_functiondef(v_target.oid) INTO v_definition;
++    v_marker := '$function$' || v_target.prosrc || '$function$';
++    IF position(v_marker IN v_definition) = 0 THEN
++      RAISE EXCEPTION 'F03: could not safely rebuild definition for %', v_target.signature;
++    END IF;
++    EXECUTE replace(v_definition, v_marker, '$function$' || v_new_source || '$function$');
++  END IF;
++END;
++$f03_rewrite_admin_or_customer$;
++
++-- These function bodies reference application objects explicitly by schema.
++ALTER FUNCTION public.worker_get_booking_context(uuid) SET search_path = '';
++ALTER FUNCTION public.worker_get_booking_offer_details(uuid) SET search_path = '';
++ALTER FUNCTION public.can_access_booking_communication(uuid, uuid) SET search_path = '';
++
++COMMIT;
+
+diff --git a/supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql b/supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql
+@@ -0,0 +1,11 @@
++BEGIN;
++
++-- Both legacy RPCs have no current application or database-function caller.
++-- customer_booking_action duplicates the newer cancellation workflow, while
++-- reconcile_paid_booking can transition payment state and trigger worker dispatch.
++REVOKE EXECUTE ON FUNCTION public.customer_booking_action(uuid, text)
++  FROM PUBLIC, anon, authenticated, service_role;
++REVOKE EXECUTE ON FUNCTION public.reconcile_paid_booking(uuid)
++  FROM PUBLIC, anon, authenticated, service_role;
++
++COMMIT;
+
+diff --git a/supabase/tests/test_security_definer_active_accounts.sql b/supabase/tests/test_security_definer_active_accounts.sql
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/supabase/tests/test_security_definer_active_accounts.sql
+@@ -0,0 +1,505 @@
++\set ON_ERROR_STOP on
++
++BEGIN;
++
++DO $setup$
++DECLARE
++  v_active_customer uuid := gen_random_uuid();
++  v_inactive_customer uuid := gen_random_uuid();
++  v_active_worker uuid := gen_random_uuid();
++  v_inactive_worker uuid := gen_random_uuid();
++  v_active_customer_email text := gen_random_uuid()::text || '@example.invalid';
++  v_inactive_customer_email text := gen_random_uuid()::text || '@example.invalid';
++  v_active_worker_email text := gen_random_uuid()::text || '@example.invalid';
++  v_inactive_worker_email text := gen_random_uuid()::text || '@example.invalid';
++BEGIN
++  INSERT INTO auth.users (id, email, raw_user_meta_data)
++  VALUES
++    (v_active_customer, v_active_customer_email, jsonb_build_object('full_name','F03 Active Customer','company_name','F03 Test Co','role','customer')),
++    (v_inactive_customer, v_inactive_customer_email, jsonb_build_object('full_name','F03 Inactive Customer','company_name','F03 Test Co','role','customer')),
++    (v_active_worker, v_active_worker_email, jsonb_build_object('full_name','F03 Active Worker','role','worker')),
++    (v_inactive_worker, v_inactive_worker_email, jsonb_build_object('full_name','F03 Inactive Worker','role','worker'))
++  ON CONFLICT (id) DO NOTHING;
++
++  INSERT INTO public.profiles (id, full_name, email, company_name, role, is_active)
++  VALUES
++    (v_active_customer, 'F03 Active Customer', v_active_customer_email, 'F03 Test Co', 'customer'::public.user_role, true),
++    (v_inactive_customer, 'F03 Inactive Customer', v_inactive_customer_email, 'F03 Test Co', 'customer'::public.user_role, false),
++    (v_active_worker, 'F03 Active Worker', v_active_worker_email, NULL, 'worker'::public.user_role, true),
++    (v_inactive_worker, 'F03 Inactive Worker', v_inactive_worker_email, NULL, 'worker'::public.user_role, false)
++  ON CONFLICT (id) DO UPDATE
++  SET full_name = EXCLUDED.full_name,
++      email = EXCLUDED.email,
++      company_name = EXCLUDED.company_name,
++      role = EXCLUDED.role,
++      is_active = EXCLUDED.is_active;
++
++  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id=v_active_customer AND role='customer'::public.user_role AND is_active=true)
++     OR NOT EXISTS (SELECT 1 FROM public.profiles WHERE id=v_inactive_customer AND role='customer'::public.user_role AND is_active=false)
++     OR NOT EXISTS (SELECT 1 FROM public.profiles WHERE id=v_active_worker AND role='worker'::public.user_role AND is_active=true)
++     OR NOT EXISTS (SELECT 1 FROM public.profiles WHERE id=v_inactive_worker AND role='worker'::public.user_role AND is_active=false) THEN
++    RAISE EXCEPTION 'F03_SETUP_FAIL: test profiles do not have the expected roles/states';
++  END IF;
++
++  PERFORM set_config('app.f03.active_customer_id', v_active_customer::text, true);
++  PERFORM set_config('app.f03.inactive_customer_id', v_inactive_customer::text, true);
++  PERFORM set_config('app.f03.active_worker_id', v_active_worker::text, true);
++  PERFORM set_config('app.f03.inactive_worker_id', v_inactive_worker::text, true);
++END
++$setup$;
++
++DO $catalog_checks$
++BEGIN
++  IF to_regprocedure('private.assert_active_worker()') IS NULL
++     OR to_regprocedure('private.assert_active_customer()') IS NULL
++     OR to_regprocedure('private.assert_active_profile()') IS NULL THEN
++    RAISE EXCEPTION 'F03_FAIL: an active-account guard helper is missing';
++  END IF;
++
++  IF has_function_privilege('anon','private.assert_active_worker()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('authenticated','private.assert_active_worker()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('service_role','private.assert_active_worker()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('anon','private.assert_active_customer()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('authenticated','private.assert_active_customer()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('service_role','private.assert_active_customer()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('anon','private.assert_active_profile()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('authenticated','private.assert_active_profile()'::regprocedure,'EXECUTE')
++     OR has_function_privilege('service_role','private.assert_active_profile()'::regprocedure,'EXECUTE') THEN
++    RAISE EXCEPTION 'F03_FAIL: an API role can directly execute a private active-account guard';
++  END IF;
++
++  IF has_function_privilege('anon','public.customer_booking_action(uuid,text)'::regprocedure,'EXECUTE')
++     OR has_function_privilege('authenticated','public.customer_booking_action(uuid,text)'::regprocedure,'EXECUTE')
++     OR has_function_privilege('service_role','public.customer_booking_action(uuid,text)'::regprocedure,'EXECUTE') THEN
++    RAISE EXCEPTION 'F03_FAIL: an API role can execute the unused customer_booking_action RPC';
++  END IF;
++
++  IF has_function_privilege('anon','public.reconcile_paid_booking(uuid)'::regprocedure,'EXECUTE')
++     OR has_function_privilege('authenticated','public.reconcile_paid_booking(uuid)'::regprocedure,'EXECUTE')
++     OR has_function_privilege('service_role','public.reconcile_paid_booking(uuid)'::regprocedure,'EXECUTE') THEN
++    RAISE EXCEPTION 'F03_FAIL: an API role can execute the unused reconcile_paid_booking RPC';
++  END IF;
++
++  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid='private.assert_active_worker()'::regprocedure AND proconfig @> ARRAY['search_path=""']::text[])
++     OR NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid='private.assert_active_customer()'::regprocedure AND proconfig @> ARRAY['search_path=""']::text[])
++     OR NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid='private.assert_active_profile()'::regprocedure AND proconfig @> ARRAY['search_path=""']::text[]) THEN
++    RAISE EXCEPTION 'F03_FAIL: a private active-account helper does not use an empty search_path';
++  END IF;
++
++  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid='public.worker_get_booking_context(uuid)'::regprocedure AND proconfig @> ARRAY['search_path=""']::text[])
++     OR NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid='public.worker_get_booking_offer_details(uuid)'::regprocedure AND proconfig @> ARRAY['search_path=""']::text[])
++     OR NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid='public.can_access_booking_communication(uuid,uuid)'::regprocedure AND proconfig @> ARRAY['search_path=""']::text[]) THEN
++    RAISE EXCEPTION 'F03_FAIL: a hardened booking-context function does not use an empty search_path';
++  END IF;
++END
++$catalog_checks$;
++
++
++-- Explicit inventory of authenticated-callable SECURITY DEFINER RPCs. These are
++-- intentionally exposed to authenticated clients and reviewed by role/category:
++-- admin RPCs (guarded by public.is_admin()), customer workflows (active account,
++-- ownership and status checks), worker workflows (active worker and ownership),
++-- and the RLS/helper functions. The three PostGIS overloads are tracked separately
++-- under F-01 and remain an explicit known exception pending Supabase Support.
++DO $client_rpc_allowlist$
++DECLARE
++  v_unreviewed text;
++  v_unapproved_anon text;
++  v_approved text[] := ARRAY[
++    'admin_assign_booking_worker(uuid,uuid)',
++    'admin_cancel_booking_occurrence(uuid,text)',
++    'admin_cancel_booking(uuid,text)',
++    'admin_create_notification(uuid,text,text,text,uuid)',
++    'admin_create_service(text,text,numeric,text,boolean)',
++    'admin_create_service(text,text,numeric,text,text,boolean,uuid,integer,boolean)',
++    'admin_create_service(text,text,numeric,text,text,boolean)',
++    'admin_create_worker_payout(uuid,uuid,numeric,text,text)',
++    'admin_execute_worker_booking_change_request(uuid,text,text)',
++    'admin_get_booking_detail(uuid)',
++    'admin_get_live_map_data()',
++    'admin_list_account_deletion_requests()',
++    'admin_list_invoices()',
++    'admin_list_payment_refunds()',
++    'admin_list_payment_webhook_events()',
++    'admin_list_payments()',
++    'admin_list_razorpay_webhook_events()',
++    'admin_list_refund_requests()',
++    'admin_list_service_areas_v3()',
++    'admin_list_service_areas()',
++    'admin_moderate_review(uuid,text,text)',
++    'admin_remove_worker(uuid)',
++    'admin_review_account_deletion(uuid,text)',
++    'admin_review_worker_application(uuid,worker_application_status,text)',
++    'admin_review_worker_booking_change_request(uuid,text,text)',
++    'admin_review_worker_booking_incident(uuid,text,text)',
++    'admin_review_worker_document(uuid,worker_document_status,text)',
++    'admin_review_worker_payout_account(uuid,text,text)',
++    'admin_set_customer_active(uuid,boolean)',
++    'admin_set_service_active(uuid,boolean)',
++    'admin_set_worker_status(uuid,worker_status)',
++    'admin_update_current_hourly_service_price(uuid,numeric,text)',
++    'admin_update_service_availability_request(uuid,text)',
++    'admin_update_service_catalog(uuid,text,text,text,boolean,uuid,integer,boolean)',
++    'admin_update_support_ticket(uuid,text,text)',
++    'admin_update_worker(uuid,text,text,worker_status,boolean,numeric,boolean,uuid[])',
++    'admin_update_worker(uuid,text,text,worker_status,boolean,numeric,boolean)',
++    'admin_upsert_service_area_v2(uuid,uuid,text,text,text,double precision,double precision,numeric,boolean)',
++    'admin_upsert_service_area_v3(uuid,text,text,text,double precision,double precision,numeric,boolean,uuid[])',
++    'admin_upsert_service_area(uuid,text,text,text,double precision,double precision,numeric,boolean)',
++    'admin_upsert_service_price(uuid,uuid,numeric,text,timestamp with time zone,timestamp with time zone,boolean)',
++    'admin_upsert_service_variant(uuid,uuid,text,text,text,integer,text,integer,integer,boolean,integer)',
++    'admin_upsert_service(uuid,text,text,boolean,text)',
++    'admin_upsert_service(uuid,text,text,boolean)',
++    'calculate_customer_booking_schedule(uuid,uuid,date,date,time without time zone,time without time zone,smallint[],date[])',
++    'calculate_multi_occurrence_booking_price(uuid,date,date,time without time zone,time without time zone,smallint[],date[],booking_fulfillment_type)',
++    'calculate_service_booking_price(uuid,numeric)',
++    'can_access_booking_communication(uuid,uuid)',
++    'cancel_customer_booking_occurrence(uuid,text)',
++    'cancel_customer_booking_series(uuid,text)',
++    'cancel_customer_booking(uuid,text)',
++    'cancel_service_availability_request(uuid)',
++    'check_customer_instant_worker_availability(uuid,double precision,double precision)',
++    'check_service_availability(double precision,double precision,uuid)',
++    'complete_customer_account_deletion(uuid,uuid,uuid)',
++    'create_customer_hourly_booking(uuid,uuid,booking_fulfillment_type,timestamp with time zone,timestamp with time zone,text)',
++    'create_customer_recurring_booking(uuid,uuid,date,date,time without time zone,time without time zone,smallint[],date[],text)',
++    'create_customer_review(uuid,uuid,integer,text,uuid)',
++    'create_customer_scheduled_booking(uuid,uuid,date,date,time without time zone,time without time zone,smallint[],date[],text)',
++    'create_support_ticket(text,text,text,uuid,uuid,uuid,uuid,uuid)',
++    'create_worker_support_ticket(text,text,text,uuid)',
++    'get_customer_instant_availability_slots(uuid,uuid,numeric)',
++    'get_customer_near_term_scheduled_slots(uuid,uuid)',
++    'get_customer_scheduled_availability_slots(uuid,uuid,timestamp with time zone,timestamp with time zone,integer)',
++    'get_customer_scheduled_slots(uuid,uuid,date,date)',
++    'get_eligible_workers(uuid)',
++    'is_admin()',
++    'issue_booking_invoice(uuid)',
++    'mark_notification_read(uuid)',
++    'prepare_customer_account_deletion(uuid)',
++    'record_worker_booking_location(uuid,double precision,double precision)',
++    'register_customer_push_token(text,text)',
++    'register_worker_push_token(text,text)',
++    'request_service_availability(uuid,double precision,double precision)',
++    'request_worker_account_deletion(text)',
++    'reschedule_customer_booking(uuid,timestamp with time zone,timestamp with time zone)',
++    'save_worker_document(worker_document_type,text,text,text,bigint)',
++    'save_worker_onboarding(date,text,text,text,text,text,text,numeric,text,text,double precision,double precision,smallint)',
++    'set_worker_onboarding_consent()',
++    'set_worker_services(uuid[])',
++    'st_estimatedextent(text,text,text,boolean)',
++    'st_estimatedextent(text,text,text)',
++    'st_estimatedextent(text,text)',
++    'submit_worker_application()',
++    'verify_booking_occurrence_otp_atomic(uuid,text,text)',
++    'verify_booking_otp_atomic(uuid,text,text)',
++    'worker_booking_action(uuid,text)',
++    'worker_create_booking_change_request(uuid,text,text,timestamp with time zone,timestamp with time zone,uuid)',
++    'worker_disable_payout_account(uuid)',
++    'worker_get_available_earnings()',
++    'worker_get_booking_context(uuid)',
++    'worker_get_booking_offer_details(uuid)',
++    'worker_get_incident_summary(uuid)',
++    'worker_get_payout_overview()',
++    'worker_get_performance_summary()',
++    'worker_get_verification_summary()',
++    'worker_list_booking_change_requests(uuid,integer)',
++    'worker_list_booking_incidents(uuid,integer)',
++    'worker_list_payout_accounts()',
++    'worker_list_payouts(integer)',
++    'worker_list_reviews(integer)',
++    'worker_occurrence_action(uuid,text)',
++    'worker_presence_heartbeat(double precision,double precision)',
++    'worker_report_booking_incident(uuid,text,text,uuid)',
++    'worker_request_payout(numeric,text,uuid,text)',
++    'worker_respond_to_offer(uuid,text)',
++    'worker_set_default_payout_account(uuid)',
++    'worker_set_presence(boolean)',
++    'worker_update_location(double precision,double precision,uuid)',
++    'worker_withdraw_booking_change_request(uuid)'
++  ]::text[];
++BEGIN
++  SELECT string_agg(p.oid::regprocedure::text, ', ' ORDER BY p.oid::regprocedure::text)
++  INTO v_unreviewed
++  FROM pg_proc p
++  JOIN pg_namespace n ON n.oid=p.pronamespace
++  WHERE n.nspname='public'
++    AND p.prosecdef
++    AND has_function_privilege('authenticated',p.oid,'EXECUTE')
++    AND NOT (p.oid::regprocedure::text = ANY (v_approved));
++
++  IF v_unreviewed IS NOT NULL THEN
++    RAISE EXCEPTION 'F03_FAIL: unreviewed authenticated SECURITY DEFINER RPCs: %', v_unreviewed;
++  END IF;
++
++  SELECT string_agg(p.oid::regprocedure::text, ', ' ORDER BY p.oid::regprocedure::text)
++  INTO v_unapproved_anon
++  FROM pg_proc p
++  JOIN pg_namespace n ON n.oid=p.pronamespace
++  WHERE n.nspname='public'
++    AND p.prosecdef
++    AND has_function_privilege('anon',p.oid,'EXECUTE')
++    AND p.oid::regprocedure::text NOT IN (
++      'st_estimatedextent(text,text)',
++      'st_estimatedextent(text,text,text)',
++      'st_estimatedextent(text,text,text,boolean)'
++    );
++
++  IF v_unapproved_anon IS NOT NULL THEN
++    RAISE EXCEPTION 'F03_FAIL: unreviewed anonymous SECURITY DEFINER RPCs: %', v_unapproved_anon;
++  END IF;
++END
++$client_rpc_allowlist$;
++
++SET LOCAL ROLE authenticated;
++
++DO $inactive_worker_checks$
++DECLARE
++  v_worker uuid := current_setting('app.f03.inactive_worker_id', true)::uuid;
++  v_error text;
++BEGIN
++  PERFORM set_config('request.jwt.claim.sub', v_worker::text, true);
++  PERFORM set_config('request.jwt.claims', json_build_object('sub',v_worker::text,'role','authenticated')::text, true);
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_get_booking_context(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker booking context call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_get_booking_offer_details(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker offer-details call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_disable_payout_account(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker payout-account mutation returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_set_default_payout_account(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker default-payout mutation returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_withdraw_booking_change_request(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker withdraw-request mutation returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_report_booking_incident(gen_random_uuid(),'other','F03 test',NULL);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker incident mutation returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_get_performance_summary();
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker performance summary returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_get_verification_summary();
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active worker account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive worker verification summary returned %',v_error;
++  END IF;
++END
++$inactive_worker_checks$;
++
++DO $active_worker_control$
++DECLARE
++  v_worker uuid := current_setting('app.f03.active_worker_id', true)::uuid;
++  v_error text;
++BEGIN
++  PERFORM set_config('request.jwt.claim.sub', v_worker::text, true);
++  PERFORM set_config('request.jwt.claims', json_build_object('sub',v_worker::text,'role','authenticated')::text, true);
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.worker_get_booking_context(NULL::uuid);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Booking id is required' THEN
++    RAISE EXCEPTION 'F03_FAIL: active worker did not pass the account guard; got %',v_error;
++  END IF;
++END
++$active_worker_control$;
++
++DO $inactive_customer_checks$
++DECLARE
++  v_customer uuid := current_setting('app.f03.inactive_customer_id', true)::uuid;
++  v_error text;
++BEGIN
++  PERFORM set_config('request.jwt.claim.sub', v_customer::text, true);
++  PERFORM set_config('request.jwt.claims', json_build_object('sub',v_customer::text,'role','authenticated')::text, true);
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.calculate_service_booking_price(gen_random_uuid(), 1);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer pricing call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.calculate_customer_booking_schedule(NULL::uuid,NULL::uuid,NULL::date,NULL::date,NULL::time,NULL::time,NULL::smallint[],NULL::date[]);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer schedule-pricing call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.cancel_service_availability_request(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer availability-cancel call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.check_customer_instant_worker_availability(gen_random_uuid(),0,0);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer instant-availability call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.check_service_availability(0,0,gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer service-availability call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.get_customer_instant_availability_slots(gen_random_uuid(),gen_random_uuid(),1);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer instant-slot call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.get_customer_near_term_scheduled_slots(gen_random_uuid(),gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer near-term slots call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.get_customer_scheduled_availability_slots(gen_random_uuid(),gen_random_uuid(),now(),now()+interval '1 day',1);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer scheduled-availability call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.get_customer_scheduled_slots(gen_random_uuid(),gen_random_uuid(),current_date,current_date+1);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer scheduled-slots call returned %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.issue_booking_invoice(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Active customer account required' THEN
++    RAISE EXCEPTION 'F03_FAIL: inactive customer invoice call returned %',v_error;
++  END IF;
++END
++$inactive_customer_checks$;
++
++DO $active_customer_control$
++DECLARE
++  v_customer uuid := current_setting('app.f03.active_customer_id', true)::uuid;
++  v_error text;
++BEGIN
++  PERFORM set_config('request.jwt.claim.sub', v_customer::text, true);
++  PERFORM set_config('request.jwt.claims', json_build_object('sub',v_customer::text,'role','authenticated')::text, true);
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.calculate_service_booking_price(gen_random_uuid(), 1);
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Service package is not available' THEN
++    RAISE EXCEPTION 'F03_FAIL: active customer did not pass account guard; got %',v_error;
++  END IF;
++
++  v_error := NULL;
++  BEGIN
++    PERFORM public.issue_booking_invoice(gen_random_uuid());
++  EXCEPTION WHEN OTHERS THEN
++    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
++  END;
++  IF v_error IS DISTINCT FROM 'Booking not found' THEN
++    RAISE EXCEPTION 'F03_FAIL: active customer did not pass invoice account guard; got %',v_error;
++  END IF;
++END
++$active_customer_control$;
++
++ROLLBACK;
+
+diff --git a/.github/workflows/db-integration-tests.yml b/.github/workflows/db-integration-tests.yml
+index e7d724a..511e421 100644
+--- a/.github/workflows/db-integration-tests.yml
++++ b/.github/workflows/db-integration-tests.yml
+@@ -137,3 +137,5 @@
+             supabase/migrations/20261016064717_revoke_service_role_internal_rpc_execute.sql \
+-            supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql; do
++            supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql \
++            supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql \
++            supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql; do
+             docker exec -i supabase_db_kvikstaffci \
+@@ -148,2 +150,7 @@
+ 
++      - name: Test active-account guards for SECURITY DEFINER RPCs
++        run: |
++          docker exec -i supabase_db_kvikstaffci \
++            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
++            < supabase/tests/test_security_definer_active_accounts.sql
+ 
+diff --git a/customer-app/types/database.ts b/customer-app/types/database.ts
+index 6aadb12..e30f25e 100644
+--- a/customer-app/types/database.ts
++++ b/customer-app/types/database.ts
+@@ -6,8 +6,4 @@
+         }
+       }
+-      customer_booking_action: {
+-        Args: { p_action: string; p_booking_id: string }
+-        Returns: Json
+-      }
+       customer_has_active_booking_overlap: {
+         Args: {
+@@ -21,5 +17,4 @@
+       disablelongtransactions: { Args: never; Returns: string }
+       reconcile_expired_worker_presence: { Args: never; Returns: number }
+-      reconcile_paid_booking: { Args: { p_booking_id: string }; Returns: Json }
+       record_razorpay_webhook_event: {
+         Args: { p_event_id: string; p_event_name: string; p_payload: Json }
