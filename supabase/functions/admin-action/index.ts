@@ -34,7 +34,6 @@ const ALLOWED_ACTIONS = new Set([
   "admin_upsert_service_price",
   "admin_upsert_service_variant",
   "get_eligible_workers",
-  "write_admin_audit",
   "admin_list_service_areas_v3",
   "admin_upsert_service_area_v3"
 ]);

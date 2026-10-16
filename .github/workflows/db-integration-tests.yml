@@ -127,6 +127,25 @@ jobs:
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/test_worker_payout_reversal_transition.sql       
 
+      - name: Apply SECURITY DEFINER access-hardening migrations
+        run: |
+          for migration in \
+            supabase/migrations/20261016063734_secure_internal_security_definer_helpers.sql \
+            supabase/migrations/20261016064102_revoke_unused_refund_result_rpc.sql \
+            supabase/migrations/20261016064224_revoke_unused_refund_result_rpc.sql \
+            supabase/migrations/20261016064450_pin_is_admin_empty_search_path.sql \
+            supabase/migrations/20261016064717_revoke_service_role_internal_rpc_execute.sql \
+            supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql; do
+            docker exec -i supabase_db_kvikstaffci \
+              psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$migration"
+          done
+
+      - name: Test SECURITY DEFINER grants and role guards
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/test_security_definer_access.sql
+
 
       - name: Verify baseline tables are empty
         run: |

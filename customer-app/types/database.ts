@@ -4257,14 +4257,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      set_refund_request_result: {
-        Args: {
-          p_provider_refund_id?: string
-          p_refund_id: string
-          p_status: string
-        }
-        Returns: Json
-      }
       set_worker_onboarding_consent: {
         Args: never
         Returns: {
@@ -5023,17 +5015,6 @@ export type Database = {
       worker_update_location: {
         Args: { p_booking_id?: string; p_latitude: number; p_longitude: number }
         Returns: Json
-      }
-      write_admin_audit: {
-        Args: {
-          p_action: string
-          p_after?: Json
-          p_before?: Json
-          p_entity_id?: string
-          p_entity_type: string
-          p_metadata?: Json
-        }
-        Returns: string
       }
     }
     Enums: {
