@@ -135,7 +135,9 @@ jobs:
             supabase/migrations/20261016064224_revoke_unused_refund_result_rpc.sql \
             supabase/migrations/20261016064450_pin_is_admin_empty_search_path.sql \
             supabase/migrations/20261016064717_revoke_service_role_internal_rpc_execute.sql \
-            supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql; do
+            supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql \
+            supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql \
+            supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql; do
             docker exec -i supabase_db_kvikstaffci \
               psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$migration"
           done
@@ -146,6 +148,11 @@ jobs:
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/test_security_definer_access.sql
 
+      - name: Test active-account guards for SECURITY DEFINER RPCs
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/test_security_definer_active_accounts.sql
 
       - name: Verify baseline tables are empty
         run: |
