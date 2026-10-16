@@ -421,3 +421,17 @@ verify_jwt = true
 verify_jwt = false
 [functions.migrate-customer-phone-identities]
 verify_jwt = false
+
+# F-06: These functions authenticate at the handler level.
+
+[functions.razorpay-webhook]
+verify_jwt = false
+
+[functions.send-worker-push]
+verify_jwt = false
+
+[functions.razorpayx-payout-webhook]
+verify_jwt = false
+
+[functions.reconcile-worker-payouts]
+verify_jwt = false
