@@ -1,6 +1,6 @@
 """Razorpay integration boundary."""
 
-from app.integrations.razorpay.client import (
+from .client import (
     RazorpayApiError,
     RazorpayClient,
 )
