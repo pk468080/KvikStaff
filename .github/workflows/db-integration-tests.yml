@@ -137,7 +137,8 @@ jobs:
             supabase/migrations/20261016064717_revoke_service_role_internal_rpc_execute.sql \
             supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql \
             supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql \
-            supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql; do
+            supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql \
+            supabase/migrations/20261016085000_normalize_public_security_definer_grants.sql; do
             docker exec -i supabase_db_kvikstaffci \
               psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$migration"
           done
