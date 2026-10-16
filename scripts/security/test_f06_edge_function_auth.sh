@@ -6,10 +6,17 @@ set -euo pipefail
 
 : "${SUPABASE_URL:?Set SUPABASE_URL to the target Supabase project URL}"
 PUBLIC_API_KEY="${SUPABASE_ANON_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}"
-if [[ -z "$PUBLIC_API_KEY" ]]; then
-  echo "Set SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY. Use a public key only." >&2
-  exit 2
-fi
+case "$PUBLIC_API_KEY" in
+  sb_publishable_*)
+    ;;
+  eyJ*)
+    # Legacy Supabase anon JWT.
+    ;;
+  *)
+    echo "Set a real public Supabase publishable key (sb_publishable_...) or legacy anon JWT (eyJ...). Do not use a service-role or secret key." >&2
+    exit 2
+    ;;
+esac
 
 BASE_URL="${SUPABASE_URL%/}"
 TMP_RESPONSE="$(mktemp)"
@@ -22,19 +29,25 @@ probe() {
   local endpoint="$3"
   local body="$4"
   shift 4
+  local extra_header_count="$#"
   local -a extra_headers=("$@")
   local status
   local expected
   local matched=0
 
-  if ! status="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \
-    --output "$TMP_RESPONSE" --write-out '%{http_code}' \
-    --request POST \
-    --header "apikey: ${PUBLIC_API_KEY}" \
-    --header 'Content-Type: application/json' \
-    "${extra_headers[@]}" \
-    --data "$body" \
-    "${BASE_URL}/functions/v1/${endpoint}")"; then
+  local -a curl_args=(
+    --silent --show-error --connect-timeout 5 --max-time 20
+    --output "$TMP_RESPONSE" --write-out '%{http_code}'
+    --request POST
+    --header "apikey: ${PUBLIC_API_KEY}"
+    --header 'Content-Type: application/json'
+  )
+  if [[ "$extra_header_count" -gt 0 ]]; then
+    curl_args+=("${extra_headers[@]}")
+  fi
+  curl_args+=(--data "$body" "${BASE_URL}/functions/v1/${endpoint}")
+
+  if ! status="$(curl "${curl_args[@]}")"; then
     printf 'FAIL %-46s (HTTP request failed)\n' "$label"
     FAILURES=$((FAILURES + 1))
     return
