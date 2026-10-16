@@ -192,7 +192,7 @@ Deno.test("rejects an invalid request ID before performing deletion", async () =
   const result = await processAccountDeletionApproval("invalid-id", deps);
 
   assert(result.kind === "failure");
-assertEquals(result.status, 503);
+assertEquals(result.status, 400);
   assertEquals(calls.prepare, 0);
   assertEquals(calls.deleteAuthUser, 0);
 });

@@ -117,7 +117,7 @@ Deno.serve(async (req)=>{
             error
           };
         },
-        
+
         findAuthUser: async (id: string) => {
           const { data, error } = await adminClient.auth.admin.getUserById(id);
           if (error) {
