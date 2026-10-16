@@ -134,7 +134,8 @@ jobs:
             supabase/migrations/20261016064102_revoke_unused_refund_result_rpc.sql \
             supabase/migrations/20261016064224_revoke_unused_refund_result_rpc.sql \
             supabase/migrations/20261016064450_pin_is_admin_empty_search_path.sql \
-            supabase/migrations/20261016064717_revoke_service_role_internal_rpc_execute.sql; do
+            supabase/migrations/20261016064717_revoke_service_role_internal_rpc_execute.sql \
+            supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql; do
             docker exec -i supabase_db_kvikstaffci \
               psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$migration"
           done
