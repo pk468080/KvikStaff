@@ -138,7 +138,12 @@ jobs:
             supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql \
             supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql \
             supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql \
-            supabase/migrations/20261016085000_normalize_public_security_definer_grants.sql; do
+            supabase/migrations/20261016085000_normalize_public_security_definer_grants.sql \
+            supabase/migrations/20261016122925_f07_harden_sensitive_table_grants.sql \
+            supabase/migrations/20261016123545_f07_normalize_sensitive_table_grants.sql \
+            supabase/migrations/20261016123804_f07_remove_worker_document_trigger_privilege.sql \
+            supabase/migrations/20261016142327_f07_require_active_account_for_sensitive_rows.sql \
+            supabase/migrations/20261016160439_f07_normalize_all_sensitive_table_grants.sql; do
             docker exec -i supabase_db_kvikstaffci \
               psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$migration"
           done
@@ -154,6 +159,12 @@ jobs:
           docker exec -i supabase_db_kvikstaffci \
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/test_security_definer_active_accounts.sql
+
+      - name: Test F-07 RLS authorization matrix
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/test_rls_authorization_matrix.sql
 
       - name: Verify baseline tables are empty
         run: |
