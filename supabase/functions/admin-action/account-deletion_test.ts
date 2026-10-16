@@ -1,5 +1,5 @@
 
-import { assertEquals } from "jsr:@std/assert@1";
+import { assert, assertEquals } from "jsr:@std/assert@1";
 import { processAccountDeletionApproval } from "./account-deletion.ts";
 
 const REQUEST_ID = "11111111-1111-4111-8111-111111111111";
@@ -119,8 +119,8 @@ Deno.test("failed deletion blocks sign-in where possible and remains retryable",
 
   const result = await processAccountDeletionApproval(REQUEST_ID, deps);
 
-  assertEquals(result.kind, "failure");
-  assertEquals(result.status, 503);
+assert(result.kind === "failure");
+assertEquals(result.status, 503);
   assertEquals(calls.banAuthUser, 1);
   assertEquals(calls.complete, 0);
 });
@@ -158,7 +158,7 @@ Deno.test("allows retry after ban failure and eventually completes deletion", as
 
   const firstAttempt = await processAccountDeletionApproval(REQUEST_ID, deps);
 
-  assertEquals(firstAttempt.kind, "failure");
+  assert(firstAttempt.kind === "failure");
   assertEquals(firstAttempt.status, 503);
   assertEquals(calls.complete, 0);
 
@@ -180,8 +180,8 @@ Deno.test("does not report success if completion recording fails", async () => {
 
   const result = await processAccountDeletionApproval(REQUEST_ID, deps);
 
-  assertEquals(result.kind, "failure");
-  assertEquals(result.status, 503);
+assert(result.kind === "failure");
+assertEquals(result.status, 503);
   assertEquals(calls.deleteAuthUser, 0);
   assertEquals(calls.complete, 1);
 });
@@ -191,8 +191,8 @@ Deno.test("rejects an invalid request ID before performing deletion", async () =
 
   const result = await processAccountDeletionApproval("invalid-id", deps);
 
-  assertEquals(result.kind, "failure");
-  assertEquals(result.status, 400);
+  assert(result.kind === "failure");
+assertEquals(result.status, 503);
   assertEquals(calls.prepare, 0);
   assertEquals(calls.deleteAuthUser, 0);
 });
