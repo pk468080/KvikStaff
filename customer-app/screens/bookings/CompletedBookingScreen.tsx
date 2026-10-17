@@ -555,6 +555,9 @@ export default function CompletedBookingScreen({
                               <TouchableOpacity
                                 key={star}
                                 activeOpacity={0.8}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${star} star${star === 1 ? '' : 's'}`}
+                                accessibilityState={{ selected: reviewRating === star }}
                                 onPress={() => setReviewRating(star)}
                                 hitSlop={8}
                               >
@@ -674,6 +677,9 @@ export default function CompletedBookingScreen({
                         <TouchableOpacity
                           key={star}
                           activeOpacity={0.8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${star} star${star === 1 ? '' : 's'}`}
+                          accessibilityState={{ selected: reviewRating === star }}
                           onPress={() => setReviewRating(star)}
                           hitSlop={8}
                         >
@@ -765,6 +771,7 @@ export default function CompletedBookingScreen({
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel={`${star} star${star === 1 ? '' : 's'}`}
+                  accessibilityState={{ selected: reviewRating === star }}
                   onPress={() => setReviewRating(star)}
                   hitSlop={8}
                 >
