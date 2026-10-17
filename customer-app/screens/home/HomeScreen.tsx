@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { Ionicons } from '@expo/vector-icons'
 import {
   ActivityIndicator,
   FlatList,
@@ -862,37 +863,38 @@ async function fetchCurrentLocation(automatic = false) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.notificationButton}
-            activeOpacity={0.82}
-            onPress={onOpenNotifications}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-            accessibilityHint="View your notifications"
-          >
-            <View
-              style={styles.notificationBell}
-              accessible={false}
-              importantForAccessibility="no"
-            >
-              <View style={styles.notificationBellBody} />
-              <View style={styles.notificationBellBase} />
-              <View style={styles.notificationBellClapper} />
-            </View>
+  style={styles.notificationButton}
+  activeOpacity={0.8}
+  onPress={onOpenNotifications}
+  accessibilityRole="button"
+  accessibilityLabel={
+    unreadNotificationCount > 0
+      ? `Notifications, ${unreadNotificationCount} unread`
+      : 'Notifications'
+  }
+  accessibilityHint="View your notifications"
+>
+  <Ionicons
+    name="notifications-outline"
+    size={25}
+    color={COLORS.primaryDark}
+    accessible={false}
+  />
 
-            {unreadNotificationCount > 0 ? (
-              <View
-                style={styles.notificationBadge}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                <Text style={styles.notificationBadgeText}>
-                  {formatUnreadNotificationCount(
-                    unreadNotificationCount,
-                  )}
-                </Text>
-              </View>
-            ) : null}
-          </TouchableOpacity>
+  {unreadNotificationCount > 0 ? (
+    <View
+      style={styles.notificationBadge}
+      accessible={false}
+      importantForAccessibility="no"
+    >
+      <Text style={styles.notificationBadgeText}>
+        {formatUnreadNotificationCount(
+          unreadNotificationCount,
+        )}
+      </Text>
+    </View>
+  ) : null}
+</TouchableOpacity>
         </View>
 
         <View style={styles.welcomeRow}>
@@ -2072,13 +2074,23 @@ const styles = StyleSheet.create({
   },
 
   notificationButton: {
-    width: 44,
-    height: 44,
-    marginLeft: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
+  width: 44,
+  height: 44,
+  marginLeft: 8,
+  borderRadius: 15,
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+  shadowColor: COLORS.primaryDark,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.06,
+  shadowRadius: 5,
+  elevation: 2,
+},
+
 
   notificationBell: {
     width: 26,
@@ -2117,24 +2129,27 @@ const styles = StyleSheet.create({
   },
 
   notificationBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: UI.spacing.xs,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.danger,
-  },
+  position: 'absolute',
+  top: -5,
+  right: -5,
+  minWidth: 20,
+  height: 20,
+  paddingHorizontal: 4,
+  borderRadius: 10,
+  borderWidth: 2,
+  borderColor: '#FFFFFF',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#E11D48',
+  zIndex: 1,
+},
 
   notificationBadgeText: {
-    fontSize: 9,
-    lineHeight: 11,
-    fontWeight: '900',
-    color: COLORS.white,
-  },
+  fontSize: 9,
+  lineHeight: 11,
+  fontWeight: '800',
+  color: '#FFFFFF',
+},
 
   locationPill: {
     flex: 1,
