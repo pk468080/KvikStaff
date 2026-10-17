@@ -240,6 +240,12 @@ export default function RecurringBookingScreen({
   bookingId,
 }: RecurringBookingScreenProps) {
   const cancellationConfirmedBookingIdRef = useRef<string | null>(null)
+  const currentBookingIdRef = useRef<string | null>(bookingId)
+  currentBookingIdRef.current = bookingId
+  const loadRequestVersionRef = useRef(0)
+  const loadInFlightRef = useRef(false)
+  const queuedLoadRef = useRef<{ isRefresh: boolean; suppressError: boolean } | null>(null)
+  const loadDataRef = useRef<((isRefresh?: boolean, suppressError?: boolean) => Promise<void>) | null>(null)
 
   const [
     booking,
@@ -316,6 +322,24 @@ export default function RecurringBookingScreen({
         isRefresh = false,
         suppressError = false,
       ) => {
+        if (currentBookingIdRef.current !== bookingId) {
+          return
+        }
+
+        if (loadInFlightRef.current) {
+          loadRequestVersionRef.current += 1
+          const queued = queuedLoadRef.current
+          queuedLoadRef.current = {
+            isRefresh: queued ? queued.isRefresh && isRefresh : isRefresh,
+            suppressError: Boolean(queued?.suppressError || suppressError),
+          }
+          return
+        }
+
+        loadInFlightRef.current = true
+        const requestBookingId = bookingId
+        const requestVersion = ++loadRequestVersionRef.current
+
         if (isRefresh) {
           setRefreshing(true)
         } else {
@@ -343,6 +367,13 @@ export default function RecurringBookingScreen({
                 bookingId,
               ),
             ])
+
+          if (
+            requestVersion !== loadRequestVersionRef.current ||
+            currentBookingIdRef.current !== requestBookingId
+          ) {
+            return
+          }
 
           if (
             nextBooking.booking_type !==
@@ -388,6 +419,13 @@ export default function RecurringBookingScreen({
           cause
         ) {
           if (
+            requestVersion !== loadRequestVersionRef.current ||
+            currentBookingIdRef.current !== requestBookingId
+          ) {
+            return
+          }
+
+          if (
             suppressError ||
             cancellationConfirmedBookingIdRef.current === bookingId
           ) {
@@ -403,12 +441,30 @@ export default function RecurringBookingScreen({
             )
           }
         } finally {
-          setLoading(false)
-          setRefreshing(false)
+          if (
+            requestVersion === loadRequestVersionRef.current &&
+            currentBookingIdRef.current === requestBookingId
+          ) {
+            setLoading(false)
+            setRefreshing(false)
+          }
+
+          loadInFlightRef.current = false
+          const queued = queuedLoadRef.current
+          queuedLoadRef.current = null
+
+          if (queued && currentBookingIdRef.current !== null) {
+            void loadDataRef.current?.(
+              queued.isRefresh,
+              queued.suppressError,
+            )
+          }
         }
       },
       [bookingId],
     )
+
+  loadDataRef.current = loadData
 
   useEffect(() => {
     void loadData()
@@ -469,6 +525,12 @@ export default function RecurringBookingScreen({
       void supabase.removeChannel(
         channel,
       )
+
+      if (currentBookingIdRef.current === bookingId) {
+        currentBookingIdRef.current = null
+        loadRequestVersionRef.current += 1
+        queuedLoadRef.current = null
+      }
     }
   }, [
     bookingId,

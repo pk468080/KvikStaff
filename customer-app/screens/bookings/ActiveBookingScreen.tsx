@@ -373,6 +373,12 @@ const [
   ] = useState<'start' | 'end' | null>(null)
 
   const bookingStatusRef = useRef<BookingStatus | null>(null)
+  const currentBookingIdRef = useRef<string | null>(bookingId)
+  currentBookingIdRef.current = bookingId
+  const refreshRequestVersionRef = useRef(0)
+  const refreshInFlightRef = useRef(false)
+  const queuedRefreshRef = useRef<{ suppressError: boolean } | null>(null)
+  const refreshRef = useRef<((suppressError?: boolean) => Promise<void>) | null>(null)
   const otpRequestIdRef = useRef(0)
   const otpRequestInFlightRef = useRef(false)
 
@@ -435,11 +441,35 @@ const [
     )
 
     async function refresh(suppressError = false) {
+    if (currentBookingIdRef.current !== bookingId) {
+      return
+    }
+
+    if (refreshInFlightRef.current) {
+      refreshRequestVersionRef.current += 1
+      const queued = queuedRefreshRef.current
+      queuedRefreshRef.current = {
+        suppressError: Boolean(queued?.suppressError || suppressError),
+      }
+      return
+    }
+
+    refreshInFlightRef.current = true
+    const requestBookingId = bookingId
+    const requestVersion = ++refreshRequestVersionRef.current
+
     try {
       const nextBooking =
         await getCustomerBooking(
           bookingId,
         )
+
+      if (
+        requestVersion !== refreshRequestVersionRef.current ||
+        currentBookingIdRef.current !== requestBookingId
+      ) {
+        return
+      }
 
       if (
         bookingStatusRef.current === 'cancelled' &&
@@ -459,9 +489,23 @@ const [
               bookingId,
             )
 
+          if (
+            requestVersion !== refreshRequestVersionRef.current ||
+            currentBookingIdRef.current !== requestBookingId
+          ) {
+            return
+          }
+
           setRefunds(nextRefunds)
           setRefundStatusError(null)
         } catch (cause) {
+          if (
+            requestVersion !== refreshRequestVersionRef.current ||
+            currentBookingIdRef.current !== requestBookingId
+          ) {
+            return
+          }
+
           console.warn(
             'Unable to refresh booking refund status:',
             cause,
@@ -481,6 +525,13 @@ const [
           bookingId,
         )
 
+      if (
+        requestVersion !== refreshRequestVersionRef.current ||
+        currentBookingIdRef.current !== requestBookingId
+      ) {
+        return
+      }
+
       setStatusHistory(
         nextHistory,
       )
@@ -490,6 +541,13 @@ const [
           await getLatestWorkerLocation(
             bookingId,
           )
+
+        if (
+          requestVersion !== refreshRequestVersionRef.current ||
+          currentBookingIdRef.current !== requestBookingId
+        ) {
+          return
+        }
 
         setLocation(
           nextLocation,
@@ -508,6 +566,13 @@ const [
         await getCustomerAddress(
           nextBooking.address_id,
         )
+
+      if (
+        requestVersion !== refreshRequestVersionRef.current ||
+        currentBookingIdRef.current !== requestBookingId
+      ) {
+        return
+      }
 
       if (!address) {
         console.warn(
@@ -558,6 +623,13 @@ const [
     } catch (
       nextError
     ) {
+      if (
+        requestVersion !== refreshRequestVersionRef.current ||
+        currentBookingIdRef.current !== requestBookingId
+      ) {
+        return
+      }
+
       if (suppressError || bookingStatusRef.current === 'cancelled') {
         console.warn(
           'Booking details could not be refreshed after cancellation:',
@@ -571,11 +643,27 @@ const [
         )
       }
     } finally {
-      setLoading(false)
+      if (
+        requestVersion === refreshRequestVersionRef.current &&
+        currentBookingIdRef.current === requestBookingId
+      ) {
+        setLoading(false)
+      }
+
+      refreshInFlightRef.current = false
+      const queued = queuedRefreshRef.current
+      queuedRefreshRef.current = null
+
+      if (queued && currentBookingIdRef.current !== null) {
+        void refreshRef.current?.(queued.suppressError)
+      }
     }
   }
 
+  refreshRef.current = refresh
+
   useEffect(() => {
+    setLoading(true)
     void refresh()
 
     const refreshInterval =
@@ -620,7 +708,9 @@ const [
               `id=eq.${bookingId}`,
           },
           () => {
-            void refresh()
+            if (currentBookingIdRef.current === bookingId) {
+              void refresh()
+            }
           },
         )
 
@@ -638,6 +728,10 @@ const [
               `booking_id=eq.${bookingId}`,
           },
           payload => {
+            if (currentBookingIdRef.current !== bookingId) {
+              return
+            }
+
             const nextHistory =
               payload.new as BookingStatusHistoryItem
 
@@ -680,6 +774,10 @@ const [
               `booking_id=eq.${bookingId}`,
           },
           payload => {
+            if (currentBookingIdRef.current !== bookingId) {
+              return
+            }
+
             const nextLocation =
               payload.new as WorkerLocation
 
@@ -706,6 +804,12 @@ const [
       void supabase.removeChannel(
         channel,
       )
+
+      if (currentBookingIdRef.current === bookingId) {
+        currentBookingIdRef.current = null
+        refreshRequestVersionRef.current += 1
+        queuedRefreshRef.current = null
+      }
     }
   }, [bookingId])
 
