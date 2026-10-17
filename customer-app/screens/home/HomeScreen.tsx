@@ -598,12 +598,11 @@ async function fetchCurrentLocation(automatic = false) {
       setLocationPickerVisible(false);
     }
   } catch (error) {
-    console.error(
-      automatic
-        ? 'Automatic location error:'
-        : 'Manual GPS location error:',
-      error,
-    );
+    console.warn(
+  automatic
+    ? 'Automatic location unavailable; manual search is available.'
+    : 'Manual GPS location unavailable.',
+)
 
     setLocationError(getFriendlyLocationError(error));
 
@@ -753,9 +752,9 @@ async function fetchCurrentLocation(automatic = false) {
 }, [])
 
   if (
-    loading ||
-    locationLoading
-  ) {
+  (loading || locationLoading) &&
+  (!locationPickerVisible || location !== null)
+) {
     return (
       <ScreenContainer>
         <View style={styles.loading}>
@@ -1587,8 +1586,8 @@ async function fetchCurrentLocation(automatic = false) {
                 </View>
 
                 <Text style={styles.modalTitle}>
-                  Where do you need staff?
-                </Text>
+  Choose your service area
+</Text>
               </View>
 
               <TouchableOpacity
@@ -1604,10 +1603,8 @@ async function fetchCurrentLocation(automatic = false) {
             </View>
 
             <Text style={styles.modalDescription}>
-              Search for the address or
-              area where you want the
-              service.
-            </Text>
+  GPS is optional. Search by area, landmark, full address, or PIN code.
+</Text>
 
             <View style={styles.searchField}>
               <CustomerIcon
@@ -1622,7 +1619,7 @@ async function fetchCurrentLocation(automatic = false) {
                   setLocationQuery(value)
                   setLocationError('')
                 }}
-                placeholder="Enter address or area"
+                placeholder="e.g. Sector 12, Dwarka, New Delhi"
                 placeholderTextColor="#94A3B8"
                 style={styles.locationInput}
                 autoCorrect={false}
