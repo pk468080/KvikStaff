@@ -13,6 +13,15 @@ export type HomePromotion = {
   imageUrl: string | null
 }
 
+export type HomeUpdate = {
+  id: string
+  title: string
+  body: string | null
+  ctaText: string | null
+  serviceId: string | null
+  imageUrl: string | null
+}
+
 export type HomeRebook = {
   serviceId: string
   createdAt: string
@@ -25,6 +34,16 @@ type HomePromotionApi = {
   id: string
   title: string
   subtitle: string | null
+  cta_text: string | null
+  service_id: string | null
+  image_url: string | null
+  sort_order: number
+}
+
+type HomeUpdateApi = {
+  id: string
+  title: string
+  body: string | null
   cta_text: string | null
   service_id: string | null
   image_url: string | null
@@ -127,6 +146,26 @@ export async function getHomePromotions(
     id: row.id,
     title: row.title,
     subtitle: row.subtitle,
+    ctaText: row.cta_text,
+    serviceId: row.service_id,
+    imageUrl: row.image_url,
+  }))
+}
+
+export async function getHomeUpdates(
+  availableServiceIds: Set<string>,
+): Promise<HomeUpdate[]> {
+  const serviceIds = Array.from(availableServiceIds)
+  const path = serviceIds.length > 0
+    ? `/home/updates?service_ids=${encodeURIComponent(serviceIds.join(','))}`
+    : '/home/updates?service_ids='
+
+  const rows = await publicApiRequest<HomeUpdateApi[]>(path)
+
+  return rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    body: row.body,
     ctaText: row.cta_text,
     serviceId: row.service_id,
     imageUrl: row.image_url,

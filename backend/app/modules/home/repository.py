@@ -115,6 +115,34 @@ class HomeRepository:
             for row in result.mappings().all()
         ]
 
+    async def get_active_home_updates(
+        self,
+    ) -> list[dict[str, Any]]:
+        result = await self.db.execute(
+            text(
+                """
+                SELECT
+                    id,
+                    title,
+                    body,
+                    cta_text,
+                    service_id,
+                    image_url,
+                    sort_order,
+                    starts_at,
+                    ends_at
+                FROM public.home_updates
+                WHERE is_active = true
+                ORDER BY sort_order ASC, id ASC
+                """
+            )
+        )
+
+        return [
+            dict(row)
+            for row in result.mappings().all()
+        ]
+
     async def get_customer_rebook_rows(
         self,
         customer_id: UUID,

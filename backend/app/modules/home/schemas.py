@@ -14,6 +14,16 @@ class HomePromotionResponse(BaseModel):
     sort_order: int
 
 
+class HomeUpdateResponse(BaseModel):
+    id: UUID
+    title: str
+    body: str | None
+    cta_text: str | None
+    service_id: UUID | None
+    image_url: str | None
+    sort_order: int
+
+
 class HomeFavouriteResponse(BaseModel):
     service_id: UUID
     is_favourite: bool

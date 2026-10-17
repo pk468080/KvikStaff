@@ -450,7 +450,7 @@ export default function OffersUpdates() {
         <div>
           <div className="page-eyebrow">HOME CMS</div>
           <h1 style={{ margin: '5px 0 6px' }}>Offers & Updates</h1>
-          <p style={{ margin: 0, color: '#71818C' }}>Manage the content customers see on the Home Screen. Offers can now carry server-enforced automatic discount rules. Booking totals are calculated by the backend; this page only configures the rule.</p>
+          <p style={{ margin: 0, color: '#71818C' }}>Manage customer-facing home content. Offers publish to the large auto-rotating hero banner; Updates publish to the smaller carousel beneath it. Upload clean landscape artwork (the app overlays your title and copy), set display order and schedule start/end times. Offer discounts remain enforced by the backend when bookings are priced.</p>
         </div>
         <button className="dashboard-refresh" onClick={() => void load()} disabled={loading}>
           <RefreshCw size={15} style={{ marginRight: 6 }} /> Refresh

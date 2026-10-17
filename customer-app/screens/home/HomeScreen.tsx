@@ -21,6 +21,7 @@ import {
 import * as Location from 'expo-location'
 import { useFocusEffect } from '@react-navigation/native'
 import ActiveBookingHomeCard from '../../components/home/ActiveBookingHomeCard'
+import HomeContentCarousel from '../../components/home/HomeContentCarousel'
 import CustomerIcon from '../../components/ui/CustomerIcon'
 import { geocodeCustomerAddress } from '../../services/addresses/customerGeocoding.service'
 import {
@@ -37,9 +38,10 @@ import {
   getCustomerFavouriteServiceIds,
   getCustomerRebookHistory,
   getHomePromotions,
+  getHomeUpdates,
   setCustomerFavouriteService,
 } from '../../services/home/home-content.service'
-import type { HomePromotion, HomeRebook } from '../../services/home/home-content.service'
+import type { HomePromotion, HomeRebook, HomeUpdate } from '../../services/home/home-content.service'
 import {
   getHomeServicesForLocation,
 } from '../../services/services/services.service'
@@ -51,8 +53,6 @@ import {
 } from '../../services/notifications/customerNotifications.service'
 
 const KvikStaffLogo = require('../../assets/branding/tempstuff-logo.png')
-const heroBannerImage = require('../../assets/home/hero-banner.png')
-const heroWorkerImage = require('../../assets/home/hero-worker.png')
 
 
 type HomeLocation = {
@@ -104,6 +104,7 @@ export default function HomeScreen({
   )
   const [rebookHistory, setRebookHistory] = useState<HomeRebook[]>([])
   const [promotions, setPromotions] = useState<HomePromotion[]>([])
+  const [updates, setUpdates] = useState<HomeUpdate[]>([])
   const [contentLoading, setContentLoading] = useState(true)
   const [contentError, setContentError] = useState('')
   const [unreadNotificationCount, setUnreadNotificationCount] =
@@ -291,10 +292,12 @@ async function loadHomeContent(
       favouritesResult,
       rebookResult,
       promotionsResult,
+      updatesResult,
     ] = await Promise.allSettled([
       getCustomerFavouriteServiceIds(),
       getCustomerRebookHistory(),
       getHomePromotions(availableIds),
+      getHomeUpdates(availableIds),
     ])
 
     let hasFailure = false
@@ -323,6 +326,15 @@ async function loadHomeContent(
       hasFailure = true
       console.warn(
         'Home promotions could not be loaded.',
+      )
+    }
+
+    if (updatesResult.status === 'fulfilled') {
+      setUpdates(updatesResult.value)
+    } else {
+      hasFailure = true
+      console.warn(
+        'Home updates could not be loaded.',
       )
     }
 
@@ -930,50 +942,82 @@ async function fetchCurrentLocation(automatic = false) {
           </View>
         </View>
 
-        <View style={styles.heroCard}>
-          <Image
-            source={heroBannerImage}
-            style={styles.heroBackground}
-            resizeMode="contain"
-          />
+        <HomeContentCarousel
+          variant="hero"
+          items={promotions.map(item => ({
+            id: item.id,
+            title: item.title,
+            description: item.subtitle,
+            ctaText: item.ctaText,
+            imageUrl: item.imageUrl,
+            serviceId: item.serviceId,
+          }))}
+          onItemPress={item => {
+            if (!item.serviceId) {
+              setServiceQuery('')
+              setSelectedCategoryId(null)
+              setFeaturedOnly(false)
+              return
+            }
 
-          <View style={styles.heroTint} />
-          <View style={styles.heroGlow} />
+            const service = services.find(
+              candidate => candidate.id === item.serviceId,
+            )
 
-          <View style={styles.heroCopy}>
-            <View style={styles.heroTag}>
-              <View style={styles.heroTagDot} />
-              <Text style={styles.heroTagText}>
-                HOURLY STAFFING
-              </Text>
+            if (service) {
+              void handleServicePress(service)
+            }
+          }}
+        />
+
+        {updates.length > 0 &&
+        normalizedServiceQuery.length === 0 &&
+        selectedCategoryId === null &&
+        !featuredOnly ? (
+          <View style={styles.homeSection}>
+            <View style={styles.personalHeader}>
+              <View style={styles.sectionHeadingWrap}>
+                <View style={styles.sectionEyebrowRow}>
+                  <View style={styles.sectionEyebrowLine} />
+                  <Text style={styles.sectionEyebrow}>
+                    LATEST FROM KVIKSTAFF
+                  </Text>
+                </View>
+                <Text style={styles.sectionTitle}>
+                  News & updates
+                </Text>
+              </View>
             </View>
 
-            <Text style={styles.heroTitle}>
-              Your workday,
-              {'\n'}fully supported.
-            </Text>
+            <HomeContentCarousel
+              variant="updates"
+              items={updates.map(item => ({
+                id: item.id,
+                title: item.title,
+                description: item.body,
+                ctaText: item.ctaText,
+                imageUrl: item.imageUrl,
+                serviceId: item.serviceId,
+              }))}
+              onItemPress={item => {
+                if (!item.serviceId) {
+                  setServiceQuery('')
+                  setSelectedCategoryId(null)
+                  setFeaturedOnly(false)
+                  return
+                }
 
-            <Text style={styles.heroSubtitle}>
-              Choose a service and continue
-              through your existing booking
-              flow.
-            </Text>
+                const service = services.find(
+                  candidate => candidate.id === item.serviceId,
+                )
+
+                if (service) {
+                  void handleServicePress(service)
+                }
+              }}
+            />
           </View>
-
-          <Image
-            source={heroWorkerImage}
-            style={styles.heroWorker}
-            resizeMode="contain"
-          />
-
-          <View style={styles.heroFooter}>
-            <View style={styles.heroFooterDot} />
-
-            <Text style={styles.heroFooterText}>
-              Professional support • Flexible hours
-            </Text>
-          </View>
-        </View>
+        ) : null}
 
         {locationError ? (
           <View style={styles.locationWarning}>
@@ -1202,94 +1246,7 @@ async function fetchCurrentLocation(automatic = false) {
           </View>
         ) : null}
 
-        {promotions.length > 0 &&
-        normalizedServiceQuery.length === 0 &&
-        selectedCategoryId === null &&
-        !featuredOnly ? (
-          <View style={styles.homeSection}>
-            <View style={styles.personalHeader}>
-              <View style={styles.sectionHeadingWrap}>
-                <View style={styles.sectionEyebrowRow}>
-                  <View style={styles.sectionEyebrowLine} />
-                  <Text style={styles.sectionEyebrow}>
-                    KvikStaff UPDATES
-                  </Text>
-                </View>
-                <Text style={styles.sectionTitle}>
-                  Offers & updates
-                </Text>
-              </View>
-            </View>
 
-            <FlatList
-              data={promotions}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.promotionList}
-              keyExtractor={item => `promotion-${item.id}`}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.promotionCard}
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    if (!item.serviceId) {
-                      setServiceQuery('')
-                      setSelectedCategoryId(null)
-                      setFeaturedOnly(false)
-                      return
-                    }
-
-                    const service = services.find(
-                      candidate => candidate.id === item.serviceId,
-                    )
-
-                    if (service) {
-                      void handleServicePress(service)
-                    }
-                  }}
-                >
-                  {item.imageUrl ? (
-                    <Image
-                      source={{ uri: item.imageUrl }}
-                      style={styles.promotionImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles.promotionImageFallback}>
-                      <Text style={styles.promotionImageFallbackText}>
-                        TS
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={styles.promotionOverlay} />
-                  <View style={styles.promotionCopy}>
-                    <Text style={styles.promotionTitle} numberOfLines={2}>
-                      {item.title}
-                    </Text>
-                    {item.subtitle ? (
-                      <Text style={styles.promotionSubtitle} numberOfLines={2}>
-                        {item.subtitle}
-                      </Text>
-                    ) : null}
-                    {item.ctaText ? (
-                      <View style={styles.promotionCta}>
-                        <Text style={styles.promotionCtaText}>
-                          {item.ctaText}
-                        </Text>
-                        <CustomerIcon
-                          name="arrow-right"
-                          size={14}
-                          color="#FFFFFF"
-                        />
-                      </View>
-                    ) : null}
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        ) : null}
 
         <View style={styles.servicesToolbar}>
           <View style={styles.serviceSearchField}>

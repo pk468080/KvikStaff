@@ -106,6 +106,44 @@ class HomeService:
 
         return result
 
+    async def get_home_updates(
+        self,
+        available_service_ids: set[UUID] | None = None,
+    ) -> list[dict[str, Any]]:
+        rows = await self.repository.get_active_home_updates()
+        now = datetime.now(timezone.utc)
+        result: list[dict[str, Any]] = []
+
+        for row in rows:
+            starts_at = row.get("starts_at")
+            ends_at = row.get("ends_at")
+            service_id = row.get("service_id")
+
+            if starts_at is not None and starts_at > now:
+                continue
+            if ends_at is not None and now >= ends_at:
+                continue
+            if (
+                available_service_ids is not None
+                and service_id is not None
+                and service_id not in available_service_ids
+            ):
+                continue
+
+            result.append(
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "body": row["body"],
+                    "cta_text": row["cta_text"],
+                    "service_id": row["service_id"],
+                    "image_url": row["image_url"],
+                    "sort_order": row["sort_order"],
+                }
+            )
+
+        return result
+
     async def get_customer_rebook_history(
         self,
         customer_id: UUID,

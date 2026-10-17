@@ -10,6 +10,7 @@ from app.modules.home.schemas import (
     HomeFavouriteResponse,
     HomePromotionResponse,
     HomeRebookResponse,
+    HomeUpdateResponse,
 )
 from app.modules.home.service import HomeService
 
@@ -57,6 +58,38 @@ async def get_home_promotions(
                 continue
 
     return await service.get_home_promotions(
+        available_service_ids=available_service_ids,
+    )
+
+
+@router.get(
+    "/updates",
+    response_model=list[HomeUpdateResponse],
+)
+async def get_home_updates(
+    service_ids: str | None = Query(
+        default=None,
+        description="Comma-separated service UUIDs available at the customer's location.",
+    ),
+    service: HomeService = Depends(
+        get_home_service,
+    ),
+) -> list[dict[str, Any]]:
+    available_service_ids: set[UUID] | None = None
+
+    if service_ids is not None:
+        available_service_ids = set()
+
+        for raw_id in service_ids.split(","):
+            normalized = raw_id.strip()
+            if not normalized:
+                continue
+            try:
+                available_service_ids.add(UUID(normalized))
+            except ValueError:
+                continue
+
+    return await service.get_home_updates(
         available_service_ids=available_service_ids,
     )
 
