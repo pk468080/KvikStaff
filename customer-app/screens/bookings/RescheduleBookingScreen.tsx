@@ -257,7 +257,7 @@ export default function RescheduleBookingScreen({
         <View style={styles.headingRow}>
           <View style={styles.stepBadge}>
             <Text style={styles.stepBadgeText}>
-              11
+              ↻
             </Text>
           </View>
 
