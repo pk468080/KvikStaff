@@ -206,19 +206,23 @@ function matchesFilter(
 
 function sortBookings(
   bookings: WorkerBooking[],
+  filter: BookingFilter,
 ): WorkerBooking[] {
+  const newestFirst =
+    filter === 'completed' ||
+    filter === 'cancelled'
+
   return [
     ...bookings,
   ].sort(
     (a, b) => {
-      return (
-        new Date(
-          a.scheduledStart,
-        ).getTime() -
-        new Date(
-          b.scheduledStart,
-        ).getTime()
-      )
+      const aTime = new Date(a.scheduledStart).getTime()
+      const bTime = new Date(b.scheduledStart).getTime()
+      const difference = aTime - bTime
+
+      return newestFirst
+        ? -difference
+        : difference
     },
   )
 }
@@ -298,6 +302,7 @@ export default function WorkerBookingsScreen({
 
         return sortBookings(
           filtered,
+          filter,
         )
       },
       [
