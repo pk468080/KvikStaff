@@ -38,6 +38,18 @@ type EligibleWorker = {
 
 type BookingFilter = 'all' | 'needs_assignment' | 'assigned' | 'cancelled'
 
+function formatFulfillmentType(value: string | null): string {
+  switch (value) {
+    case 'instant':
+      return 'Instant'
+    case 'recurring':
+      return 'Recurring'
+    case 'scheduled':
+    default:
+      return 'Scheduled'
+  }
+}
+
 export default function Bookings() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -181,10 +193,17 @@ export default function Bookings() {
   }, [bookings])
 
   const assignedBookings = useMemo(() => {
+    const activeAssignmentStatuses = new Set([
+      'assigned',
+      'on_the_way',
+      'arrived',
+      'in_progress',
+    ])
+
     return bookings.filter(
       (booking) =>
-        booking.worker_id &&
-        booking.status !== 'cancelled'
+        Boolean(booking.worker_id) &&
+        activeAssignmentStatuses.has(booking.status)
     )
   }, [bookings])
 
@@ -216,8 +235,8 @@ export default function Bookings() {
       if (
         filter === 'assigned' &&
         !(
-          booking.worker_id &&
-          booking.status !== 'cancelled'
+          Boolean(booking.worker_id) &&
+          ['assigned', 'on_the_way', 'arrived', 'in_progress'].includes(booking.status)
         )
       ) {
         return false
@@ -601,11 +620,15 @@ export default function Bookings() {
     )
   }
 
-  function resetFilters() {
-    setSearch('')
-    setFilter('needs_assignment')
+  function selectQueue(nextFilter: BookingFilter) {
+    setFilter(nextFilter)
     setStatusFilter('all')
     setServiceFilter('all')
+  }
+
+  function resetFilters() {
+    setSearch('')
+    selectQueue('needs_assignment')
   }
 
   return (
@@ -643,9 +666,7 @@ export default function Bookings() {
         <button
           type="button"
           className="panel"
-          onClick={() =>
-            setFilter('needs_assignment')
-          }
+          onClick={() => selectQueue('needs_assignment')}
           style={{
             textAlign: 'left',
             cursor: 'pointer',
@@ -669,9 +690,7 @@ export default function Bookings() {
         <button
           type="button"
           className="panel"
-          onClick={() =>
-            setFilter('assigned')
-          }
+          onClick={() => selectQueue('assigned')}
           style={{
             textAlign: 'left',
             cursor: 'pointer',
@@ -695,9 +714,7 @@ export default function Bookings() {
         <button
           type="button"
           className="panel"
-          onClick={() =>
-            setFilter('cancelled')
-          }
+          onClick={() => selectQueue('cancelled')}
           style={{
             textAlign: 'left',
             cursor: 'pointer',
@@ -721,9 +738,7 @@ export default function Bookings() {
         <button
           type="button"
           className="panel"
-          onClick={() =>
-            setFilter('all')
-          }
+          onClick={() => selectQueue('all')}
           style={{
             textAlign: 'left',
             cursor: 'pointer',
@@ -1046,10 +1061,7 @@ export default function Bookings() {
 
                         <td>
                           <span className="booking-status">
-                            {booking.fulfillment_type ===
-                            'instant'
-                              ? 'Instant'
-                              : 'Scheduled'}
+                            {formatFulfillmentType(booking.fulfillment_type)}
                           </span>
                         </td>
 

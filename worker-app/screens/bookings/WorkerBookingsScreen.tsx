@@ -121,6 +121,23 @@ function getStatusVariant(
   }
 }
 
+function isCurrentlyActiveBooking(booking: WorkerBooking): boolean {
+  if (
+    booking.status === 'on_the_way' ||
+    booking.status === 'arrived' ||
+    booking.status === 'in_progress'
+  ) {
+    return true
+  }
+
+  if (booking.status !== 'assigned') {
+    return false
+  }
+
+  const scheduledStart = new Date(booking.scheduledStart).getTime()
+  return Number.isFinite(scheduledStart) && scheduledStart <= Date.now()
+}
+
 function isUpcomingBooking(
   booking: WorkerBooking,
 ): boolean {
@@ -137,12 +154,8 @@ function isUpcomingBooking(
     return false
   }
 
-  if (
-    isActiveBookingStatus(
-      booking.status,
-    )
-  ) {
-    return true
+  if (isCurrentlyActiveBooking(booking)) {
+    return false
   }
 
   const timestamp = new Date(
@@ -164,9 +177,7 @@ function matchesFilter(
 ): boolean {
   switch (filter) {
     case 'active':
-      return isActiveBookingStatus(
-        booking.status,
-      )
+      return isCurrentlyActiveBooking(booking)
 
     case 'upcoming':
       return isUpcomingBooking(
@@ -705,10 +716,7 @@ export default function WorkerBookingsScreen({
                     booking,
                   )
 
-                const active =
-                  isActiveBookingStatus(
-                    booking.status,
-                  )
+                const active = isCurrentlyActiveBooking(booking)
 
                 return (
                   <Pressable

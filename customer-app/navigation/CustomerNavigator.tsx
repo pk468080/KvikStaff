@@ -367,7 +367,7 @@ const result =
 
               instantBookingIdempotencyKeyRef.current = null
 
-              navigation.navigate(
+              navigation.replace(
                 'Payment',
                 {
                   bookingId:
@@ -442,7 +442,7 @@ const result =
 
                 scheduledBookingIdempotencyKeyRef.current = null
 
-              navigation.navigate(
+              navigation.replace(
                 'Payment',
                 {
                   bookingId:
@@ -571,7 +571,7 @@ const result =
                 idempotencyKey,
               )
               recurringBookingIdempotencyKeyRef.current = null
-            navigation.navigate(
+            navigation.replace(
               'Payment',
               {
                 bookingId:

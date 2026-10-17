@@ -1549,14 +1549,16 @@ export default function BookingScreen({
               location?.address ??
               'No location selected'
             }
+            hasLocation={Boolean(location)}
             available={
               availabilityResult
                 ?.serviceAreaAvailable ===
               true
             }
             loading={
-              availabilityStatus ===
-              'checking'
+              Boolean(location) &&
+              (availabilityStatus === 'idle' ||
+                availabilityStatus === 'checking')
             }
             error={
               availabilityStatus ===

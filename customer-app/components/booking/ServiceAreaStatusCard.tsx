@@ -6,6 +6,7 @@ interface ServiceAreaStatusCardProps {
   available: boolean
   loading?: boolean
   error?: string | null
+  hasLocation?: boolean
 }
 
 export default function ServiceAreaStatusCard({
@@ -13,20 +14,31 @@ export default function ServiceAreaStatusCard({
   available,
   loading = false,
   error,
+  hasLocation = true,
 }: ServiceAreaStatusCardProps) {
   return (
-    <View style={[styles.card, !available && styles.cardUnavailable]}>
+    <View style={[styles.card, hasLocation && !available && !loading && !error && styles.cardUnavailable]}>
       <View style={styles.content}>
         <Text style={styles.label}>Service Location</Text>
         <Text style={styles.address} numberOfLines={2}>
           {address || 'No location selected'}
         </Text>
 
-        {loading && <Text style={styles.status}>Checking availability...</Text>}
+        {!hasLocation && (
+          <Text style={styles.status}>
+            Select a service location to check availability.
+          </Text>
+        )}
 
-        {error && <Text style={styles.statusError}>{error}</Text>}
+        {hasLocation && loading && (
+          <Text style={styles.status}>Checking availability...</Text>
+        )}
 
-        {!loading && !error && (
+        {hasLocation && error && (
+          <Text style={styles.statusError}>{error}</Text>
+        )}
+
+        {hasLocation && !loading && !error && (
           <Text style={[styles.status, available && styles.statusAvailable]}>
             {available ? '✓ Available in your area' : '✗ Not available at this location'}
           </Text>

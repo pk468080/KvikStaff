@@ -107,6 +107,8 @@ export default function PaymentScreen({
     setProcessing(true)
     setError(null)
 
+    let checkoutWasAttempted = false
+
     try {
       let order: RazorpayOrder
 
@@ -158,6 +160,7 @@ order = await createRazorpayOrder(
       let checkout
 
       try {
+        checkoutWasAttempted = true
         checkout = await RazorpayCheckout.open({
           key: order.keyId,
           amount: order.amount,
@@ -195,15 +198,22 @@ order = await createRazorpayOrder(
 
       onPaid()
     } catch (paymentError) {
-      const message =
+      const rawMessage =
         paymentError instanceof Error
           ? paymentError.message
-          : 'Payment was not completed.'
+          : 'Payment could not be completed.'
+
+      const message = checkoutWasAttempted
+        ? `${rawMessage}\n\nWe could not confirm the final payment status. Do not pay again yet. Reopen this booking or contact support while the payment is checked.`
+        : rawMessage
+      const alertTitle = checkoutWasAttempted
+        ? 'Payment status needs confirmation'
+        : 'Payment not completed'
 
       setError(message)
 
       Alert.alert(
-        'Payment not completed',
+        alertTitle,
         message,
       )
     } finally {

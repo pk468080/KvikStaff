@@ -1163,9 +1163,13 @@ const [
                 styles.title
               }
             >
-              {tracking
-                ? 'Your worker is on the move'
-                : 'Booking confirmed'}
+              {booking.status === 'on_the_way'
+                ? 'Your worker is on the way'
+                : booking.status === 'arrived'
+                  ? 'Your worker has arrived'
+                  : booking.status === 'in_progress'
+                    ? 'Service in progress'
+                    : 'Booking confirmed'}
             </Text>
 
             <Text

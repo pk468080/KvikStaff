@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import {
   ActivityIndicator,
   Image,
@@ -331,6 +332,7 @@ export default function MyBookingsScreen({
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedBookingsRef = useRef(false)
 
   const loadBookings = useCallback(
     async (isRefresh = false) => {
@@ -357,9 +359,13 @@ export default function MyBookingsScreen({
     [],
   )
 
-  useEffect(() => {
-    void loadBookings()
-  }, [loadBookings])
+  useFocusEffect(
+    useCallback(() => {
+      const isSubsequentFocus = hasLoadedBookingsRef.current
+      hasLoadedBookingsRef.current = true
+      void loadBookings(isSubsequentFocus)
+    }, [loadBookings]),
+  )
 
   const counts = useMemo(() => {
     const next = {
