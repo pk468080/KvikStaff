@@ -1861,6 +1861,9 @@ const [
                   </Text>
 
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Contact support about booking cancellation"
+                    accessibilityHint="Opens customer support for help with this booking"
                     style={
                       styles.supportButton
                     }
@@ -1992,6 +1995,10 @@ const [
         {booking.status ===
         'arrived' ? (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={otpLoadingType === 'start' ? 'Generating start OTP' : 'Show start OTP'}
+            accessibilityState={{ disabled: otpLoadingType !== null, busy: otpLoadingType === 'start' }}
+            disabled={otpLoadingType !== null}
             style={
               styles.button
             }
@@ -2006,7 +2013,7 @@ const [
                 styles.buttonText
               }
             >
-              Show start OTP
+              {otpLoadingType === 'start' ? 'Generating...' : 'Show start OTP'}
             </Text>
           </Pressable>
         ) : null}
@@ -2014,6 +2021,10 @@ const [
         {booking.status ===
         'in_progress' ? (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={otpLoadingType === 'end' ? 'Generating end OTP' : 'Show end OTP'}
+            accessibilityState={{ disabled: otpLoadingType !== null, busy: otpLoadingType === 'end' }}
+            disabled={otpLoadingType !== null}
             style={
               styles.button
             }
@@ -2028,7 +2039,7 @@ const [
                 styles.buttonText
               }
             >
-              Show end OTP
+              {otpLoadingType === 'end' ? 'Generating...' : 'Show end OTP'}
             </Text>
           </Pressable>
         ) : null}
@@ -2037,6 +2048,9 @@ const [
         booking.scheduled_start &&
         booking.scheduled_end ? (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Reschedule booking"
+            accessibilityHint="Opens the screen to choose a new booking date and time"
             style={
               styles.rescheduleButton
             }
@@ -2066,6 +2080,9 @@ const [
         booking.status !==
           'arrived' ? (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cancel booking"
+            accessibilityHint="Opens a confirmation prompt before cancelling this booking"
             style={
               styles.cancelButton
             }
