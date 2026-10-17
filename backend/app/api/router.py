@@ -21,6 +21,7 @@ from app.api.v1.locations import router as locations_router
 from app.api.v1.worker_schedule import (
     router as worker_schedule_router,
 )
+from app.api.v1.wallet import router as wallet_router
 api_router = APIRouter()
 
 
@@ -110,6 +111,11 @@ api_router.include_router(
     payments_router,
     prefix="/payments",
     tags=["payments"],
+)
+api_router.include_router(
+    wallet_router,
+    prefix="/wallet",
+    tags=["wallet"],
 )
 api_router.include_router(
     worker_presence_router,
