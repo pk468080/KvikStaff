@@ -224,6 +224,9 @@ function BookingCard({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${booking.service_name ?? 'Service booking'}, ${statusTone.label}, ${formatDateTime(booking.scheduled_start)}`}
+      accessibilityHint={group === 'active' ? 'Opens booking tracking and details' : 'Opens booking details'}
       style={({ pressed }) => [
         styles.bookingCard,
         pressed && styles.bookingCardPressed,
@@ -488,6 +491,9 @@ export default function MyBookingsScreen({
             return (
               <Pressable
                 key={value}
+                accessibilityRole="button"
+                accessibilityLabel={`${label}: ${counts[value]} ${counts[value] === 1 ? 'booking' : 'bookings'}`}
+                accessibilityState={{ selected }}
                 onPress={() => setFilter(value)}
                 style={[
                   styles.filterChip,
