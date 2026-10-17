@@ -36,7 +36,7 @@ type EligibleWorker = {
   distance_km: number | null
 }
 
-type BookingFilter = 'all' | 'needs_assignment' | 'assigned' | 'cancelled'
+type BookingFilter = 'all' | 'needs_assignment' | 'assigned' | 'cancelled_or_expired'
 
 function formatFulfillmentType(value: string | null): string {
   switch (value) {
@@ -48,6 +48,15 @@ function formatFulfillmentType(value: string | null): string {
     default:
       return 'Scheduled'
   }
+}
+
+function isTerminalBookingStatus(status: string): boolean {
+  return (
+    status === 'completed' ||
+    status === 'cancelled' ||
+    status === 'expired' ||
+    status === 'payment_failed'
+  )
 }
 
 export default function Bookings() {
@@ -207,10 +216,11 @@ export default function Bookings() {
     )
   }, [bookings])
 
-  const cancelledBookings = useMemo(() => {
+  const cancelledOrExpiredBookings = useMemo(() => {
     return bookings.filter(
       (booking) =>
-        booking.status === 'cancelled'
+        booking.status === 'cancelled' ||
+        booking.status === 'expired'
     )
   }, [bookings])
 
@@ -243,8 +253,8 @@ export default function Bookings() {
       }
 
       if (
-        filter === 'cancelled' &&
-        booking.status !== 'cancelled'
+        filter === 'cancelled_or_expired' &&
+        !['cancelled', 'expired'].includes(booking.status)
       ) {
         return false
       }
@@ -374,9 +384,9 @@ export default function Bookings() {
       return
     }
 
-    if (booking.status === 'cancelled') {
+    if (isTerminalBookingStatus(booking.status)) {
       setError(
-        'This booking is already cancelled.'
+        'Completed, cancelled, expired, or payment-failed bookings cannot be cancelled again.'
       )
       return
     }
@@ -440,6 +450,13 @@ export default function Bookings() {
 
     if (!booking) {
       setError('Booking not found.')
+      return
+    }
+
+    if (isTerminalBookingStatus(booking.status)) {
+      setError(
+        'Workers cannot be assigned to completed, cancelled, expired, or payment-failed bookings.'
+      )
       return
     }
 
@@ -714,14 +731,14 @@ export default function Bookings() {
         <button
           type="button"
           className="panel"
-          onClick={() => selectQueue('cancelled')}
+          onClick={() => selectQueue('cancelled_or_expired')}
           style={{
             textAlign: 'left',
             cursor: 'pointer',
           }}
         >
           <strong>
-            Cancelled
+            Cancelled / expired
           </strong>
 
           <div
@@ -731,7 +748,7 @@ export default function Bookings() {
               marginTop: 6,
             }}
           >
-            {cancelledBookings.length}
+            {cancelledOrExpiredBookings.length}
           </div>
         </button>
 
@@ -821,8 +838,8 @@ export default function Bookings() {
                 Assigned
               </option>
 
-              <option value="cancelled">
-                Cancelled
+              <option value="cancelled_or_expired">
+                Cancelled / expired
               </option>
 
               <option value="all">
@@ -927,8 +944,8 @@ export default function Bookings() {
                 ? 'Assignment queue'
                 : filter === 'assigned'
                   ? 'Assigned bookings'
-                  : filter === 'cancelled'
-                    ? 'Cancelled bookings'
+                  : filter === 'cancelled_or_expired'
+                    ? 'Cancelled / expired bookings'
                     : 'All bookings'}
             </h2>
 
@@ -1124,8 +1141,7 @@ export default function Bookings() {
                               </strong>
                             )}
 
-                            {booking.status !==
-                              'cancelled' &&
+                            {!isTerminalBookingStatus(booking.status) &&
                               (
                                 !workers ? (
                                   <button
@@ -1290,8 +1306,7 @@ export default function Bookings() {
                         </td>
 
                         <td>
-                          {booking.status !==
-                            'cancelled' && (
+                          {!isTerminalBookingStatus(booking.status) && (
                             <button
                               className="dashboard-refresh"
                               onClick={() =>
