@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   Image,
   Modal,
@@ -110,15 +111,27 @@ export default function HomeScreen({
   const [unreadNotificationCount, setUnreadNotificationCount] =
     useState(0)
   const automaticLocationRequestStarted = useRef(false)
-const [
-  activeBookings,
-  setActiveBookings,
-] = useState<CustomerBooking[]>([])
-
-const [
-  activeBookingsLoading,
-  setActiveBookingsLoading,
-] = useState(true)
+  const homeLoadRequestId = useRef(0)
+  const locationActionRequestId = useRef(0)
+  const activeBookingRequestInFlight = useRef(false)
+  const hasLoadedBookingsRef = useRef(false)
+  const hasCompletedHomeLoadRef = useRef(false)
+  const isHomeFocusedRef = useRef(false)
+  const scrollViewRef = useRef<ScrollView>(null)
+  const servicesToolbarOffsetRef = useRef(0)
+  const refreshHomeRef = useRef<(background?: boolean) => Promise<void>>(
+    async () => {},
+  )
+  const loadActiveBookingsRef = useRef<() => Promise<void>>(
+    async () => {},
+  )
+  const pendingFavouriteIdsRef = useRef(new Set<string>())
+  const [pendingFavouriteIds, setPendingFavouriteIds] = useState<Set<string>>(
+    new Set(),
+  )
+  const [activeBookings, setActiveBookings] = useState<CustomerBooking[]>([])
+  const [activeBookingsLoading, setActiveBookingsLoading] = useState(true)
+  const [bookingPickerVisible, setBookingPickerVisible] = useState(false)
 
   const loadUnreadNotificationCount = useCallback(
     async () => {
@@ -139,7 +152,43 @@ const [
 
   useFocusEffect(
     useCallback(() => {
+      isHomeFocusedRef.current = true
       void loadUnreadNotificationCount()
+      void loadActiveBookingsRef.current()
+
+      // Refresh published offers, updates, services and customer shortcuts
+      // whenever a customer returns to Home, without blocking the whole screen.
+      if (hasCompletedHomeLoadRef.current) {
+        void refreshHomeRef.current(true)
+      }
+
+      const bookingPoll = setInterval(() => {
+        if (
+          isHomeFocusedRef.current &&
+          AppState.currentState === 'active'
+        ) {
+          void loadActiveBookingsRef.current()
+        }
+      }, 15_000)
+
+      const appStateSubscription = AppState.addEventListener(
+        'change',
+        nextState => {
+          if (
+            nextState === 'active' &&
+            isHomeFocusedRef.current
+          ) {
+            void loadUnreadNotificationCount()
+            void loadActiveBookingsRef.current()
+          }
+        },
+      )
+
+      return () => {
+        isHomeFocusedRef.current = false
+        clearInterval(bookingPoll)
+        appStateSubscription.remove()
+      }
     }, [loadUnreadNotificationCount]),
   )
   const serviceCategories = Array.from(
@@ -218,70 +267,75 @@ const [
 
   async function loadServices(
     currentLocation: HomeLocation | null,
-  ) {
-    setError('')
-
+  ): Promise<HomeService[]> {
     if (!currentLocation) {
-      setServices([])
       return []
     }
 
-    const nextServices =
-      await getHomeServicesForLocation(
-        currentLocation.latitude,
-        currentLocation.longitude,
-      )
-
-    setServices(nextServices)
-    return nextServices
+    return getHomeServicesForLocation(
+      currentLocation.latitude,
+      currentLocation.longitude,
+    )
   }
 
-async function loadActiveBookings() {
+async function loadActiveBookings(): Promise<void> {
+  // Do not start another poll while the previous request is still pending.
+  if (activeBookingRequestInFlight.current) {
+    return
+  }
+
+  activeBookingRequestInFlight.current = true
+
+  // Only show a loading placeholder for the first request. Background
+  // polling retains the previous successful booking card, avoiding flicker.
+  if (!hasLoadedBookingsRef.current) {
+    setActiveBookingsLoading(true)
+  }
+
   try {
-    setActiveBookingsLoading(true);
-
-    const bookings = await getCustomerBookings();
-
-    const active = bookings.filter(
-      booking =>
-        booking.status === 'searching_worker' ||
-        booking.status === 'assigned' ||
-        booking.status === 'on_the_way' ||
-        booking.status === 'arrived' ||
-        booking.status === 'in_progress',
-    );
+    const bookings = await getCustomerBookings()
+    const active = bookings.filter(booking =>
+      booking.status === 'searching_worker' ||
+      booking.status === 'assigned' ||
+      booking.status === 'on_the_way' ||
+      booking.status === 'arrived' ||
+      booking.status === 'in_progress',
+    )
 
     active.sort((a, b) => {
       const aTime = a.scheduled_start
         ? Date.parse(a.scheduled_start)
-        : Number.MAX_SAFE_INTEGER;
-
+        : Number.MAX_SAFE_INTEGER
       const bTime = b.scheduled_start
         ? Date.parse(b.scheduled_start)
-        : Number.MAX_SAFE_INTEGER;
+        : Number.MAX_SAFE_INTEGER
 
-      return aTime - bTime;
-    });
+      return aTime - bTime
+    })
 
-    setActiveBookings(active);
+    setActiveBookings(active)
   } catch (error) {
     // Keep the last successful booking data on refresh failure.
-    console.warn(
-      'Active booking home card refresh failed:',
-      error,
-    );
+    console.warn('Active booking home card refresh failed:', error)
   } finally {
-    setActiveBookingsLoading(false);
+    hasLoadedBookingsRef.current = true
+    activeBookingRequestInFlight.current = false
+    setActiveBookingsLoading(false)
   }
 }
+
+loadActiveBookingsRef.current = loadActiveBookings
 
 
   
 async function loadHomeContent(
   availableServices: HomeService[],
-) {
-  setContentLoading(true)
-  setContentError('')
+  isCurrentRequest: () => boolean = () => true,
+): Promise<void> {
+  if (isCurrentRequest()) {
+    setContentLoading(true)
+    setContentError('')
+  }
 
   try {
     const availableIds = new Set(
@@ -300,86 +354,105 @@ async function loadHomeContent(
       getHomeUpdates(availableIds),
     ])
 
+    // Location changes can cause overlapping requests. Ignore every result
+    // from an older location so old promotions/services cannot overwrite new.
+    if (!isCurrentRequest()) {
+      return
+    }
+
     let hasFailure = false
 
     if (favouritesResult.status === 'fulfilled') {
       setFavouriteServiceIds(favouritesResult.value)
     } else {
       hasFailure = true
-      console.warn(
-        'Home favourites could not be loaded.',
-      )
+      console.warn('Home favourites could not be loaded.')
     }
 
     if (rebookResult.status === 'fulfilled') {
       setRebookHistory(rebookResult.value)
     } else {
       hasFailure = true
-      console.warn(
-        'Home rebook history could not be loaded.',
-      )
+      console.warn('Home rebook history could not be loaded.')
     }
 
     if (promotionsResult.status === 'fulfilled') {
       setPromotions(promotionsResult.value)
     } else {
       hasFailure = true
-      console.warn(
-        'Home promotions could not be loaded.',
-      )
+      console.warn('Home promotions could not be loaded.')
     }
 
     if (updatesResult.status === 'fulfilled') {
       setUpdates(updatesResult.value)
     } else {
       hasFailure = true
-      console.warn(
-        'Home updates could not be loaded.',
-      )
+      console.warn('Home updates could not be loaded.')
     }
 
     if (hasFailure) {
       setContentError(
-        'Some personalized content is temporarily unavailable. You can still browse services.',
+        'Some home content is temporarily unavailable. You can still browse services.',
       )
     }
   } catch (err) {
-    console.error(
-      'Home personalized content error:',
-      err,
-    )
+    if (!isCurrentRequest()) {
+      return
+    }
 
+    console.error('Home personalized content error:', err)
     setContentError(
-      'Some personalized content is temporarily unavailable. You can still browse services.',
+      'Some home content is temporarily unavailable. You can still browse services.',
     )
   } finally {
-    setContentLoading(false)
+    if (isCurrentRequest()) {
+      setContentLoading(false)
+    }
   }
 }
 
-  async function toggleFavourite(serviceId: string) {
-    const wasFavourite = favouriteServiceIds.has(serviceId)
-    const next = new Set(favouriteServiceIds)
-
-    if (wasFavourite) {
-      next.delete(serviceId)
-    } else {
-      next.add(serviceId)
+  async function toggleFavourite(serviceId: string): Promise<void> {
+    // Guard against repeated taps while a request for the same service runs.
+    if (pendingFavouriteIdsRef.current.has(serviceId)) {
+      return
     }
 
-    setFavouriteServiceIds(next)
+    const wasFavourite = favouriteServiceIds.has(serviceId)
+    pendingFavouriteIdsRef.current.add(serviceId)
+    setPendingFavouriteIds(new Set(pendingFavouriteIdsRef.current))
+
+    setFavouriteServiceIds(current => {
+      const next = new Set(current)
+      if (wasFavourite) {
+        next.delete(serviceId)
+      } else {
+        next.add(serviceId)
+      }
+      return next
+    })
 
     try {
-      await setCustomerFavouriteService(
-        serviceId,
-        !wasFavourite,
-      )
+      await setCustomerFavouriteService(serviceId, !wasFavourite)
     } catch (err) {
       console.error('Favourite service error:', err)
-      setFavouriteServiceIds(favouriteServiceIds)
+      // Roll back only this service, preserving other quick favourite changes.
+      setFavouriteServiceIds(current => {
+        const next = new Set(current)
+        if (wasFavourite) {
+          next.add(serviceId)
+        } else {
+          next.delete(serviceId)
+        }
+        return next
+      })
       setContentError(
-        'Please sign in to save favourite services.',
+        err instanceof Error && err.message
+          ? err.message
+          : 'Unable to update this favourite. Please try again.',
       )
+    } finally {
+      pendingFavouriteIdsRef.current.delete(serviceId)
+      setPendingFavouriteIds(new Set(pendingFavouriteIdsRef.current))
     }
   }
 
@@ -394,16 +467,56 @@ async function loadHomeContent(
     onServicePress?.(service)
   }
 
+  function browseServicesFromContent(): void {
+    // Global offers/announcements have no service destination in the current
+    // CMS schema, so take the customer to the real service catalogue.
+    setServiceQuery('')
+    setSelectedCategoryId(null)
+    setFeaturedOnly(false)
+
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(0, servicesToolbarOffsetRef.current - 12),
+        animated: true,
+      })
+    })
+  }
+
+  function handleHomeContentPress(item: { serviceId: string | null }): void {
+    if (!item.serviceId) {
+      browseServicesFromContent()
+      return
+    }
+
+    const service = services.find(candidate => candidate.id === item.serviceId)
+    if (service) {
+      void handleServicePress(service)
+      return
+    }
+
+    // The offer may target a service that is unavailable in this location.
+    // Do not silently do nothing: show the available catalogue instead.
+    browseServicesFromContent()
+    setContentError(
+      'This item links to a service that is not available in your selected area. Browse other services or choose another location.',
+    )
+  }
+
   async function loadAddress(
     currentLocation: HomeLocation | null,
-  ) {
+    isCurrentRequest: () => boolean = () => true,
+  ): Promise<void> {
     if (!currentLocation) {
-      setAddress('Current location')
+      if (isCurrentRequest()) {
+        setAddress('Choose a service location')
+      }
       return
     }
 
     if (currentLocation.address.trim()) {
-      setAddress(currentLocation.address)
+      if (isCurrentRequest()) {
+        setAddress(currentLocation.address)
+      }
       return
     }
 
@@ -413,68 +526,93 @@ async function loadHomeContent(
         longitude: currentLocation.longitude,
       })
 
-      const first = results[0]
+      if (!isCurrentRequest()) {
+        return
+      }
 
+      const first = results[0]
       if (!first) {
         return
       }
 
       const formatted = formatAddress(first)
-
       if (formatted) {
         setAddress(formatted)
       }
     } catch (err) {
-      console.error('Reverse geocoding error:', err)
+      if (isCurrentRequest()) {
+        console.warn('Reverse geocoding error:', err)
+      }
     }
   }
 
   async function loadHome(
     currentLocation: HomeLocation | null,
-  ) {
-    setLoading(true)
+    background = false,
+  ): Promise<void> {
+    const requestId = ++homeLoadRequestId.current
+    const isCurrentRequest = () => requestId === homeLoadRequestId.current
+
+    if (!background) {
+      setLoading(true)
+    }
     setError('')
 
     try {
       /*
-       * The customer's selected location is used to
-       * determine which active services are published
-       * for that geographic service area.
-       *
-       * Booking/backend validation remains authoritative
-       * later in the booking flow.
+       * The customer's selected location determines which active services
+       * are published for that geographic service area. Booking validation
+       * remains authoritative later in the booking flow.
        */
       const nextServices = await loadServices(currentLocation)
+
+      if (!isCurrentRequest()) {
+        return
+      }
+
+      setServices(nextServices)
+
       await Promise.all([
-        loadAddress(currentLocation),
-        loadHomeContent(nextServices),
+        loadAddress(currentLocation, isCurrentRequest),
+        loadHomeContent(nextServices, isCurrentRequest),
       ])
     } catch (err) {
+      if (!isCurrentRequest()) {
+        return
+      }
+
       console.error('Home loading error:', err)
       setServices([])
       setError('Unable to load services. Please try again.')
+
+      // Still try loading global promotions/updates if service lookup failed.
+      await Promise.all([
+        loadAddress(currentLocation, isCurrentRequest),
+        loadHomeContent([], isCurrentRequest),
+      ])
     } finally {
-      setLoading(false)
+      if (isCurrentRequest()) {
+        setLoading(false)
+        hasCompletedHomeLoadRef.current = true
+      }
     }
   }
 
-  async function refreshHome() {
-    setRefreshing(true)
-    setError('')
+  async function refreshHome(background = false): Promise<void> {
+    if (!background) {
+      setRefreshing(true)
+    }
 
     try {
-      const nextServices = await loadServices(location)
-      await Promise.all([
-        loadAddress(location),
-        loadHomeContent(nextServices),
-      ])
-    } catch (err) {
-      console.error('Home refresh error:', err)
-      setError('Unable to refresh services. Please try again.')
+      await loadHome(location, true)
     } finally {
-      setRefreshing(false)
+      if (!background) {
+        setRefreshing(false)
+      }
     }
   }
+
+  refreshHomeRef.current = refreshHome
 
   
 function getFriendlyLocationError(error: unknown): string {
@@ -567,67 +705,77 @@ async function resolveCurrentCoordinates(): Promise<{
   return { latitude, longitude };
 }
 
-async function fetchCurrentLocation(automatic = false) {
+async function fetchCurrentLocation(automatic = false): Promise<void> {
   if (locationLoading || locationSearching) {
-    return;
+    return
   }
 
-  setLocationError('');
+  const actionId = ++locationActionRequestId.current
+  const previousAddress = address
+  setLocationError('')
 
   if (automatic) {
-    setLocationLoading(true);
+    setLocationLoading(true)
   } else {
-    setLocationSearching(true);
+    setLocationSearching(true)
   }
 
   try {
-    const { latitude, longitude } =
-      await resolveCurrentCoordinates();
+    const { latitude, longitude } = await resolveCurrentCoordinates()
+    if (actionId !== locationActionRequestId.current) {
+      return
+    }
 
-    let selectedAddress = 'Current location';
-
+    let selectedAddress = 'Current location'
     try {
-      const formatted = await reverseGeocode(latitude, longitude);
-
+      const formatted = await reverseGeocode(latitude, longitude)
       if (formatted) {
-        selectedAddress = formatted;
+        selectedAddress = formatted
       }
     } catch (error) {
-      console.warn('Reverse geocoding failed:', error);
+      console.warn('Reverse geocoding failed:', error)
     }
 
-    setAddress(selectedAddress);
+    if (actionId !== locationActionRequestId.current) {
+      return
+    }
 
-    await onLocationChange(
-      latitude,
-      longitude,
-      selectedAddress,
-    );
+    setAddress(selectedAddress)
+    await onLocationChange(latitude, longitude, selectedAddress)
 
-    setLocationQuery('');
-    setLocationError('');
+    if (actionId !== locationActionRequestId.current) {
+      return
+    }
 
+    setLocationQuery('')
+    setLocationError('')
     if (!automatic) {
-      setLocationPickerVisible(false);
+      setLocationPickerVisible(false)
     }
   } catch (error) {
-    console.warn(
-  automatic
-    ? 'Automatic location unavailable; manual search is available.'
-    : 'Manual GPS location unavailable.',
-)
+    if (actionId !== locationActionRequestId.current) {
+      return
+    }
 
-    setLocationError(getFriendlyLocationError(error));
+    console.warn(
+      automatic
+        ? 'Automatic location unavailable; manual search is available.'
+        : 'Manual GPS location unavailable.',
+    )
+    setAddress(previousAddress)
+    setLocationError(getFriendlyLocationError(error))
 
     // GPS failure must not prevent browsing the home screen.
     if (automatic) {
-      setLocationPickerVisible(true);
+      setLocationPickerVisible(true)
     }
   } finally {
-    if (automatic) {
-      setLocationLoading(false);
-    } else {
-      setLocationSearching(false);
+    if (actionId === locationActionRequestId.current) {
+      if (automatic) {
+        setLocationLoading(false)
+      } else {
+        setLocationSearching(false)
+      }
     }
   }
 }
@@ -635,7 +783,14 @@ async function fetchCurrentLocation(automatic = false) {
 
   async function handleSelectBookingLocation(
     savedLocation: CustomerSavedAddress,
-  ) {
+  ): Promise<void> {
+    if (locationSearching || locationLoading) {
+      return
+    }
+
+    const actionId = ++locationActionRequestId.current
+    const previousAddress = address
+    setLocationSearching(true)
     setLocationError('')
     setAddress(savedLocation.addressLine)
 
@@ -645,32 +800,52 @@ async function fetchCurrentLocation(automatic = false) {
         savedLocation.longitude,
         savedLocation.addressLine,
       )
+
+      if (actionId !== locationActionRequestId.current) {
+        return
+      }
+
       setLocationQuery('')
       setLocationPickerVisible(false)
     } catch (error) {
-      setLocationError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to select this previous booking location.',
-      )
+      if (actionId === locationActionRequestId.current) {
+        setAddress(previousAddress)
+        setLocationError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to select this previous booking location.',
+        )
+      }
+    } finally {
+      if (actionId === locationActionRequestId.current) {
+        setLocationSearching(false)
+      }
     }
   }
 
-  async function handleSearchLocation() {
-    const query = locationQuery.trim()
+  async function handleSearchLocation(): Promise<void> {
+    if (locationSearching || locationLoading) {
+      return
+    }
 
+    const query = locationQuery.trim()
     if (query.length < 3) {
       setLocationError('Enter a more specific location.')
       return
     }
 
+    const actionId = ++locationActionRequestId.current
+    const previousAddress = address
     setLocationError('')
     setLocationSearching(true)
 
     try {
       const result = await geocodeCustomerAddress(query)
-      const selectedAddress = result.formattedAddress || query
+      if (actionId !== locationActionRequestId.current) {
+        return
+      }
 
+      const selectedAddress = result.formattedAddress || query
       setAddress(selectedAddress)
 
       await onLocationChange(
@@ -679,22 +854,29 @@ async function fetchCurrentLocation(automatic = false) {
         selectedAddress,
       )
 
+      if (actionId !== locationActionRequestId.current) {
+        return
+      }
+
       setLocationQuery('')
       setLocationError('')
       setLocationPickerVisible(false)
     } catch (err) {
-      console.error(
-        'Manual location search error:',
-        err,
-      )
+      if (actionId !== locationActionRequestId.current) {
+        return
+      }
 
+      console.error('Manual location search error:', err)
+      setAddress(previousAddress)
       setLocationError(
         err instanceof Error
           ? err.message
           : 'Unable to find that location. Please try again.',
       )
     } finally {
-      setLocationSearching(false)
+      if (actionId === locationActionRequestId.current) {
+        setLocationSearching(false)
+      }
     }
   }
 
@@ -750,20 +932,14 @@ async function fetchCurrentLocation(automatic = false) {
     location?.longitude,
     location?.address,
   ])
+
   useEffect(() => {
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadActiveBookings()
-
-  const interval =
-    setInterval(() => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadActiveBookings()
-    }, 15000)
-
-  return () =>
-    clearInterval(interval)
-}, [])
-
+    return () => {
+      // Invalidate outstanding home and location requests on unmount.
+      homeLoadRequestId.current += 1
+      locationActionRequestId.current += 1
+    }
+  }, [])
   if (
   (loading || locationLoading) &&
   (!locationPickerVisible || location !== null)
@@ -819,6 +995,7 @@ async function fetchCurrentLocation(automatic = false) {
   return (
     <ScreenContainer>
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
@@ -840,9 +1017,10 @@ async function fetchCurrentLocation(automatic = false) {
           <TouchableOpacity
             style={styles.locationPill}
             activeOpacity={0.86}
-            onPress={() =>
-              setLocationPickerVisible(true)
-            }
+            onPress={() => setLocationPickerVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Service location: ${address}`}
+            accessibilityHint="Change or search your service area"
           >
             <View style={styles.locationIcon}>
               <CustomerIcon
@@ -942,6 +1120,24 @@ async function fetchCurrentLocation(automatic = false) {
           </View>
         </View>
 
+        {!activeBookingsLoading && activeBookings.length > 0 ? (
+          <ActiveBookingHomeCard
+            booking={activeBookings[0]}
+            activeBookingCount={activeBookings.length}
+            onPress={() => {
+              if (activeBookings.length > 1) {
+                setBookingPickerVisible(true)
+                return
+              }
+
+              const booking = activeBookings[0]
+              if (booking) {
+                onBookingPress?.(booking.id)
+              }
+            }}
+          />
+        ) : null}
+
         <HomeContentCarousel
           variant="hero"
           items={promotions.map(item => ({
@@ -952,22 +1148,7 @@ async function fetchCurrentLocation(automatic = false) {
             imageUrl: item.imageUrl,
             serviceId: item.serviceId,
           }))}
-          onItemPress={item => {
-            if (!item.serviceId) {
-              setServiceQuery('')
-              setSelectedCategoryId(null)
-              setFeaturedOnly(false)
-              return
-            }
-
-            const service = services.find(
-              candidate => candidate.id === item.serviceId,
-            )
-
-            if (service) {
-              void handleServicePress(service)
-            }
-          }}
+          onItemPress={handleHomeContentPress}
         />
 
         {updates.length > 0 &&
@@ -999,22 +1180,7 @@ async function fetchCurrentLocation(automatic = false) {
                 imageUrl: item.imageUrl,
                 serviceId: item.serviceId,
               }))}
-              onItemPress={item => {
-                if (!item.serviceId) {
-                  setServiceQuery('')
-                  setSelectedCategoryId(null)
-                  setFeaturedOnly(false)
-                  return
-                }
-
-                const service = services.find(
-                  candidate => candidate.id === item.serviceId,
-                )
-
-                if (service) {
-                  void handleServicePress(service)
-                }
-              }}
+              onItemPress={handleHomeContentPress}
             />
           </View>
         ) : null}
@@ -1045,30 +1211,6 @@ async function fetchCurrentLocation(automatic = false) {
             </View>
           </View>
         ) : null}
-        {!activeBookingsLoading &&
-  activeBookings.length > 0 && (
-    <ActiveBookingHomeCard
-      booking={
-        activeBookings[0]
-      }
-      activeBookingCount={
-        activeBookings.length
-      }
-      onPress={() => {
-        const booking =
-          activeBookings[0]
-
-        if (!booking) {
-          return
-        }
-
-        onBookingPress?.(
-          booking.id,
-        )
-      }}
-    />
-  )}
-
         {featuredServices.length > 0 &&
         normalizedServiceQuery.length === 0 &&
         selectedCategoryId === null &&
@@ -1114,6 +1256,7 @@ async function fetchCurrentLocation(automatic = false) {
                     service={item}
                     variant="featured"
                     isFavourite={favouriteServiceIds.has(item.id)}
+                    isFavouritePending={pendingFavouriteIds.has(item.id)}
                     onToggleFavourite={() => void toggleFavourite(item.id)}
                     onPress={() => void handleServicePress(item)}
                   />
@@ -1235,6 +1378,7 @@ async function fetchCurrentLocation(automatic = false) {
                     service={item}
                     variant="featured"
                     isFavourite
+                    isFavouritePending={pendingFavouriteIds.has(item.id)}
                     onToggleFavourite={() =>
                       void toggleFavourite(item.id)
                     }
@@ -1248,7 +1392,12 @@ async function fetchCurrentLocation(automatic = false) {
 
 
 
-        <View style={styles.servicesToolbar}>
+        <View
+          style={styles.servicesToolbar}
+          onLayout={event => {
+            servicesToolbarOffsetRef.current = event.nativeEvent.layout.y
+          }}
+        >
           <View style={styles.serviceSearchField}>
             <CustomerIcon
               name="search"
@@ -1261,6 +1410,7 @@ async function fetchCurrentLocation(automatic = false) {
               onChangeText={setServiceQuery}
               placeholder="Search services"
               placeholderTextColor="#94A3B8"
+              accessibilityLabel="Search services"
               style={styles.serviceSearchInput}
               autoCorrect={false}
               autoCapitalize="none"
@@ -1475,21 +1625,30 @@ async function fetchCurrentLocation(automatic = false) {
             </TouchableOpacity>
           </View>
         ) : (
-          <FlatList
-            data={filteredServices}
-            scrollEnabled={false}
-            numColumns={2}
-            columnWrapperStyle={styles.serviceRow}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <ServiceCard
-                service={item}
-                isFavourite={favouriteServiceIds.has(item.id)}
-                onToggleFavourite={() => void toggleFavourite(item.id)}
-                onPress={() => void handleServicePress(item)}
-              />
+          <View style={styles.serviceGrid}>
+            {Array.from(
+              { length: Math.ceil(filteredServices.length / 2) },
+              (_, rowIndex) => (
+                <View
+                  key={`service-grid-row-${rowIndex}`}
+                  style={styles.serviceRow}
+                >
+                  {filteredServices
+                    .slice(rowIndex * 2, rowIndex * 2 + 2)
+                    .map(item => (
+                      <ServiceCard
+                        key={item.id}
+                        service={item}
+                        isFavourite={favouriteServiceIds.has(item.id)}
+                        isFavouritePending={pendingFavouriteIds.has(item.id)}
+                        onToggleFavourite={() => void toggleFavourite(item.id)}
+                        onPress={() => void handleServicePress(item)}
+                      />
+                    ))}
+                </View>
+              ),
             )}
-          />
+          </View>
         )}
 
         <View style={styles.bottomBanner}>
@@ -1608,7 +1767,7 @@ async function fetchCurrentLocation(automatic = false) {
                 styles.primaryButton,
                 locationSearching && styles.disabledButton,
               ]}
-              disabled={locationSearching}
+              disabled={locationSearching || locationLoading}
               onPress={() =>
                 void handleSearchLocation()
               }
@@ -1632,7 +1791,7 @@ async function fetchCurrentLocation(automatic = false) {
 
             <TouchableOpacity
               style={styles.currentLocationButton}
-              disabled={locationSearching}
+              disabled={locationSearching || locationLoading}
               onPress={() =>
                 void fetchCurrentLocation(false)
               }
@@ -1677,6 +1836,7 @@ async function fetchCurrentLocation(automatic = false) {
                   {bookingLocations.map(savedLocation => (
                     <TouchableOpacity
                       key={savedLocation.id}
+                      disabled={locationSearching || locationLoading}
                       style={{
                         width: 205,
                         padding: UI.spacing.md,
@@ -1740,6 +1900,88 @@ async function fetchCurrentLocation(automatic = false) {
           </View>
         </ScreenContainer>
       </Modal>
+
+      <Modal
+        visible={bookingPickerVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setBookingPickerVisible(false)}
+      >
+        <ScreenContainer>
+          <View style={styles.bookingPickerContainer}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeadingWrap}>
+                <Text style={styles.modalKicker}>KVIKSTAFF</Text>
+                <Text style={styles.modalTitle}>Your active bookings</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setBookingPickerVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close active bookings"
+              >
+                <Text style={styles.closeButton}>Close</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalDescription}>
+              Select a booking to view its latest status and details.
+            </Text>
+
+            <ScrollView
+              contentContainerStyle={styles.bookingPickerList}
+              showsVerticalScrollIndicator={false}
+            >
+              {activeBookings.map(booking => {
+                const scheduledDate = booking.scheduled_start
+                  ? new Date(booking.scheduled_start)
+                  : null
+                const scheduleLabel =
+                  scheduledDate && !Number.isNaN(scheduledDate.getTime())
+                    ? scheduledDate.toLocaleString([], {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })
+                    : 'Schedule pending'
+
+                return (
+                  <TouchableOpacity
+                    key={booking.id}
+                    style={styles.bookingPickerItem}
+                    activeOpacity={0.84}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open booking for ${booking.service_name || 'your service'}, status ${booking.status.replace(/_/g, ' ')}`}
+                    onPress={() => {
+                      setBookingPickerVisible(false)
+                      onBookingPress?.(booking.id)
+                    }}
+                  >
+                    <View style={styles.bookingPickerItemCopy}>
+                      <Text style={styles.bookingPickerService} numberOfLines={1}>
+                        {booking.service_name || 'Your service'}
+                      </Text>
+                      <Text style={styles.bookingPickerStatus}>
+                        {booking.status.replace(/_/g, ' ')}
+                      </Text>
+                      <Text style={styles.bookingPickerSchedule}>
+                        {scheduleLabel}
+                      </Text>
+                    </View>
+                    <CustomerIcon
+                      name="chevron-right"
+                      size={18}
+                      color={COLORS.primaryDark}
+                    />
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          </View>
+        </ScreenContainer>
+      </Modal>
     </ScreenContainer>
   )
 }
@@ -1749,12 +1991,14 @@ function ServiceCard({
   onPress,
   onToggleFavourite,
   isFavourite = false,
+  isFavouritePending = false,
   variant = 'grid',
 }: {
   service: HomeService
   onPress: () => void
   onToggleFavourite?: () => void
   isFavourite?: boolean
+  isFavouritePending?: boolean
   variant?: 'grid' | 'featured'
 }) {
   const initials = getServiceInitials(
@@ -1868,19 +2112,33 @@ function ServiceCard({
 
         {onToggleFavourite ? (
           <TouchableOpacity
-            style={
-              styles.favoriteButton
-            }
+            style={[
+              styles.favoriteButton,
+              isFavourite && styles.favoriteButtonActive,
+            ]}
             onPress={event => {
               event.stopPropagation?.()
               onToggleFavourite()
             }}
+            disabled={isFavouritePending}
             activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isFavourite
+                ? `Remove ${service.name} from favourites`
+                : `Add ${service.name} to favourites`
+            }
+            accessibilityState={{
+              selected: isFavourite,
+              disabled: isFavouritePending,
+            }}
+            hitSlop={8}
           >
-            <CustomerIcon
-              name="heart"
-              size={18}
-              color={COLORS.primaryDark}
+            <Ionicons
+              name={isFavourite ? 'heart' : 'heart-outline'}
+              size={19}
+              color={isFavourite ? '#E11D48' : COLORS.primaryDark}
+              accessible={false}
             />
           </TouchableOpacity>
         ) : null}
@@ -2488,7 +2746,12 @@ const styles = StyleSheet.create({
     color: COLORS.primaryDark,
   },
 
+  serviceGrid: {
+    width: '100%',
+  },
+
   serviceRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
   },
 
@@ -2864,12 +3127,19 @@ gridCardContent: {
     position: 'absolute',
     left: 8,
     top: 8,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(7,27,46,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  favoriteButtonActive: {
+    backgroundColor: '#FFF1F3',
+    borderColor: '#FBC4CE',
   },
 
   favoriteButtonText: {
@@ -3263,6 +3533,61 @@ gridCardContent: {
     fontWeight: '500',
     color: COLORS.muted,
     textAlign: 'center',
+  },
+
+  bookingPickerContainer: {
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    paddingBottom: 18,
+    backgroundColor: COLORS.canvas,
+  },
+
+  bookingPickerList: {
+    paddingBottom: 24,
+    gap: 10,
+  },
+
+  bookingPickerItem: {
+    minHeight: 78,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+
+  bookingPickerItemCopy: {
+    flex: 1,
+  },
+
+  bookingPickerService: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '900',
+    color: COLORS.ink,
+  },
+
+  bookingPickerStatus: {
+    marginTop: 3,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    textTransform: 'capitalize',
+  },
+
+  bookingPickerSchedule: {
+    marginTop: 3,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '600',
+    color: COLORS.inkSoft,
   },
 
   modalContainer: {
