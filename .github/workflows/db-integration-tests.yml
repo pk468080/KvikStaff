@@ -1,3 +1,4 @@
+
 name: Database Integration Tests
 
 on:
@@ -18,6 +19,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Check migration history consistency
+        run: python3 scripts/check_migration_history.py
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
@@ -48,11 +52,11 @@ jobs:
           path = Path("/tmp/kvikstaff-ci/supabase/config.toml")
           lines = path.read_text().splitlines()
 
-          if 'project_id = "KvikStaff"' not in lines:
+          project_id_line = 'project_id = "KvikStaff"'
+          if project_id_line not in lines:
               raise SystemExit("Expected project_id not found in Supabase config")
 
-          lines[lines.index('project_id = "KvikStaff"')] = \
-              'project_id = "kvikstaffci"'
+          lines[lines.index(project_id_line)] = 'project_id = "kvikstaffci"'
 
           section = ""
           changed = set()
@@ -62,7 +66,6 @@ jobs:
 
               if stripped.startswith("[") and stripped.endswith("]"):
                   section = stripped
-
               elif (
                   section in {"[db.migrations]", "[db.seed]"}
                   and stripped == "enabled = true"
@@ -102,51 +105,66 @@ jobs:
             -v ON_ERROR_STOP=1 --single-transaction \
             < supabase/tests/fixtures/kvikstaff_schema_baseline.sql
 
-      - name: Apply profile privacy migration to isolated database
+      # The checked-in schema-only fixture is a checkpoint immediately before
+      # 20261015111844. This is not a from-empty migration replay.
+      - name: Replay all migrations after the schema checkpoint
+        env:
+          SCHEMA_BASELINE_VERSION: "20261015111843"
+        shell: bash
         run: |
-          docker exec -i supabase_db_kvikstaffci \
-            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-            < supabase/migrations/20261015111844_restrict_worker_profile_directory_access.sql
+          set -euo pipefail
+
+          replayed=0
+          migrations=(supabase/migrations/[0-9]*.sql)
+
+          if [[ ! -f "${migrations[0]}" ]]; then
+            echo "ERROR: no timestamped migration files found"
+            exit 1
+          fi
+
+          for migration in "${migrations[@]}"; do
+            filename="${migration##*/}"
+            version="${filename%%_*}"
+
+            if [[ "$version" > "$SCHEMA_BASELINE_VERSION" ]]; then
+              # This is CI fixture preparation, not a production migration.
+              # Normalize the schema-only fixture before the F-07 grants.
+              if [[ "$version" == "20261016122925" ]]; then
+                echo "Applying CI-only SECURITY DEFINER grant normalization"
+                docker exec -i supabase_db_kvikstaffci \
+                  psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+                  < supabase/tests/fixtures/normalize_public_security_definer_grants.sql
+              fi
+
+              echo "Replaying migration: $filename"
+              docker exec -i supabase_db_kvikstaffci \
+                psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+                < "$migration"
+
+              replayed=$((replayed + 1))
+            fi
+          done
+
+          echo "Replayed $replayed committed migrations after checkpoint $SCHEMA_BASELINE_VERSION"
+
+          # Update this expected count when the replay checkpoint or committed
+          # migration set intentionally changes.
+          if [[ "$replayed" -ne 18 ]]; then
+            echo "ERROR: expected 18 migrations after the schema checkpoint, got $replayed"
+            exit 1
+          fi
 
       - name: Verify worker profile privacy restrictions
         run: |
           docker exec -i supabase_db_kvikstaffci \
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/test_worker_profile_privacy.sql
-     
-            
-      - name: Apply worker payout reversal migration to isolated database
-        run: |
-          docker exec -i supabase_db_kvikstaffci \
-            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-            < supabase/migrations/20261015114000_fix_worker_payout_reversal_transition.sql
 
       - name: Verify worker payout reversal transition
         run: |
           docker exec -i supabase_db_kvikstaffci \
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-            < supabase/tests/test_worker_payout_reversal_transition.sql       
-
-      - name: Apply SECURITY DEFINER access-hardening migrations
-        run: |
-          for migration in \
-            supabase/migrations/20261016063734_secure_internal_security_definer_helpers.sql \
-            supabase/migrations/20261016064102_revoke_unused_refund_result_rpc.sql \
-            supabase/migrations/20261016064224_revoke_unused_refund_result_rpc.sql \
-            supabase/migrations/20261016064450_pin_is_admin_empty_search_path.sql \
-            supabase/migrations/20261016064717_revoke_service_role_internal_rpc_execute.sql \
-            supabase/migrations/20261016071339_lock_down_admin_worker_payout_anon_access.sql \
-            supabase/migrations/20261016073453_harden_active_account_checks_for_secdef_rpcs.sql \
-            supabase/migrations/20261016074443_revoke_unused_booking_action_rpcs.sql \
-            supabase/migrations/20261016085000_normalize_public_security_definer_grants.sql \
-            supabase/migrations/20261016122925_f07_harden_sensitive_table_grants.sql \
-            supabase/migrations/20261016123545_f07_normalize_sensitive_table_grants.sql \
-            supabase/migrations/20261016123804_f07_remove_worker_document_trigger_privilege.sql \
-            supabase/migrations/20261016142327_f07_require_active_account_for_sensitive_rows.sql \
-            supabase/migrations/20261016160439_f07_normalize_all_sensitive_table_grants.sql; do
-            docker exec -i supabase_db_kvikstaffci \
-              psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$migration"
-          done
+            < supabase/tests/test_worker_payout_reversal_transition.sql
 
       - name: Test SECURITY DEFINER grants and role guards
         run: |
@@ -165,6 +183,12 @@ jobs:
           docker exec -i supabase_db_kvikstaffci \
             psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/test_rls_authorization_matrix.sql
+
+      - name: Test F-08 migration security grants
+        run: |
+          docker exec -i supabase_db_kvikstaffci \
+            psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/test_migration_history_security_grants.sql
 
       - name: Verify baseline tables are empty
         run: |
