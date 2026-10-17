@@ -1317,6 +1317,22 @@ export default function BookingFlowModal({
                 </View>
               </>
             )}
+          {bookingType === 'recurring' && excludedDates.length > 0 && (
+            <>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryIcon}>
+                  <Text style={styles.summaryIconText}>X</Text>
+                </View>
+                <View style={styles.summaryMain}>
+                  <Text style={styles.summaryLabel}>Excluded dates</Text>
+                  <Text style={styles.summaryValue}>
+                    {excludedDates.join(', ')}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         <View
