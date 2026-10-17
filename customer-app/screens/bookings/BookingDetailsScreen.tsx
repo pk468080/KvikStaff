@@ -75,6 +75,9 @@ export default function BookingDetailsScreen({
   const [pricingLoading, setPricingLoading] =
     useState(false)
 
+  const [pricingRetryCount, setPricingRetryCount] =
+    useState(0)
+
   const [submitting, setSubmitting] =
     useState(false)
 
@@ -278,6 +281,7 @@ export default function BookingDetailsScreen({
     selectedWeekdays,
     excludedDates,
     durationHours,
+    pricingRetryCount,
   ])
 
   return (
@@ -747,6 +751,8 @@ export default function BookingDetailsScreen({
             error={
               pricingError
             }
+
+            onRetry={() => setPricingRetryCount(count => count + 1)}
           />
         </BookingSection>
 

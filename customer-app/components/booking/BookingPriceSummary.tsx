@@ -1,6 +1,7 @@
 import {
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native'
 
@@ -41,6 +42,8 @@ interface BookingPriceSummaryProps {
   loading?: boolean
 
   error?: string | null
+
+  onRetry?: () => void
 }
 
 export default function BookingPriceSummary({
@@ -77,6 +80,7 @@ export default function BookingPriceSummary({
   loading = false,
 
   error,
+  onRetry,
 }: BookingPriceSummaryProps) {
   if (loading) {
     return (
@@ -94,6 +98,19 @@ export default function BookingPriceSummary({
         <Text style={styles.errorText}>
           {error}
         </Text>
+        {onRetry ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Retry price calculation"
+            onPress={onRetry}
+            hitSlop={8}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>
+              Try again
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     )
   }
@@ -391,6 +408,21 @@ const styles = StyleSheet.create({
     color: UI.colors.error,
     textAlign: 'center',
     fontWeight: '500',
+  },
+
+  retryButton: {
+    alignSelf: 'center',
+    marginTop: UI.spacing.md,
+    paddingHorizontal: UI.spacing.lg,
+    paddingVertical: UI.spacing.sm,
+    borderRadius: UI.radius.sm,
+    backgroundColor: UI.colors.primary,
+  },
+
+  retryButtonText: {
+    color: UI.colors.surface,
+    fontSize: UI.typography.body,
+    fontWeight: '700',
   },
 
   row: {
